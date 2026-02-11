@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/PublicationDetails",
+    "definitions": {
+        "PublicationDetails": {
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Container title"
+                },
+                "volume": {
+                    "type": "string"
+                },
+                "issue": {
+                    "type": "string"
+                },
+                "pages": {
+                    "type": "string"
+                },
+                "issn": {
+                    "type": "string"
+                },
+                "l_issn": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Publication Details",
+            "description": "PublicationDetails holds specific publication metadata often found in citations."
+        }
+    }
+}

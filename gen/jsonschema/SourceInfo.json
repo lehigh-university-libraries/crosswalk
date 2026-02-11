@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SourceInfo",
+    "definitions": {
+        "SourceInfo": {
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "description": "Format name (e.g., \"drupal\", \"csv\", \"datacite\")"
+                },
+                "format_version": {
+                    "type": "string",
+                    "description": "Format version if applicable (e.g., \"5.3.1\" for CrossRef)"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original identifier in source system"
+                },
+                "parsed_at": {
+                    "type": "string",
+                    "description": "Timestamp when parsed into Hub format",
+                    "format": "date-time"
+                },
+                "profile": {
+                    "type": "string",
+                    "description": "Profile used for parsing (if any)"
+                },
+                "unmapped_fields": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Fields that were placed in 'extra' (for audit purposes)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Source Info",
+            "description": "SourceInfo tracks the origin of a record for auditing and debugging."
+        }
+    }
+}

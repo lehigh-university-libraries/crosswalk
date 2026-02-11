@@ -1,0 +1,955 @@
+// CrossRef deposit schema for DOI registration.
+// Source: CrossRef Metadata Schema 5.3.1
+// Spec: https://gitlab.com/crossref/schema/-/releases/5.3.1
+syntax = "proto3";
+
+package spoke.crossref.v5_3_1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/crossref/v5.3.1;crossrefv5_3_1";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the CrossRef schema version this proto implements.
+// Value: "5.3.1"
+
+// Deposit - Root element for CrossRef deposit.
+message Deposit {
+  Head head = 1;
+  Body body = 2;
+}
+
+// Head - Deposit header information.
+message Head {
+  // Unique batch ID
+  string doi_batch_id = 1;
+  // Timestamp of deposit
+  string timestamp = 2;
+  // Depositor information
+  Depositor depositor = 3;
+  // Registrant name
+  string registrant = 4;
+}
+
+// Depositor - Information about who is making the deposit.
+message Depositor {
+  string depositor_name = 1;
+  string email_address = 2 [(hub.v1.field) = {
+    validators: "email"
+  }];
+}
+
+// Body - Contains the content being registered.
+message Body {
+  repeated Journal journal = 1;
+  repeated Book book = 2;
+  repeated Conference conference = 3;
+  repeated Dataset dataset = 4;
+  repeated Dissertation dissertation = 5;
+  repeated PostedContent posted_content = 6;
+  repeated PeerReview peer_review = 7;
+}
+
+// Journal - A journal containing issues and articles.
+message Journal {
+  JournalMetadata journal_metadata = 1 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Journal metadata"
+  }];
+  repeated JournalIssue journal_issue = 2;
+  repeated JournalArticle journal_article = 3;
+}
+
+// JournalMetadata - Metadata about the journal itself.
+message JournalMetadata {
+  // Full journal title
+  string full_title = 1 [(hub.v1.field) = {
+    target: "title"
+    description: "Journal full title"
+  }];
+  // Abbreviated title
+  string abbrev_title = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Abbreviated title"
+  }];
+  // ISSN (print)
+  string issn_print = 3 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "issn"
+    validators: "issn"
+    description: "Print ISSN"
+  }];
+  // ISSN (electronic)
+  string issn_electronic = 4 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "eissn"
+    validators: "issn"
+    description: "Electronic ISSN"
+  }];
+  // DOI for the journal
+  DoiData doi_data = 5 [(hub.v1.field) = {
+    target: "identifiers"
+    description: "Journal DOI"
+  }];
+}
+
+// JournalIssue - A single issue of a journal.
+message JournalIssue {
+  // Publication date
+  PublicationDate publication_date = 1 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // Volume number
+  string volume = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume number"
+  }];
+  // Issue number
+  string issue = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue number"
+  }];
+  // DOI for the issue
+  DoiData doi_data = 4 [(hub.v1.field) = {
+    target: "identifiers"
+  }];
+}
+
+// JournalArticle - An article in a journal.
+message JournalArticle {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef JournalArticle maps to Hub Record with ARTICLE type"
+  };
+
+  // Titles
+  Titles titles = 1 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors (authors)
+  Contributors contributors = 2 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Publication date
+  PublicationDate publication_date = 3 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // Pages
+  Pages pages = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page range"
+  }];
+  // Abstract
+  string abstract = 5 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+  // Citation list
+  CitationList citation_list = 7 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "cites"
+    description: "References"
+  }];
+  // Funding information
+  repeated FundingInfo program = 8 [(hub.v1.field) = {
+    target: "funders"
+  }];
+  // License
+  repeated License license = 9 [(hub.v1.field) = {
+    target: "rights"
+  }];
+}
+
+// Book - A book or book chapter.
+message Book {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef Book maps to Hub Record with BOOK type"
+  };
+
+  // Book type: monograph, edited_book, reference
+  string book_type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Book type"
+  }];
+  // Book metadata
+  BookMetadata book_metadata = 2 [(hub.v1.field) = {
+    target: "self"
+    description: "Book metadata"
+  }];
+  // Book series metadata
+  BookSeriesMetadata book_series_metadata = 3 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "in_series"
+    description: "Series information"
+  }];
+  // Content item (chapter)
+  repeated ContentItem content_item = 4 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "has_part"
+    description: "Book chapters"
+  }];
+}
+
+// BookMetadata - Metadata for a book.
+message BookMetadata {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef BookMetadata maps to Hub Record"
+  };
+
+  // Titles
+  Titles titles = 1 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors
+  Contributors contributors = 2 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Publication date
+  PublicationDate publication_date = 3 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // ISBN (print)
+  string isbn_print = 4 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    validators: "isbn"
+    description: "Print ISBN"
+  }];
+  // ISBN (electronic)
+  string isbn_electronic = 5 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    validators: "isbn"
+    description: "Electronic ISBN"
+  }];
+  // Publisher
+  Publisher publisher = 6 [(hub.v1.field) = {
+    target: "publisher"
+  }];
+  // DOI data
+  DoiData doi_data = 7 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+  // Edition number
+  string edition_number = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "Edition number"
+  }];
+}
+
+// BookSeriesMetadata - Metadata for a book series.
+message BookSeriesMetadata {
+  // Series title
+  string series_title = 1 [(hub.v1.field) = {
+    target: "title"
+    description: "Series title"
+  }];
+  // ISSN
+  string issn = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "issn"
+    validators: "issn"
+  }];
+  // Volume number
+  string volume = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume number"
+  }];
+}
+
+// ContentItem - A book chapter or component.
+message ContentItem {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef ContentItem maps to Hub Record with BOOK_CHAPTER type"
+  };
+
+  // Component type: chapter, section, part, etc.
+  string component_type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Component type"
+  }];
+  // Titles
+  Titles titles = 2 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors
+  Contributors contributors = 3 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Publication date
+  PublicationDate publication_date = 4 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // Pages
+  Pages pages = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page range"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+}
+
+// Conference - A conference proceeding.
+message Conference {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef Conference maps to Hub Record with CONFERENCE_PROCEEDING type"
+  };
+
+  // Event metadata
+  EventMetadata event_metadata = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conference event information"
+  }];
+  // Proceedings metadata
+  ProceedingsMetadata proceedings_metadata = 2 [(hub.v1.field) = {
+    target: "self"
+    description: "Proceedings metadata"
+  }];
+  // Conference papers
+  repeated ConferencePaper conference_paper = 3 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "has_part"
+    description: "Conference papers"
+  }];
+}
+
+// EventMetadata - Metadata about the conference event.
+message EventMetadata {
+  // Conference name
+  string conference_name = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conference name"
+  }];
+  // Conference acronym
+  string conference_acronym = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conference acronym"
+  }];
+  // Conference number
+  string conference_number = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conference number"
+  }];
+  // Conference date
+  string conference_date = 4 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "other"
+    description: "Conference date"
+  }];
+  // Conference location
+  string conference_location = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conference location"
+  }];
+}
+
+// ProceedingsMetadata - Metadata about the proceedings.
+message ProceedingsMetadata {
+  // Proceedings title
+  string proceedings_title = 1 [(hub.v1.field) = {
+    target: "title"
+    description: "Proceedings title"
+  }];
+  // Publisher
+  Publisher publisher = 2 [(hub.v1.field) = {
+    target: "publisher"
+  }];
+  // Publication date
+  PublicationDate publication_date = 3 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // ISBN
+  string isbn = 4 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    validators: "isbn"
+  }];
+  // DOI data
+  DoiData doi_data = 5 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+}
+
+// ConferencePaper - A paper in conference proceedings.
+message ConferencePaper {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef ConferencePaper maps to Hub Record with CONFERENCE_PAPER type"
+  };
+
+  // Titles
+  Titles titles = 1 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors
+  Contributors contributors = 2 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Publication date
+  PublicationDate publication_date = 3 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // Pages
+  Pages pages = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page range"
+  }];
+  // Abstract
+  string abstract = 5 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+}
+
+// Dataset - A dataset registration.
+message Dataset {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef Dataset maps to Hub Record with DATASET type"
+  };
+
+  // Dataset type: record, collection, crossmark_policy, etc.
+  string dataset_type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Dataset type"
+  }];
+  // Titles
+  Titles titles = 2 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors
+  Contributors contributors = 3 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Description
+  string description = 4 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // Publication date
+  PublicationDate publication_date = 5 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+  // Format/MIME type
+  repeated string format = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "File formats"
+  }];
+}
+
+// Dissertation - A thesis or dissertation.
+message Dissertation {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef Dissertation maps to Hub Record with DISSERTATION type"
+  };
+
+  // Titles
+  Titles titles = 1 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Person (author)
+  PersonName person_name = 2 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+  }];
+  // Approval date
+  PublicationDate approval_date = 3 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "accepted"
+    description: "Approval date"
+  }];
+  // Institution
+  Institution institution = 4 [(hub.v1.field) = {
+    target: "degree_info.institution"
+  }];
+  // Degree
+  string degree = 5 [(hub.v1.field) = {
+    target: "degree_info.degree_name"
+  }];
+  // Abstract
+  string abstract = 6 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // DOI data
+  DoiData doi_data = 7 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+}
+
+// Institution - An educational institution.
+message Institution {
+  // Institution name
+  string institution_name = 1 [(hub.v1.field) = {
+    target: "name"
+    description: "Institution name"
+  }];
+  // Department
+  string institution_department = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Department"
+  }];
+  // Place
+  string institution_place = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Institution location"
+  }];
+}
+
+// PostedContent - Preprints and other posted content.
+message PostedContent {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef PostedContent maps to Hub Record with PREPRINT type"
+  };
+
+  // Type: preprint, working_paper, letter, etc.
+  string type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Posted content type"
+  }];
+  // Titles
+  Titles titles = 2 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Contributors
+  Contributors contributors = 3 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  // Posted date
+  PublicationDate posted_date = 4 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    description: "Posted date"
+  }];
+  // Abstract
+  string abstract = 5 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+  // Group title (e.g., subject area)
+  string group_title = 7 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "local"
+    description: "Subject area"
+  }];
+}
+
+// PeerReview - A peer review.
+message PeerReview {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CrossRef PeerReview maps to Hub Record with PEER_REVIEW type"
+  };
+
+  // Review type: referee-report, editor-report, author-comment, etc.
+  string type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Review type"
+  }];
+  // Stage: pre-publication, post-publication
+  string stage = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Review stage"
+  }];
+  // Titles
+  Titles titles = 3 [(hub.v1.field) = {
+    target: "title"
+  }];
+  // Contributors (reviewers)
+  Contributors contributors = 4 [(hub.v1.field) = {
+    target: "contributors"
+    role: "reviewer"
+  }];
+  // Review date
+  PublicationDate review_date = 5 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+  // DOI data
+  DoiData doi_data = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+  }];
+}
+
+// Titles - Title information.
+message Titles {
+  option (hub.v1.message) = {
+    target: "string"
+    description: "CrossRef Titles extracts main title"
+  };
+
+  // Main title
+  string title = 1 [(hub.v1.field) = {
+    target: "value"
+    required: true
+  }];
+  // Subtitle
+  string subtitle = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Subtitle"
+  }];
+  // Original language title
+  string original_language_title = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Original language title"
+  }];
+}
+
+// Contributors - List of contributors.
+message Contributors {
+  option (hub.v1.message) = {
+    target: "Contributors"
+    description: "CrossRef Contributors list"
+  };
+
+  repeated PersonName person_name = 1 [(hub.v1.field) = {
+    target: "contributors"
+    contributor_type: "person"
+  }];
+  repeated Organization organization = 2 [(hub.v1.field) = {
+    target: "contributors"
+    contributor_type: "organization"
+  }];
+}
+
+// PersonName - A person's name.
+message PersonName {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "CrossRef PersonName maps to Hub Contributor"
+  };
+
+  // Contributor role: author, editor, translator, chair
+  string contributor_role = 1 [(hub.v1.field) = {
+    target: "role"
+  }];
+  // Sequence: first, additional
+  string sequence = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Contributor sequence"
+  }];
+  // Given name
+  string given_name = 3 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+  // Surname
+  string surname = 4 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+  // Suffix
+  string suffix = 5 [(hub.v1.field) = {
+    target: "parsed_name.suffix"
+  }];
+  // ORCID
+  string orcid = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "orcid"
+    parser: "orcid"
+    validators: "orcid"
+  }];
+  // Affiliations
+  repeated Affiliation affiliation = 7 [(hub.v1.field) = {
+    target: "affiliations"
+  }];
+}
+
+// Organization - An organization as contributor.
+message Organization {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "CrossRef Organization maps to Hub Contributor"
+  };
+
+  // Contributor role
+  string contributor_role = 1 [(hub.v1.field) = {
+    target: "role"
+  }];
+  // Sequence
+  string sequence = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Contributor sequence"
+  }];
+  // Organization name
+  string name = 3 [(hub.v1.field) = {
+    target: "name"
+  }];
+}
+
+// Affiliation - Author affiliation.
+message Affiliation {
+  option (hub.v1.message) = {
+    target: "Affiliation"
+    description: "CrossRef Affiliation maps to Hub Affiliation"
+  };
+
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+  }];
+}
+
+// Publisher - Publisher information.
+message Publisher {
+  string publisher_name = 1 [(hub.v1.field) = {
+    target: "name"
+    description: "Publisher name"
+  }];
+  string publisher_place = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Publisher location"
+  }];
+}
+
+// PublicationDate - A publication date.
+message PublicationDate {
+  option (hub.v1.message) = {
+    target: "DateValue"
+    description: "CrossRef PublicationDate maps to Hub DateValue"
+  };
+
+  // Media type: print, online
+  string media_type = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Media type"
+  }];
+  // Year
+  int32 year = 2 [(hub.v1.field) = {
+    target: "year"
+  }];
+  // Month (1-12)
+  int32 month = 3 [(hub.v1.field) = {
+    target: "month"
+  }];
+  // Day (1-31)
+  int32 day = 4 [(hub.v1.field) = {
+    target: "day"
+  }];
+}
+
+// Pages - Page range information.
+message Pages {
+  string first_page = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "First page"
+  }];
+  string last_page = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Last page"
+  }];
+  string other_pages = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Other pages"
+  }];
+}
+
+// DoiData - DOI registration data.
+message DoiData {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "CrossRef DoiData maps to Hub Identifier"
+  };
+
+  // The DOI value
+  string doi = 1 [(hub.v1.field) = {
+    target: "value"
+    parser: "doi"
+    validators: "doi"
+  }];
+  // Resource URL the DOI resolves to
+  string resource = 2 [(hub.v1.field) = {
+    target: "extra"
+    validators: "url"
+    description: "Resource URL"
+  }];
+  // Collection of URLs for multiple resolution
+  repeated Item collection = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Multiple resolution URLs"
+  }];
+}
+
+// Item - A URL in a DOI collection.
+message Item {
+  // URL
+  string resource = 1 [(hub.v1.field) = {
+    target: "extra"
+    validators: "url"
+    description: "Resource URL"
+  }];
+  // MIME type
+  string mime_type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "MIME type"
+  }];
+  // Label
+  string label = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Label"
+  }];
+}
+
+// CitationList - List of citations.
+message CitationList {
+  repeated Citation citation = 1 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "cites"
+  }];
+}
+
+// Citation - A single citation.
+message Citation {
+  option (hub.v1.message) = {
+    target: "Relation"
+    description: "CrossRef Citation maps to Hub Relation"
+  };
+
+  // Citation key
+  string key = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Citation key"
+  }];
+  // DOI of cited work
+  string doi = 2 [(hub.v1.field) = {
+    target: "target_identifier"
+    parser: "doi"
+    validators: "doi"
+  }];
+  // Unstructured citation text
+  string unstructured_citation = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Unstructured citation"
+  }];
+  // Journal title
+  string journal_title = 4 [(hub.v1.field) = {
+    target: "target_title"
+    description: "Journal title"
+  }];
+  // Author
+  string author = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Author"
+  }];
+  // Volume
+  string volume = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume"
+  }];
+  // Issue
+  string issue = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue"
+  }];
+  // First page
+  string first_page = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "First page"
+  }];
+  // Year
+  string year = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "Year"
+  }];
+  // Article title
+  string article_title = 10 [(hub.v1.field) = {
+    target: "target_title"
+    description: "Article title"
+  }];
+}
+
+// FundingInfo - Funding information (Fundref).
+message FundingInfo {
+  option (hub.v1.message) = {
+    target: "Funder"
+    description: "CrossRef FundingInfo maps to Hub Funder"
+  };
+
+  // Funder name
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+  }];
+  // Funder DOI
+  string funder_identifier = 2 [(hub.v1.field) = {
+    target: "identifier"
+    parser: "doi"
+    validators: "doi"
+  }];
+  // Award numbers
+  repeated string award_number = 3 [(hub.v1.field) = {
+    target: "award_numbers"
+  }];
+}
+
+// License - Access and license information.
+message License {
+  option (hub.v1.message) = {
+    target: "Rights"
+    description: "CrossRef License maps to Hub Rights"
+  };
+
+  // License URL
+  string license_ref = 1 [(hub.v1.field) = {
+    target: "uri"
+    validators: "url"
+  }];
+  // Start date
+  string start_date = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "License start date"
+  }];
+  // Applies to: vor, am, tdm
+  string applies_to = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Applies to version"
+  }];
+}

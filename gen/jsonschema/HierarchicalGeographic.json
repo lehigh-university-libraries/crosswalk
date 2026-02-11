@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/HierarchicalGeographic",
+    "definitions": {
+        "HierarchicalGeographic": {
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "description": "State/province"
+                },
+                "county": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "area": {
+                    "type": "string",
+                    "description": "Neighborhood/area"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Hierarchical Geographic",
+            "description": "HierarchicalGeographic represents structured geographic location data. Used for geographic subjects in MODS and similar formats."
+        }
+    }
+}

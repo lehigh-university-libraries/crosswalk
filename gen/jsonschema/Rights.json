@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Rights",
+    "definitions": {
+        "Rights": {
+            "properties": {
+                "statement": {
+                    "type": "string",
+                    "description": "Rights statement text"
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "URI for standardized rights statement"
+                },
+                "license": {
+                    "type": "string",
+                    "description": "License identifier (e.g., \"CC-BY-4.0\")"
+                },
+                "holder": {
+                    "type": "string",
+                    "description": "Rights holder name"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rights",
+            "description": "Rights represents rights information for a resource."
+        }
+    }
+}

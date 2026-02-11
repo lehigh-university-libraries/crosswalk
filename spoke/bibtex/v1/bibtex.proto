@@ -1,0 +1,359 @@
+// BibTeX bibliography format.
+// Source: BibTeX (Oren Patashnik, 1988) with biblatex extensions
+// Spec: http://www.bibtex.org/Format/ (no versioned spec exists)
+// Note: BibTeX has no formal versioned specification. This proto covers
+// the original 14 entry types plus common biblatex extensions.
+syntax = "proto3";
+
+package spoke.bibtex.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/spoke/bibtex/v1;bibtexv1";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION documents the source this proto is based on.
+// Value: "bibtex-1988+biblatex" (no formal version exists)
+
+// Entry - A BibTeX bibliography entry.
+message Entry {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "BibTeX bibliography entry maps to Hub Record"
+  };
+
+  // Entry type (article, book, inproceedings, etc.)
+  EntryType entry_type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "BibTeX entry type maps to resource type"
+  }];
+
+  // Citation key
+  string citation_key = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "local"
+    description: "Citation key as local identifier"
+  }];
+
+  // ===== Standard Fields =====
+
+  // Address of publisher or institution
+  string address = 3 [(hub.v1.field) = {
+    target: "place_published"
+  }];
+
+  // Annotation for the bibliography
+  string annote = 4 [(hub.v1.field) = {
+    target: "notes"
+  }];
+
+  // Author(s)
+  repeated Person author = 5 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+    contributor_type: "person"
+  }];
+
+  // Title of the book (for @inbook, @incollection)
+  string booktitle = 6 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Container title for chapters/articles in books"
+  }];
+
+  // Chapter number
+  string chapter = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Chapter number stored in extra"
+  }];
+
+  // DOI
+  string doi = 8 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+    parser: "doi"
+    validators: "doi"
+  }];
+
+  // Edition of the book
+  string edition = 9 [(hub.v1.field) = {
+    target: "edition"
+    description: "Edition number/name"
+  }];
+
+  // Editor(s)
+  repeated Person editor = 10 [(hub.v1.field) = {
+    target: "contributors"
+    role: "editor"
+    contributor_type: "person"
+  }];
+
+  // Email
+  string email = 11 [(hub.v1.field) = {
+    target: "extra"
+    validators: "email"
+  }];
+
+  // How something was published (for @misc)
+  string howpublished = 12 [(hub.v1.field) = {
+    target: "extra"
+  }];
+
+  // Institution (for @techreport, @mastersthesis, etc.)
+  string institution = 13 [(hub.v1.field) = {
+    target: "degree_info.institution"
+    description: "Maps to degree institution for thesis types, otherwise publisher"
+  }];
+
+  // Journal name
+  string journal = 14 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Journal title for articles"
+  }];
+
+  // Key for sorting (when author/editor missing)
+  string key = 15 [(hub.v1.field) = {
+    target: "extra"
+  }];
+
+  // Month of publication
+  string month = 16 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    description: "Combined with year for publication date"
+  }];
+
+  // Note with additional information
+  string note = 17 [(hub.v1.field) = {
+    target: "notes"
+  }];
+
+  // Number of journal, magazine, tech report, or work in series
+  string number = 18 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue/report number"
+  }];
+
+  // Organization sponsoring conference or manual
+  string organization = 19 [(hub.v1.field) = {
+    target: "contributors"
+    role: "sponsor"
+    contributor_type: "organization"
+  }];
+
+  // Page numbers (e.g., "42--111")
+  string pages = 20 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page range"
+  }];
+
+  // Publisher name
+  string publisher = 21 [(hub.v1.field) = {
+    target: "publisher"
+  }];
+
+  // School (for thesis types)
+  string school = 22 [(hub.v1.field) = {
+    target: "degree_info.institution"
+    description: "Granting institution for theses"
+  }];
+
+  // Series name
+  string series = 23 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "in_series"
+  }];
+
+  // Title of the work
+  string title = 24 [(hub.v1.field) = {
+    target: "title"
+    required: true
+    parser: "strip_html"
+  }];
+
+  // Type of tech report or thesis
+  string type = 25 [(hub.v1.field) = {
+    target: "degree_info.degree_name"
+    description: "Thesis type (e.g., 'PhD Thesis', 'Master\\'s Thesis')"
+  }];
+
+  // URL
+  string url = 26 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    validators: "url"
+  }];
+
+  // Volume of journal or multi-volume book
+  string volume = 27 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume number"
+  }];
+
+  // Year of publication
+  string year = 28 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    parser: "year"
+    validators: "year_range"
+  }];
+
+  // ===== Extended Fields =====
+
+  // Abstract
+  string abstract = 29 [(hub.v1.field) = {
+    target: "abstract"
+    parser: "strip_html"
+  }];
+
+  // Keywords
+  repeated string keywords = 30 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "keywords"
+  }];
+
+  // ISSN
+  string issn = 31 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "issn"
+    validators: "issn"
+  }];
+
+  // ISBN
+  string isbn = 32 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    parser: "isbn"
+    validators: "isbn"
+  }];
+
+  // Language
+  string language = 33 [(hub.v1.field) = {
+    target: "language"
+  }];
+
+  // Location (e.g., conference location)
+  string location = 34 [(hub.v1.field) = {
+    target: "extra"
+    description: "Event/conference location"
+  }];
+
+  // EPRINT identifier (arXiv, etc.)
+  string eprint = 35 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "arxiv"
+    description: "arXiv or other preprint identifier"
+  }];
+
+  // EPRINT type
+  string eprinttype = 36 [(hub.v1.field) = {
+    target: "extra"
+    description: "Type of eprint repository"
+  }];
+
+  // Primary class (for arXiv)
+  string primaryclass = 37 [(hub.v1.field) = {
+    target: "extra"
+    description: "arXiv primary classification"
+  }];
+
+  // URL access date
+  string urldate = 38 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "other"
+    parser: "iso8601"
+    description: "Date URL was accessed"
+  }];
+}
+
+// EntryType - BibTeX entry types.
+enum EntryType {
+  ENTRY_TYPE_UNSPECIFIED = 0;
+  // An article from a journal or magazine
+  ENTRY_TYPE_ARTICLE = 1 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  // A book with an explicit publisher
+  ENTRY_TYPE_BOOK = 2 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK"}];
+  // A work printed and distributed but without publisher
+  ENTRY_TYPE_BOOKLET = 3 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  // A part of a book (chapter, section, etc.)
+  ENTRY_TYPE_INBOOK = 4 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK_CHAPTER"}];
+  // A part of a book with its own title
+  ENTRY_TYPE_INCOLLECTION = 5 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK_CHAPTER"}];
+  // An article in conference proceedings
+  ENTRY_TYPE_INPROCEEDINGS = 6 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_CONFERENCE_PAPER"}];
+  // Same as inproceedings
+  ENTRY_TYPE_CONFERENCE = 7 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_CONFERENCE_PAPER"}];
+  // Technical documentation
+  ENTRY_TYPE_MANUAL = 8 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  // A master's thesis
+  ENTRY_TYPE_MASTERSTHESIS = 9 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_THESIS"}];
+  // A Ph.D. thesis
+  ENTRY_TYPE_PHDTHESIS = 10 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DISSERTATION"}];
+  // For things that don't fit other types
+  ENTRY_TYPE_MISC = 11 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  // Conference proceedings
+  ENTRY_TYPE_PROCEEDINGS = 12 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_COLLECTION"}];
+  // A technical report
+  ENTRY_TYPE_TECHREPORT = 13 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_TECHNICAL_REPORT"}];
+  // A document with author and title but not formally published
+  ENTRY_TYPE_UNPUBLISHED = 14 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_MANUSCRIPT"}];
+  // Online resource (biblatex)
+  ENTRY_TYPE_ONLINE = 15 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_WEBPAGE"}];
+  // Dataset (biblatex)
+  ENTRY_TYPE_DATASET = 16 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DATASET"}];
+  // Software (biblatex)
+  ENTRY_TYPE_SOFTWARE = 17 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  // Patent
+  ENTRY_TYPE_PATENT = 18 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_PATENT"}];
+  // Report (biblatex generalized)
+  ENTRY_TYPE_REPORT = 19 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_REPORT"}];
+  // Thesis (biblatex generalized)
+  ENTRY_TYPE_THESIS = 20 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_THESIS"}];
+}
+
+// Person - A person (author or editor) in BibTeX format.
+message Person {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "BibTeX person maps to Hub Contributor"
+  };
+
+  // Full name as single string (BibTeX format: "Last, First" or "First Last")
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+    parser: "bibtex_name"
+  }];
+
+  // Parsed given name
+  string given = 2 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+
+  // Parsed family name
+  string family = 3 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+
+  // Parsed suffix (Jr., III, etc.)
+  string suffix = 4 [(hub.v1.field) = {
+    target: "parsed_name.suffix"
+  }];
+
+  // ORCID identifier
+  string orcid = 5 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "orcid"
+    parser: "orcid"
+    validators: "orcid"
+  }];
+}
+
+// Bibliography - A collection of BibTeX entries.
+message Bibliography {
+  repeated Entry entries = 1;
+  // Preamble declarations
+  repeated string preamble = 2;
+  // String definitions (@string)
+  map<string, string> strings = 3;
+}

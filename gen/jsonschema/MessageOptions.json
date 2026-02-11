@@ -1,0 +1,78 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/MessageOptions",
+    "definitions": {
+        "MessageOptions": {
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "The Hub message this spoke message maps to (e.g., \"Record\", \"Contributor\")"
+                },
+                "preserve_unmapped": {
+                    "type": "boolean",
+                    "description": "Whether to preserve unmapped fields in Extra"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of this message's purpose"
+                },
+                "computed_fields": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.ComputedField"
+                    },
+                    "type": "array",
+                    "description": "Computed fields that derive values from multiple source fields. These are evaluated after all individual field mappings are processed."
+                },
+                "xml_name": {
+                    "type": "string",
+                    "title": "===== XML serialization options =====",
+                    "description": "===== XML serialization options =====  XML element name for this message type"
+                },
+                "xml_namespaces": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "XML namespaces to declare on this element Format: \"prefix=uri\" (e.g., \"dc=http://purl.org/dc/elements/1.1/\")"
+                },
+                "xml_default_ns": {
+                    "type": "string",
+                    "description": "Default XML namespace URI"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Message Options",
+            "description": "MessageOptions defines message-level Hub mapping options."
+        },
+        "hub.v1.ComputedField": {
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "Target Hub field path (e.g., \"dates\", \"extra.embargo_date\")"
+                },
+                "computer": {
+                    "type": "string",
+                    "description": "Name of the registered computation function The function must be registered with ComputedFieldRegistry"
+                },
+                "date_type": {
+                    "type": "string",
+                    "title": "===== Type-specific options (same as FieldOptions) =====",
+                    "description": "===== Type-specific options (same as FieldOptions) =====  For dates: the semantic date type (issued, created, available, etc.)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "For identifiers: the identifier type (doi, url, etc.)"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of this computed field"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Computed Field",
+            "description": "ComputedField defines a field derived from multiple source fields. Used for values that require access to the full source message during parsing. Example: ProQuest embargo date is computed from embargo_code + accept_date"
+        }
+    }
+}

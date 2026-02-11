@@ -1,0 +1,196 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Contributor",
+    "definitions": {
+        "Contributor": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the full name as a single string (e.g., \"Fries, Albert F. Jr.\")"
+                },
+                "parsed_name": {
+                    "$ref": "#/definitions/hub.v1.ParsedName",
+                    "additionalProperties": true,
+                    "description": "ParsedName contains parsed name components if available"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "Role is the contributor's role (e.g., \"creator\", \"author\", \"editor\")"
+                },
+                "role_code": {
+                    "type": "string",
+                    "description": "RoleCode is the original role code (e.g., \"relators:cre\")"
+                },
+                "type": {
+                    "enum": [
+                        "CONTRIBUTOR_TYPE_UNSPECIFIED",
+                        0,
+                        "CONTRIBUTOR_TYPE_PERSON",
+                        1,
+                        "CONTRIBUTOR_TYPE_ORGANIZATION",
+                        2
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Contributor Type",
+                    "description": "ContributorType indicates whether a contributor is a person or organization."
+                },
+                "identifiers": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Identifier"
+                    },
+                    "type": "array",
+                    "description": "Identifiers for the contributor (ORCID, ISNI, etc.)"
+                },
+                "affiliation": {
+                    "type": "string",
+                    "description": "Affiliation is the contributor's institutional affiliation (deprecated, use affiliations)"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "SourceID is the original ID from the source system"
+                },
+                "affiliations": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Affiliation"
+                    },
+                    "type": "array",
+                    "description": "Affiliations for the contributor (preferred over single affiliation field)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contributor",
+            "description": "Contributor represents a person or organization that contributed to a work."
+        },
+        "hub.v1.Affiliation": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Affiliation name"
+                },
+                "identifier": {
+                    "type": "string",
+                    "description": "Affiliation identifier (e.g., ROR)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "Type of identifier (e.g., \"ROR\", \"ISNI\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Affiliation",
+            "description": "Affiliation represents an institutional affiliation for a contributor."
+        },
+        "hub.v1.Identifier": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "IDENTIFIER_TYPE_UNSPECIFIED",
+                        0,
+                        "IDENTIFIER_TYPE_DOI",
+                        1,
+                        "IDENTIFIER_TYPE_URL",
+                        2,
+                        "IDENTIFIER_TYPE_HANDLE",
+                        3,
+                        "IDENTIFIER_TYPE_ISBN",
+                        4,
+                        "IDENTIFIER_TYPE_ISSN",
+                        5,
+                        "IDENTIFIER_TYPE_ORCID",
+                        6,
+                        "IDENTIFIER_TYPE_PMID",
+                        7,
+                        "IDENTIFIER_TYPE_PMCID",
+                        8,
+                        "IDENTIFIER_TYPE_ARXIV",
+                        9,
+                        "IDENTIFIER_TYPE_LOCAL",
+                        10,
+                        "IDENTIFIER_TYPE_PID",
+                        11,
+                        "IDENTIFIER_TYPE_NID",
+                        12,
+                        "IDENTIFIER_TYPE_UUID",
+                        13,
+                        "IDENTIFIER_TYPE_ISNI",
+                        14,
+                        "IDENTIFIER_TYPE_REPORT_NUMBER",
+                        15,
+                        "IDENTIFIER_TYPE_CALL_NUMBER",
+                        16
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Identifier Type",
+                    "description": "IdentifierType represents the type of identifier."
+                },
+                "value": {
+                    "type": "string"
+                },
+                "display": {
+                    "type": "string",
+                    "description": "Optional human-readable display form"
+                },
+                "is_preferred": {
+                    "type": "boolean",
+                    "description": "Is this the preferred identifier of its type?"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Identifier",
+            "description": "Identifier represents a typed identifier for a scholarly work."
+        },
+        "hub.v1.ParsedName": {
+            "properties": {
+                "family": {
+                    "type": "string",
+                    "description": "Last name / surname"
+                },
+                "given": {
+                    "type": "string",
+                    "description": "First name(s)"
+                },
+                "middle": {
+                    "type": "string",
+                    "description": "Middle name(s) or initial(s)"
+                },
+                "suffix": {
+                    "type": "string",
+                    "description": "Jr., Sr., III, etc."
+                },
+                "prefix": {
+                    "type": "string",
+                    "description": "von, van, de, etc."
+                },
+                "full_name": {
+                    "type": "string",
+                    "description": "Original full name string"
+                },
+                "normalized": {
+                    "type": "string",
+                    "description": "Normalized form: \"Family, Given Middle Suffix\""
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parsed Name",
+            "description": "ParsedName contains parsed components of a personal name."
+        }
+    }
+}

@@ -1,0 +1,249 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Relation",
+    "definitions": {
+        "Relation": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "RELATION_TYPE_UNSPECIFIED",
+                        0,
+                        "RELATION_TYPE_MEMBER_OF",
+                        1,
+                        "RELATION_TYPE_HAS_MEMBER",
+                        2,
+                        "RELATION_TYPE_PART_OF",
+                        3,
+                        "RELATION_TYPE_HAS_PART",
+                        4,
+                        "RELATION_TYPE_VERSION_OF",
+                        5,
+                        "RELATION_TYPE_HAS_VERSION",
+                        6,
+                        "RELATION_TYPE_REPLACES",
+                        7,
+                        "RELATION_TYPE_IS_REPLACED_BY",
+                        8,
+                        "RELATION_TYPE_FORMAT_OF",
+                        9,
+                        "RELATION_TYPE_HAS_FORMAT",
+                        10,
+                        "RELATION_TYPE_REFERENCES",
+                        11,
+                        "RELATION_TYPE_IS_CITED_BY",
+                        12,
+                        "RELATION_TYPE_CITES",
+                        13,
+                        "RELATION_TYPE_DERIVED_FROM",
+                        14,
+                        "RELATION_TYPE_SOURCE_OF",
+                        15,
+                        "RELATION_TYPE_BASED_ON",
+                        16,
+                        "RELATION_TYPE_IS_BASIS_FOR",
+                        17,
+                        "RELATION_TYPE_SUPPLEMENTS",
+                        18,
+                        "RELATION_TYPE_IS_SUPPLEMENT_TO",
+                        19,
+                        "RELATION_TYPE_DOCUMENTS",
+                        20,
+                        "RELATION_TYPE_IS_DOCUMENTED_BY",
+                        21,
+                        "RELATION_TYPE_DESCRIBES",
+                        22,
+                        "RELATION_TYPE_IS_DESCRIBED_BY",
+                        23,
+                        "RELATION_TYPE_IDENTICAL_TO",
+                        24,
+                        "RELATION_TYPE_SAME_AS",
+                        25,
+                        "RELATION_TYPE_SERIES_OF",
+                        26,
+                        "RELATION_TYPE_IN_SERIES",
+                        27,
+                        "RELATION_TYPE_RELATED_TO",
+                        28,
+                        "RELATION_TYPE_OTHER",
+                        29,
+                        "RELATION_TYPE_SUPPLEMENTED_BY",
+                        30,
+                        "RELATION_TYPE_REQUIRED_BY",
+                        31,
+                        "RELATION_TYPE_REQUIRES",
+                        32,
+                        "RELATION_TYPE_REVIEWS",
+                        33
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Relation Type",
+                    "description": "RelationType represents the type of relationship between resources."
+                },
+                "target_title": {
+                    "type": "string"
+                },
+                "target_id": {
+                    "type": "string"
+                },
+                "target_id_type": {
+                    "enum": [
+                        "IDENTIFIER_TYPE_UNSPECIFIED",
+                        0,
+                        "IDENTIFIER_TYPE_DOI",
+                        1,
+                        "IDENTIFIER_TYPE_URL",
+                        2,
+                        "IDENTIFIER_TYPE_HANDLE",
+                        3,
+                        "IDENTIFIER_TYPE_ISBN",
+                        4,
+                        "IDENTIFIER_TYPE_ISSN",
+                        5,
+                        "IDENTIFIER_TYPE_ORCID",
+                        6,
+                        "IDENTIFIER_TYPE_PMID",
+                        7,
+                        "IDENTIFIER_TYPE_PMCID",
+                        8,
+                        "IDENTIFIER_TYPE_ARXIV",
+                        9,
+                        "IDENTIFIER_TYPE_LOCAL",
+                        10,
+                        "IDENTIFIER_TYPE_PID",
+                        11,
+                        "IDENTIFIER_TYPE_NID",
+                        12,
+                        "IDENTIFIER_TYPE_UUID",
+                        13,
+                        "IDENTIFIER_TYPE_ISNI",
+                        14,
+                        "IDENTIFIER_TYPE_REPORT_NUMBER",
+                        15,
+                        "IDENTIFIER_TYPE_CALL_NUMBER",
+                        16
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Identifier Type",
+                    "description": "IdentifierType represents the type of identifier."
+                },
+                "target_uri": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original ID from the source system"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Additional context about the relationship"
+                },
+                "target_resource_type": {
+                    "enum": [
+                        "RESOURCE_TYPE_UNSPECIFIED",
+                        0,
+                        "RESOURCE_TYPE_ARTICLE",
+                        1,
+                        "RESOURCE_TYPE_BOOK",
+                        2,
+                        "RESOURCE_TYPE_BOOK_CHAPTER",
+                        3,
+                        "RESOURCE_TYPE_CONFERENCE_PAPER",
+                        4,
+                        "RESOURCE_TYPE_DATASET",
+                        5,
+                        "RESOURCE_TYPE_DISSERTATION",
+                        6,
+                        "RESOURCE_TYPE_THESIS",
+                        7,
+                        "RESOURCE_TYPE_IMAGE",
+                        8,
+                        "RESOURCE_TYPE_JOURNAL",
+                        9,
+                        "RESOURCE_TYPE_REPORT",
+                        10,
+                        "RESOURCE_TYPE_TECHNICAL_REPORT",
+                        11,
+                        "RESOURCE_TYPE_WORKING_PAPER",
+                        12,
+                        "RESOURCE_TYPE_PREPRINT",
+                        13,
+                        "RESOURCE_TYPE_POSTER",
+                        14,
+                        "RESOURCE_TYPE_PRESENTATION",
+                        15,
+                        "RESOURCE_TYPE_SOFTWARE",
+                        16,
+                        "RESOURCE_TYPE_VIDEO",
+                        17,
+                        "RESOURCE_TYPE_AUDIO",
+                        18,
+                        "RESOURCE_TYPE_MAP",
+                        19,
+                        "RESOURCE_TYPE_NEWSPAPER",
+                        20,
+                        "RESOURCE_TYPE_NEWSPAPER_ARTICLE",
+                        21,
+                        "RESOURCE_TYPE_PERIODICAL",
+                        22,
+                        "RESOURCE_TYPE_COLLECTION",
+                        23,
+                        "RESOURCE_TYPE_ARCHIVAL_MATERIAL",
+                        24,
+                        "RESOURCE_TYPE_MANUSCRIPT",
+                        25,
+                        "RESOURCE_TYPE_PATENT",
+                        26,
+                        "RESOURCE_TYPE_STANDARD",
+                        27,
+                        "RESOURCE_TYPE_WEBPAGE",
+                        28,
+                        "RESOURCE_TYPE_OTHER",
+                        29,
+                        "RESOURCE_TYPE_PEER_REVIEW",
+                        30,
+                        "RESOURCE_TYPE_INTERACTIVE",
+                        31,
+                        "RESOURCE_TYPE_OBJECT",
+                        32,
+                        "RESOURCE_TYPE_CONFERENCE_PROCEEDING",
+                        33,
+                        "RESOURCE_TYPE_TEXT",
+                        34
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Resource Type Value",
+                    "description": "ResourceTypeValue is a normalized resource type."
+                },
+                "target_type_uri": {
+                    "type": "string",
+                    "description": "External URI for target's type (e.g., \"https://schema.org/Collection\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Relation",
+            "description": "Relation represents a relationship between this record and another resource."
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/File",
+    "definitions": {
+        "File": {
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "e.g. \"supplemental\", \"service\", \"thumbnail\""
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "File",
+            "description": "File represents a file associated with the record."
+        }
+    }
+}

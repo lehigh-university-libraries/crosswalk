@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Funder",
+    "definitions": {
+        "Funder": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Funder name (e.g., \"National Science Foundation\")"
+                },
+                "identifier": {
+                    "type": "string",
+                    "description": "Funder identifier (e.g., Crossref Funder ID, ROR)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "Type of funder identifier"
+                },
+                "award_numbers": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Grant/award numbers"
+                },
+                "award_title": {
+                    "type": "string",
+                    "description": "Title of the funded project/award"
+                },
+                "award_uri": {
+                    "type": "string",
+                    "description": "URI for the award"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Funder",
+            "description": "Funder represents funding information for a resource."
+        }
+    }
+}

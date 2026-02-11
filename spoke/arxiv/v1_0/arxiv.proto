@@ -1,0 +1,370 @@
+// arXiv metadata record format.
+// Source: arXiv metadata schema 1.0
+// Spec: https://arxiv.org/help/prep (based on fixtures/arxiv/1.0.xsd)
+syntax = "proto3";
+
+package spoke.arxiv.v1_0;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/arxiv/v1.0;arxivv1_0";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the arXiv schema version this proto implements.
+// Value: "1.0"
+
+// Record represents an arXiv metadata record for a paper version.
+message Record {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "arXiv Record maps to Hub Record with PREPRINT type"
+  };
+
+  // Paper identifier in canonical form (e.g., hep-th/9901001, math.AG/0101001)
+  string identifier = 1 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "arxiv"
+    required: true
+    description: "arXiv paper identifier"
+  }];
+
+  // Primary classification (e.g., hep-th, math.AG, cond-mat.supr-con)
+  string primary = 2 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "arxiv"
+    required: true
+    description: "Primary arXiv classification"
+  }];
+
+  // Cross-listed classifications
+  repeated string cross = 3 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "arxiv"
+    description: "Cross-listed classifications"
+  }];
+
+  // Submitter information
+  Submitter submitter = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Submitter information"
+  }];
+
+  // Proxy submitter (optional)
+  Proxy proxy = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Proxy submitter"
+  }];
+
+  // Version number
+  int32 version = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Version number"
+  }];
+
+  // Submission date (ISO 8601 with Z suffix)
+  string date = 7 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "submitted"
+    parser: "iso8601"
+    description: "Submission date"
+  }];
+
+  // Source file information
+  Source source = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "Source file information"
+  }];
+
+  // Version history
+  repeated History history = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "Version history"
+  }];
+
+  // Title (may contain TeX markup)
+  string title = 10 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+
+  // Authorship information (authors and affiliations)
+  Authorship authorship = 11 [(hub.v1.field) = {
+    target: "self"
+    description: "Authorship information"
+  }];
+
+  // External classifications (MSC, ACM, PACS)
+  repeated Classification classification = 12 [(hub.v1.field) = {
+    target: "subjects"
+    description: "External classifications"
+  }];
+
+  // Alternate identifiers (report numbers, journal refs, DOIs)
+  Alternate alternate = 13 [(hub.v1.field) = {
+    target: "self"
+    description: "Alternate identifiers"
+  }];
+
+  // Comments (may contain TeX markup)
+  repeated string comments = 14 [(hub.v1.field) = {
+    target: "notes"
+    description: "Author comments"
+  }];
+
+  // Abstract (may contain TeX markup)
+  repeated string abstract = 15 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+
+  // Attic - old metadata storage for migrations
+  repeated Attic attic = 16 [(hub.v1.field) = {
+    target: "extra"
+    description: "Legacy metadata"
+  }];
+}
+
+// Submitter represents submitter information.
+message Submitter {
+  // Email address
+  string email = 1 [(hub.v1.field) = {
+    target: "extra"
+    validators: "email"
+    description: "Submitter email"
+  }];
+
+  // User ID in authentication system
+  string identifier = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Submitter user ID"
+  }];
+}
+
+// Proxy represents a proxy submitter.
+message Proxy {
+  // User ID of proxy submitter
+  string identifier = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Proxy user ID"
+  }];
+
+  // Remote identifier in proxy's database
+  string remote_identifier = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Remote identifier"
+  }];
+}
+
+// Source describes the source file for the submission.
+message Source {
+  // Source type (tex, encrypted-tex, ps, pdf, html, ignore)
+  SourceType type = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Source file type"
+  }];
+
+  // File size in bytes
+  int64 size = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "File size in bytes"
+  }];
+
+  // MD5 checksum (32 hex characters)
+  string md5 = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "MD5 checksum"
+  }];
+}
+
+// SourceType enumerates source file types.
+enum SourceType {
+  SOURCE_TYPE_UNSPECIFIED = 0;
+  SOURCE_TYPE_TEX = 1;
+  SOURCE_TYPE_ENCRYPTED_TEX = 2;
+  SOURCE_TYPE_PS = 3;
+  SOURCE_TYPE_PDF = 4;
+  SOURCE_TYPE_HTML = 5;
+  SOURCE_TYPE_IGNORE = 6;
+}
+
+// History records information about a previous version.
+message History {
+  // Version number
+  int32 version = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Version number"
+  }];
+
+  // Submission date
+  string date = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Submission date"
+  }];
+
+  // Source file information
+  Source source = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Source information"
+  }];
+}
+
+// Authorship contains authors and their affiliations.
+message Authorship {
+  option (hub.v1.message) = {
+    target: "self"
+    description: "arXiv Authorship extracts contributors"
+  };
+
+  // Affiliations indexed by affid
+  repeated Affiliation affiliations = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Indexed affiliations"
+  }];
+
+  // Authors
+  repeated Author authors = 2 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+    contributor_type: "person"
+  }];
+}
+
+// Affiliation represents an institutional affiliation.
+message Affiliation {
+  option (hub.v1.message) = {
+    target: "Affiliation"
+    description: "arXiv Affiliation maps to Hub Affiliation"
+  };
+
+  // Affiliation index (referenced by authors)
+  int32 affid = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Affiliation ID"
+  }];
+
+  // Institution name
+  string institution = 2 [(hub.v1.field) = {
+    target: "name"
+    description: "Institution name"
+  }];
+
+  // Address (optional)
+  string address = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Institution address"
+  }];
+}
+
+// Author represents a single author.
+message Author {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "arXiv Author maps to Hub Contributor"
+  };
+
+  // Given name/forename (beforekey in arXiv terminology)
+  string beforekey = 1 [(hub.v1.field) = {
+    target: "parsed_name.given"
+    description: "Given name/forename"
+  }];
+
+  // Family name/surname (keyname in arXiv terminology)
+  string keyname = 2 [(hub.v1.field) = {
+    target: "parsed_name.family"
+    required: true
+    description: "Family name/surname"
+  }];
+
+  // Suffix (afterkey in arXiv terminology, e.g., Jr, III)
+  string afterkey = 3 [(hub.v1.field) = {
+    target: "parsed_name.suffix"
+    description: "Name suffix"
+  }];
+
+  // Affiliation references (indexes into authorship.affiliations)
+  string affref = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Affiliation references"
+  }];
+
+  // Role (e.g., "appendix", "edited by")
+  string role = 5 [(hub.v1.field) = {
+    target: "role"
+    description: "Author role"
+  }];
+}
+
+// Classification represents an external classification scheme entry.
+message Classification {
+  option (hub.v1.message) = {
+    target: "Subject"
+    description: "arXiv Classification maps to Hub Subject"
+  };
+
+  // Classification scheme (MSC1991, MSC2000, ACM1998, PACS2003)
+  ClassificationScheme scheme = 1 [(hub.v1.field) = {
+    target: "vocabulary"
+    description: "Classification scheme"
+  }];
+
+  // Classification values (first is primary, rest are secondary)
+  repeated string value = 2 [(hub.v1.field) = {
+    target: "value"
+    description: "Classification codes"
+  }];
+}
+
+// ClassificationScheme enumerates supported classification schemes.
+enum ClassificationScheme {
+  CLASSIFICATION_SCHEME_UNSPECIFIED = 0;
+  CLASSIFICATION_SCHEME_MSC1991 = 1 [(hub.v1.enum_value) = {target: "msc"}];
+  CLASSIFICATION_SCHEME_MSC2000 = 2 [(hub.v1.enum_value) = {target: "msc"}];
+  CLASSIFICATION_SCHEME_ACM1998 = 3 [(hub.v1.enum_value) = {target: "acm"}];
+  CLASSIFICATION_SCHEME_PACS2003 = 4 [(hub.v1.enum_value) = {target: "pacs"}];
+}
+
+// Alternate contains alternate identifiers for the paper.
+message Alternate {
+  // Report numbers
+  repeated string report_no = 1 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "report"
+    description: "Report numbers"
+  }];
+
+  // Journal references
+  repeated string journal_ref = 2 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "published_in"
+    description: "Journal references"
+  }];
+
+  // DOIs
+  repeated string doi = 3 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+    parser: "doi"
+    validators: "doi"
+    description: "Digital Object Identifiers"
+  }];
+}
+
+// Attic stores legacy metadata from migrations.
+message Attic {
+  // Original content (XML encoded)
+  string content = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Legacy content"
+  }];
+
+  // Conversion date
+  string date = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conversion date"
+  }];
+
+  // Conversion notes
+  string note = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conversion notes"
+  }];
+}

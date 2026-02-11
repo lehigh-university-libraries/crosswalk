@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Affiliation",
+    "definitions": {
+        "Affiliation": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Affiliation name"
+                },
+                "identifier": {
+                    "type": "string",
+                    "description": "Affiliation identifier (e.g., ROR)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "Type of identifier (e.g., \"ROR\", \"ISNI\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Affiliation",
+            "description": "Affiliation represents an institutional affiliation for a contributor."
+        }
+    }
+}

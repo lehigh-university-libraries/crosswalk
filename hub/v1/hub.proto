@@ -1,0 +1,529 @@
+syntax = "proto3";
+
+package hub.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/hub/v1;hubv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Record represents a single scholarly work with its metadata.
+// This is the central type of the hub - all formats convert to/from this.
+message Record {
+  // Core metadata
+  string title = 1;
+  repeated string alt_title = 2;
+  string abstract = 3;
+
+  // Contributors (authors, editors, etc.)
+  repeated Contributor contributors = 4;
+
+  // Dates with semantic types
+  repeated DateValue dates = 5;
+
+  // Resource classification
+  ResourceType resource_type = 6;
+  repeated Subject genres = 7;
+
+  // Subject access
+  repeated Subject subjects = 8;
+  string language = 9;
+
+  // Publication info
+  string publisher = 10;
+  string place_published = 11;
+  PublicationDetails publication = 24;
+
+  // Rights and access
+  repeated Rights rights = 12;
+  bool is_public = 25;
+  string access_condition = 26;
+
+  // Identifiers
+  repeated Identifier identifiers = 13;
+
+  // Descriptions and notes
+  string description = 14;
+  string physical_desc = 15;
+  repeated string notes = 16;
+  string table_of_contents = 17;
+  string source = 18;
+  string digital_origin = 19;
+  string edition = 27;
+  string version = 28;
+  string preferred_citation = 29;
+
+  // Technical Metadata
+  string object_model = 30;
+  bool add_coverpage = 31;
+  string capture_device = 32;
+  int32 ppi = 33;
+  
+  // Physical description details
+  int32 page_count = 34;
+  string dimensions = 35;
+  string duration = 36;
+
+  // Archival info
+  ArchivalLocation archival_location = 37;
+
+  // Files
+  repeated File files = 38;
+  
+  // Physical form (e.g. Getty AAT)
+  repeated Subject physical_form = 39;
+
+  // Relations to other works
+  repeated Relation relations = 20;
+
+  // Thesis/dissertation specific
+  DegreeInfo degree_info = 21;
+
+  // Funding information
+  repeated Funder funders = 40;
+
+  // Full title (when different from display title)
+  string full_title = 41;
+
+  // Related departments/units (for non-thesis items like faculty publications)
+  repeated string departments = 42;
+
+  // Local access restrictions beyond rights statements
+  string local_restriction = 43;
+
+  // Structured geographic location
+  HierarchicalGeographic geographic = 44;
+
+  // Extra holds additional fields that don't map to standard Hub fields.
+  // Used for round-trip preservation and format-specific data.
+  //
+  // 1. This is a TEMPORARY home - if a field appears in >50% of records,
+  //    promote it to a first-class field in the Hub schema.
+  // 2. Enforce consistent types - don't let spokes mix string "10" and int 10.
+  // 3. Use machine names as keys (dc_creator), never human labels ("Creator").
+  // 4. Data here is NOT indexed/searchable - only use for pass-through.
+  // 5. Store semantics, not presentation (ISO dates, not "March 15, 2024").
+  //
+  // Periodic audit: Run `crosswalk audit-extras` to find promotion candidates.
+  google.protobuf.Struct extra = 22;
+
+  // Source metadata - tracks where this record came from for auditing.
+  SourceInfo source_info = 23;
+}
+
+// SourceInfo tracks the origin of a record for auditing and debugging.
+message SourceInfo {
+  // Format name (e.g., "drupal", "csv", "datacite")
+  string format = 1;
+  // Format version if applicable (e.g., "5.3.1" for CrossRef)
+  string format_version = 2;
+  // Original identifier in source system
+  string source_id = 3;
+  // Timestamp when parsed into Hub format
+  google.protobuf.Timestamp parsed_at = 4;
+  // Profile used for parsing (if any)
+  string profile = 5;
+  // Fields that were placed in 'extra' (for audit purposes)
+  repeated string unmapped_fields = 6;
+}
+
+// Group represents a container with child records.
+// Used for hierarchical outputs like CrossRef XML (issue + articles).
+message Group {
+  GroupType type = 1;
+  Record container = 2;      // Parent record (e.g., journal issue)
+  repeated Record members = 3; // Child records (e.g., articles)
+}
+
+// GroupType identifies the type of grouping.
+enum GroupType {
+  GROUP_TYPE_UNSPECIFIED = 0;
+  GROUP_TYPE_ISSUE = 1;       // Journal issue
+  GROUP_TYPE_COLLECTION = 2;  // Repository collection
+  GROUP_TYPE_SERIES = 3;      // Monograph series
+  GROUP_TYPE_VOLUME = 4;      // Multi-volume work
+}
+
+// Contributor represents a person or organization that contributed to a work.
+message Contributor {
+  // Name is the full name as a single string (e.g., "Fries, Albert F. Jr.")
+  string name = 1;
+
+  // ParsedName contains parsed name components if available
+  ParsedName parsed_name = 2;
+
+  // Role is the contributor's role (e.g., "creator", "author", "editor")
+  string role = 3;
+
+  // RoleCode is the original role code (e.g., "relators:cre")
+  string role_code = 4;
+
+  // Type indicates whether this is a person or organization
+  ContributorType type = 5;
+
+  // Identifiers for the contributor (ORCID, ISNI, etc.)
+  repeated Identifier identifiers = 6;
+
+  // Affiliation is the contributor's institutional affiliation (deprecated, use affiliations)
+  string affiliation = 7;
+
+  // SourceID is the original ID from the source system
+  string source_id = 8;
+
+  // Affiliations for the contributor (preferred over single affiliation field)
+  repeated Affiliation affiliations = 9;
+}
+
+// ContributorType indicates whether a contributor is a person or organization.
+enum ContributorType {
+  CONTRIBUTOR_TYPE_UNSPECIFIED = 0;
+  CONTRIBUTOR_TYPE_PERSON = 1;
+  CONTRIBUTOR_TYPE_ORGANIZATION = 2;
+}
+
+// ParsedName contains parsed components of a personal name.
+message ParsedName {
+  string family = 1;     // Last name / surname
+  string given = 2;      // First name(s)
+  string middle = 3;     // Middle name(s) or initial(s)
+  string suffix = 4;     // Jr., Sr., III, etc.
+  string prefix = 5;     // von, van, de, etc.
+  string full_name = 6;  // Original full name string
+  string normalized = 7; // Normalized form: "Family, Given Middle Suffix"
+}
+
+// DateValue represents a date with varying levels of precision and uncertainty.
+// Supports EDTF (Extended Date/Time Format) concepts.
+message DateValue {
+  // Type indicates the semantic meaning of this date
+  DateType type = 1;
+
+  // Raw is the original date string as provided
+  string raw = 2;
+
+  // Year, Month, Day represent the parsed date components
+  int32 year = 3;
+  int32 month = 4;  // 1-12, or 0 if unspecified
+  int32 day = 5;    // 1-31, or 0 if unspecified
+
+  // End date for ranges/intervals
+  int32 end_year = 6;
+  int32 end_month = 7;
+  int32 end_day = 8;
+
+  // Precision indicates how specific the date is
+  DatePrecision precision = 9;
+
+  // Qualifier indicates uncertainty or approximation
+  DateQualifier qualifier = 10;
+
+  // IsRange indicates this is a date range
+  bool is_range = 11;
+
+  // Time component if available
+  google.protobuf.Timestamp time = 12;
+
+  // Season (e.g., "Spring", "Winter")
+  string season = 13;
+}
+
+// DateType indicates the semantic meaning of a date.
+enum DateType {
+  DATE_TYPE_UNSPECIFIED = 0;
+  DATE_TYPE_ISSUED = 1;
+  DATE_TYPE_CREATED = 2;
+  DATE_TYPE_CAPTURED = 3;
+  DATE_TYPE_COPYRIGHT = 4;
+  DATE_TYPE_MODIFIED = 5;
+  DATE_TYPE_AVAILABLE = 6;
+  DATE_TYPE_SUBMITTED = 7;
+  DATE_TYPE_ACCEPTED = 8;
+  DATE_TYPE_PUBLISHED = 9;
+  DATE_TYPE_OTHER = 10;
+  DATE_TYPE_VALID = 11;     // Date resource is valid
+  DATE_TYPE_UPDATED = 12;   // Date resource was updated
+  DATE_TYPE_COLLECTED = 13; // Date data was collected
+}
+
+// DatePrecision indicates the granularity of a date.
+enum DatePrecision {
+  DATE_PRECISION_UNSPECIFIED = 0;
+  DATE_PRECISION_YEAR = 1;
+  DATE_PRECISION_MONTH = 2;
+  DATE_PRECISION_DAY = 3;
+  DATE_PRECISION_TIME = 4;
+  DATE_PRECISION_DECADE = 5;
+  DATE_PRECISION_CENTURY = 6;
+}
+
+// DateQualifier indicates uncertainty or approximation.
+enum DateQualifier {
+  DATE_QUALIFIER_UNSPECIFIED = 0;
+  DATE_QUALIFIER_APPROXIMATE = 1; // ~
+  DATE_QUALIFIER_UNCERTAIN = 2;   // ?
+  DATE_QUALIFIER_BOTH = 3;        // %
+}
+
+// Identifier represents a typed identifier for a scholarly work.
+message Identifier {
+  IdentifierType type = 1;
+  string value = 2;
+  string display = 3;     // Optional human-readable display form
+  bool is_preferred = 4;  // Is this the preferred identifier of its type?
+}
+
+// IdentifierType represents the type of identifier.
+enum IdentifierType {
+  IDENTIFIER_TYPE_UNSPECIFIED = 0;
+  IDENTIFIER_TYPE_DOI = 1;
+  IDENTIFIER_TYPE_URL = 2;
+  IDENTIFIER_TYPE_HANDLE = 3;
+  IDENTIFIER_TYPE_ISBN = 4;
+  IDENTIFIER_TYPE_ISSN = 5;
+  IDENTIFIER_TYPE_ORCID = 6;
+  IDENTIFIER_TYPE_PMID = 7;
+  IDENTIFIER_TYPE_PMCID = 8;
+  IDENTIFIER_TYPE_ARXIV = 9;
+  IDENTIFIER_TYPE_LOCAL = 10;
+  IDENTIFIER_TYPE_PID = 11;
+  IDENTIFIER_TYPE_NID = 12;
+  IDENTIFIER_TYPE_UUID = 13;
+  IDENTIFIER_TYPE_ISNI = 14;
+  IDENTIFIER_TYPE_REPORT_NUMBER = 15;
+  IDENTIFIER_TYPE_CALL_NUMBER = 16;
+}
+
+// Subject represents a subject, keyword, or topic classification.
+message Subject {
+  string value = 1;
+  SubjectVocabulary vocabulary = 2;
+  string uri = 3;        // Optional URI for the subject term
+  string source_id = 4;  // Original ID from the source system
+  SubjectType type = 5;
+}
+
+// SubjectType indicates the type of subject (topic, name, place).
+enum SubjectType {
+  SUBJECT_TYPE_UNSPECIFIED = 0;
+  SUBJECT_TYPE_TOPIC = 1;
+  SUBJECT_TYPE_NAME = 2;
+  SUBJECT_TYPE_GEOGRAPHIC = 3;
+  SUBJECT_TYPE_TEMPORAL = 4;
+  SUBJECT_TYPE_GENRE = 5;
+  SUBJECT_TYPE_TITLE = 6;
+}
+
+// SubjectVocabulary identifies the vocabulary a subject term comes from.
+enum SubjectVocabulary {
+  SUBJECT_VOCABULARY_UNSPECIFIED = 0;
+  SUBJECT_VOCABULARY_LCSH = 1;     // Library of Congress Subject Headings
+  SUBJECT_VOCABULARY_MESH = 2;     // Medical Subject Headings
+  SUBJECT_VOCABULARY_AAT = 3;      // Art & Architecture Thesaurus
+  SUBJECT_VOCABULARY_FAST = 4;     // Faceted Application of Subject Terminology
+  SUBJECT_VOCABULARY_DDC = 5;      // Dewey Decimal Classification
+  SUBJECT_VOCABULARY_LCC = 6;      // Library of Congress Classification
+  SUBJECT_VOCABULARY_KEYWORDS = 7; // Free-form keywords
+  SUBJECT_VOCABULARY_GENRE = 8;    // Genre terms
+  SUBJECT_VOCABULARY_LOCAL = 9;    // Local/institutional vocabulary
+  SUBJECT_VOCABULARY_GETTY_TGN = 10; // Getty Thesaurus of Geographic Names
+  SUBJECT_VOCABULARY_LCNAF = 11;   // Library of Congress Name Authority File
+  SUBJECT_VOCABULARY_ARXIV = 12;   // arXiv subject classifications
+  SUBJECT_VOCABULARY_MSC = 13;     // Mathematics Subject Classification
+  SUBJECT_VOCABULARY_ACM = 14;     // ACM Computing Classification System
+  SUBJECT_VOCABULARY_PACS = 15;    // Physics and Astronomy Classification Scheme
+}
+
+// Rights represents rights information for a resource.
+message Rights {
+  string statement = 1;  // Rights statement text
+  string uri = 2;        // URI for standardized rights statement
+  string license = 3;    // License identifier (e.g., "CC-BY-4.0")
+  string holder = 4;     // Rights holder name
+}
+
+// ResourceType represents the type of a scholarly resource.
+message ResourceType {
+  ResourceTypeValue type = 1;
+  string original = 2;     // Original type string from the source
+  string vocabulary = 3;   // Vocabulary the original type came from
+}
+
+// ResourceTypeValue is a normalized resource type.
+enum ResourceTypeValue {
+  RESOURCE_TYPE_UNSPECIFIED = 0;
+  RESOURCE_TYPE_ARTICLE = 1;
+  RESOURCE_TYPE_BOOK = 2;
+  RESOURCE_TYPE_BOOK_CHAPTER = 3;
+  RESOURCE_TYPE_CONFERENCE_PAPER = 4;
+  RESOURCE_TYPE_DATASET = 5;
+  RESOURCE_TYPE_DISSERTATION = 6;
+  RESOURCE_TYPE_THESIS = 7;
+  RESOURCE_TYPE_IMAGE = 8;
+  RESOURCE_TYPE_JOURNAL = 9;
+  RESOURCE_TYPE_REPORT = 10;
+  RESOURCE_TYPE_TECHNICAL_REPORT = 11;
+  RESOURCE_TYPE_WORKING_PAPER = 12;
+  RESOURCE_TYPE_PREPRINT = 13;
+  RESOURCE_TYPE_POSTER = 14;
+  RESOURCE_TYPE_PRESENTATION = 15;
+  RESOURCE_TYPE_SOFTWARE = 16;
+  RESOURCE_TYPE_VIDEO = 17;
+  RESOURCE_TYPE_AUDIO = 18;
+  RESOURCE_TYPE_MAP = 19;
+  RESOURCE_TYPE_NEWSPAPER = 20;
+  RESOURCE_TYPE_NEWSPAPER_ARTICLE = 21;
+  RESOURCE_TYPE_PERIODICAL = 22;
+  RESOURCE_TYPE_COLLECTION = 23;
+  RESOURCE_TYPE_ARCHIVAL_MATERIAL = 24;
+  RESOURCE_TYPE_MANUSCRIPT = 25;
+  RESOURCE_TYPE_PATENT = 26;
+  RESOURCE_TYPE_STANDARD = 27;
+  RESOURCE_TYPE_WEBPAGE = 28;
+  RESOURCE_TYPE_OTHER = 29;
+  RESOURCE_TYPE_PEER_REVIEW = 30;         // Peer review document
+  RESOURCE_TYPE_INTERACTIVE = 31;         // Interactive resource
+  RESOURCE_TYPE_OBJECT = 32;              // Physical object
+  RESOURCE_TYPE_CONFERENCE_PROCEEDING = 33; // Conference proceedings (collection)
+  RESOURCE_TYPE_TEXT = 34;                // Generic text resource
+}
+
+// Relation represents a relationship between this record and another resource.
+message Relation {
+  RelationType type = 1;
+  string target_title = 2;
+  string target_id = 3;
+  IdentifierType target_id_type = 4;
+  string target_uri = 5;
+  string source_id = 6;     // Original ID from the source system
+  string description = 7;   // Additional context about the relationship
+  ResourceTypeValue target_resource_type = 8;  // Resource type of the target (e.g., COLLECTION)
+  string target_type_uri = 9;  // External URI for target's type (e.g., "https://schema.org/Collection")
+}
+
+// RelationType represents the type of relationship between resources.
+enum RelationType {
+  RELATION_TYPE_UNSPECIFIED = 0;
+
+  // Hierarchical relations
+  RELATION_TYPE_MEMBER_OF = 1;
+  RELATION_TYPE_HAS_MEMBER = 2;
+  RELATION_TYPE_PART_OF = 3;
+  RELATION_TYPE_HAS_PART = 4;
+
+  // Version relations
+  RELATION_TYPE_VERSION_OF = 5;
+  RELATION_TYPE_HAS_VERSION = 6;
+  RELATION_TYPE_REPLACES = 7;
+  RELATION_TYPE_IS_REPLACED_BY = 8;
+
+  // Format relations
+  RELATION_TYPE_FORMAT_OF = 9;
+  RELATION_TYPE_HAS_FORMAT = 10;
+
+  // Citation relations
+  RELATION_TYPE_REFERENCES = 11;
+  RELATION_TYPE_IS_CITED_BY = 12;
+  RELATION_TYPE_CITES = 13;
+
+  // Derivation relations
+  RELATION_TYPE_DERIVED_FROM = 14;
+  RELATION_TYPE_SOURCE_OF = 15;
+  RELATION_TYPE_BASED_ON = 16;
+  RELATION_TYPE_IS_BASIS_FOR = 17;
+
+  // Supplementary relations
+  RELATION_TYPE_SUPPLEMENTS = 18;
+  RELATION_TYPE_IS_SUPPLEMENT_TO = 19;
+  RELATION_TYPE_DOCUMENTS = 20;
+  RELATION_TYPE_IS_DOCUMENTED_BY = 21;
+
+  // Descriptive relations
+  RELATION_TYPE_DESCRIBES = 22;
+  RELATION_TYPE_IS_DESCRIBED_BY = 23;
+
+  // Identity relations
+  RELATION_TYPE_IDENTICAL_TO = 24;
+  RELATION_TYPE_SAME_AS = 25;
+
+  // Series relations
+  RELATION_TYPE_SERIES_OF = 26;
+  RELATION_TYPE_IN_SERIES = 27;
+
+  // Generic
+  RELATION_TYPE_RELATED_TO = 28;
+  RELATION_TYPE_OTHER = 29;
+
+  // Supplementary (additional to 18-19)
+  RELATION_TYPE_SUPPLEMENTED_BY = 30;  // Has supplementary material
+
+  // Requirements
+  RELATION_TYPE_REQUIRED_BY = 31;      // Is required by another resource
+  RELATION_TYPE_REQUIRES = 32;         // Requires another resource
+
+  // Reviews
+  RELATION_TYPE_REVIEWS = 33;          // Reviews another resource
+}
+
+// DegreeInfo holds thesis/dissertation-specific metadata.
+message DegreeInfo {
+  string degree_name = 1;   // e.g., "Master of Science"
+  string degree_level = 2;  // e.g., "Masters", "Doctoral"
+  string department = 3;    // Granting department
+  string institution = 4;   // Granting institution
+  DateValue date = 5;       // Date degree was granted
+}
+
+// Funder represents funding information for a resource.
+message Funder {
+  string name = 1;                    // Funder name (e.g., "National Science Foundation")
+  string identifier = 2;              // Funder identifier (e.g., Crossref Funder ID, ROR)
+  string identifier_type = 3;         // Type of funder identifier
+  repeated string award_numbers = 4;  // Grant/award numbers
+  string award_title = 5;             // Title of the funded project/award
+  string award_uri = 6;               // URI for the award
+}
+
+// Affiliation represents an institutional affiliation for a contributor.
+message Affiliation {
+  string name = 1;              // Affiliation name
+  string identifier = 2;        // Affiliation identifier (e.g., ROR)
+  string identifier_type = 3;   // Type of identifier (e.g., "ROR", "ISNI")
+}
+
+// File represents a file associated with the record.
+message File {
+    string path = 1;
+    string name = 2;
+    string mime_type = 3;
+    int64 size_bytes = 4;
+    string description = 5;
+    string role = 6; // e.g. "supplemental", "service", "thumbnail"
+}
+
+// ArchivalLocation represents physical archival location.
+message ArchivalLocation {
+    string collection = 1;
+    string series = 2;
+    string box = 3;
+    string folder = 4;
+}
+
+// PublicationDetails holds specific publication metadata often found in citations.
+message PublicationDetails {
+    string title = 1; // Container title
+    string volume = 2;
+    string issue = 3;
+    string pages = 4;
+    string issn = 5;
+    string l_issn = 6;
+}
+
+// HierarchicalGeographic represents structured geographic location data.
+// Used for geographic subjects in MODS and similar formats.
+message HierarchicalGeographic {
+    string country = 1;
+    string state = 2;    // State/province
+    string county = 3;
+    string city = 4;
+    string area = 5;     // Neighborhood/area
+}

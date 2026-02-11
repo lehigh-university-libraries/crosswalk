@@ -1,0 +1,187 @@
+name: islandora
+format: drupal
+description: Default mapping profile for Islandora repository content
+
+options:
+  taxonomy_mode: passthrough
+  strip_html: true
+  multi_value_separator: "|"
+
+fields:
+  # Title fields
+  title:
+    ir: Title
+    priority: 0
+
+  field_full_title:
+    ir: Title
+    priority: 1
+
+  field_alt_title:
+    ir: AltTitle
+
+  # Contributors
+  field_linked_agent:
+    ir: Contributors
+    type: typed_relation
+    role_field: rel_type
+    resolve: taxonomy_term
+
+  # Date fields
+  field_edtf_date_issued:
+    ir: Dates
+    date_type: issued
+    parser: edtf
+
+  field_edtf_date_created:
+    ir: Dates
+    date_type: created
+    parser: edtf
+
+  field_edtf_date_captured:
+    ir: Dates
+    date_type: captured
+    parser: edtf
+
+  field_copyright_date:
+    ir: Dates
+    date_type: copyright
+    parser: edtf
+
+  field_date_modified:
+    ir: Dates
+    date_type: modified
+    parser: edtf
+
+  # Resource type and genre
+  field_resource_type:
+    ir: ResourceType
+    resolve: taxonomy_term
+
+  field_genre:
+    ir: Genre
+    resolve: taxonomy_term
+    multi_value: true
+
+  # Language
+  field_language:
+    ir: Language
+    resolve: taxonomy_term
+
+  # Rights
+  field_rights:
+    ir: Rights
+    type: uri
+
+  # Descriptions
+  field_abstract:
+    ir: Abstract
+    transform: strip_html
+
+  field_description:
+    ir: Description
+    transform: strip_html
+
+  field_physical_description:
+    ir: PhysicalDesc
+
+  field_extent:
+    ir: PhysicalDesc
+    priority: -1
+
+  # Subjects and keywords
+  field_subject:
+    ir: Subjects
+    resolve: taxonomy_term
+    multi_value: true
+
+  field_lcsh_topic:
+    ir: Subjects
+    vocabulary: lcsh
+    resolve: taxonomy_term
+    multi_value: true
+
+  field_subject_general:
+    ir: Subjects
+    vocabulary: local
+    resolve: taxonomy_term
+    multi_value: true
+
+  field_keywords:
+    ir: Subjects
+    vocabulary: keywords
+    multi_value: true
+
+  # Publishing
+  field_publisher:
+    ir: Publisher
+
+  field_place_published:
+    ir: PlacePublished
+
+  # Relations
+  field_member_of:
+    ir: Relations
+    relation_type: member_of
+    resolve: node
+
+  field_related_item:
+    ir: Relations
+    relation_type: related_to
+
+  # Identifiers
+  field_identifier:
+    ir: Identifiers
+
+  field_pid:
+    ir: Identifiers
+    type: pid
+
+  # Thesis/dissertation fields
+  field_degree_name:
+    ir: DegreeInfo.DegreeName
+
+  field_degree_level:
+    ir: DegreeInfo.DegreeLevel
+
+  field_department_name:
+    ir: DegreeInfo.Department
+    resolve: taxonomy_term
+
+  # Miscellaneous
+  field_note:
+    ir: Notes
+    multi_value: true
+
+  field_table_of_contents:
+    ir: TableOfContents
+    transform: strip_html
+
+  field_source:
+    ir: Source
+
+  field_digital_origin:
+    ir: DigitalOrigin
+    resolve: taxonomy_term
+
+  # Core Drupal fields preserved in Extra
+  nid:
+    ir: Extra.nid
+
+  uuid:
+    ir: Extra.uuid
+
+  vid:
+    ir: Extra.vid
+
+  created:
+    ir: Extra.created
+
+  changed:
+    ir: Extra.changed
+
+  status:
+    ir: Extra.status
+
+  type:
+    ir: Extra.type

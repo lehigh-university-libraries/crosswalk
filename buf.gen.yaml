@@ -1,0 +1,23 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/lehigh-university-libraries/crosswalk/gen/go
+
+inputs:
+  # Default input for Go generation (all protos)
+  - directory: .
+
+plugins:
+  # Generate Go code for all protos
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+
+# JS/PHP clients use WASM module instead of generated protobuf types.
+# Build with: make build-wasm
+
+# JSON Schema generation:
+# Generate Hub schema separately to avoid spoke collisions:
+#   buf generate --path hub/v1 --template buf.gen.jsonschema.yaml

@@ -1,0 +1,807 @@
+// DataCite Metadata Schema for DOI registration.
+// Source: DataCite Metadata Schema 4.6
+// Spec: https://schema.datacite.org/meta/kernel-4.6/
+syntax = "proto3";
+
+package spoke.datacite.v4_6;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/datacite/v4.6;datacitev4_6";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the DataCite schema version this proto implements.
+// Value: "4.6"
+
+// Resource - Root element for DataCite metadata.
+message Resource {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "DataCite Resource maps to Hub Record"
+  };
+
+  // DOI identifier (required)
+  Identifier identifier = 1 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+    required: true
+  }];
+  // Creators (required)
+  repeated Creator creators = 2 [(hub.v1.field) = {
+    target: "contributors"
+    role: "creator"
+    required: true
+  }];
+  // Titles (required)
+  repeated Title titles = 3 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+  // Publisher (required)
+  string publisher = 4 [(hub.v1.field) = {
+    target: "publisher"
+    required: true
+  }];
+  // Publication year (required)
+  int32 publication_year = 5 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    required: true
+  }];
+  // Resource type (required)
+  ResourceType resource_type = 6 [(hub.v1.field) = {
+    target: "resource_type"
+    required: true
+  }];
+
+  // Optional fields
+  repeated Subject subjects = 7 [(hub.v1.field) = {
+    target: "subjects"
+  }];
+  repeated Contributor contributors = 8 [(hub.v1.field) = {
+    target: "contributors"
+  }];
+  repeated Date dates = 9 [(hub.v1.field) = {
+    target: "dates"
+  }];
+  string language = 10 [(hub.v1.field) = {
+    target: "language"
+  }];
+  repeated AlternateIdentifier alternate_identifiers = 11 [(hub.v1.field) = {
+    target: "identifiers"
+  }];
+  repeated RelatedIdentifier related_identifiers = 12 [(hub.v1.field) = {
+    target: "relations"
+  }];
+  repeated string sizes = 13 [(hub.v1.field) = {
+    target: "extra"
+    description: "Resource sizes"
+  }];
+  repeated string formats = 14 [(hub.v1.field) = {
+    target: "extra"
+    description: "Resource formats"
+  }];
+  string version = 15 [(hub.v1.field) = {
+    target: "extra"
+    description: "Resource version"
+  }];
+  repeated Rights rights_list = 16 [(hub.v1.field) = {
+    target: "rights"
+  }];
+  repeated Description descriptions = 17 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  repeated GeoLocation geo_locations = 18 [(hub.v1.field) = {
+    target: "extra"
+    description: "Geographic locations"
+  }];
+  repeated FundingReference funding_references = 19 [(hub.v1.field) = {
+    target: "funders"
+  }];
+  repeated RelatedItem related_items = 20 [(hub.v1.field) = {
+    target: "relations"
+  }];
+}
+
+// Identifier - The primary identifier (DOI).
+message Identifier {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "DataCite Identifier maps to Hub Identifier"
+  };
+
+  // Identifier value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+    parser: "doi"
+    validators: "doi"
+  }];
+  // Identifier type (always "DOI" for DataCite)
+  string identifier_type = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+}
+
+// Creator - A person or organization responsible for creating the resource.
+message Creator {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "DataCite Creator maps to Hub Contributor"
+  };
+
+  // Name (required)
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+    required: true
+  }];
+  // Name type: Personal, Organizational
+  string name_type = 2 [(hub.v1.field) = {
+    target: "contributor_type"
+  }];
+  // Given name (for persons)
+  string given_name = 3 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+  // Family name (for persons)
+  string family_name = 4 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+  // Name identifiers (ORCID, ISNI, etc.)
+  repeated NameIdentifier name_identifiers = 5 [(hub.v1.field) = {
+    target: "identifiers"
+  }];
+  // Affiliations
+  repeated Affiliation affiliations = 6 [(hub.v1.field) = {
+    target: "affiliations"
+  }];
+}
+
+// Contributor - A person or organization that contributed to the resource.
+message Contributor {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "DataCite Contributor maps to Hub Contributor"
+  };
+
+  // Contributor type (required)
+  ContributorType contributor_type = 1 [(hub.v1.field) = {
+    target: "role"
+    required: true
+  }];
+  // Name (required)
+  string name = 2 [(hub.v1.field) = {
+    target: "name"
+    required: true
+  }];
+  // Name type
+  string name_type = 3 [(hub.v1.field) = {
+    target: "contributor_type"
+  }];
+  // Given name
+  string given_name = 4 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+  // Family name
+  string family_name = 5 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+  // Name identifiers
+  repeated NameIdentifier name_identifiers = 6 [(hub.v1.field) = {
+    target: "identifiers"
+  }];
+  // Affiliations
+  repeated Affiliation affiliations = 7 [(hub.v1.field) = {
+    target: "affiliations"
+  }];
+}
+
+// ContributorType - Types of contributors.
+enum ContributorType {
+  CONTRIBUTOR_TYPE_UNSPECIFIED = 0;
+  CONTRIBUTOR_TYPE_CONTACT_PERSON = 1 [(hub.v1.enum_value) = {target: "contributor"}];
+  CONTRIBUTOR_TYPE_DATA_COLLECTOR = 2 [(hub.v1.enum_value) = {target: "data_collector"}];
+  CONTRIBUTOR_TYPE_DATA_CURATOR = 3 [(hub.v1.enum_value) = {target: "data_curator"}];
+  CONTRIBUTOR_TYPE_DATA_MANAGER = 4 [(hub.v1.enum_value) = {target: "data_manager"}];
+  CONTRIBUTOR_TYPE_DISTRIBUTOR = 5 [(hub.v1.enum_value) = {target: "distributor"}];
+  CONTRIBUTOR_TYPE_EDITOR = 6 [(hub.v1.enum_value) = {target: "editor"}];
+  CONTRIBUTOR_TYPE_HOSTING_INSTITUTION = 7 [(hub.v1.enum_value) = {target: "host"}];
+  CONTRIBUTOR_TYPE_PRODUCER = 8 [(hub.v1.enum_value) = {target: "producer"}];
+  CONTRIBUTOR_TYPE_PROJECT_LEADER = 9 [(hub.v1.enum_value) = {target: "project_leader"}];
+  CONTRIBUTOR_TYPE_PROJECT_MANAGER = 10 [(hub.v1.enum_value) = {target: "project_manager"}];
+  CONTRIBUTOR_TYPE_PROJECT_MEMBER = 11 [(hub.v1.enum_value) = {target: "project_member"}];
+  CONTRIBUTOR_TYPE_REGISTRATION_AGENCY = 12 [(hub.v1.enum_value) = {target: "contributor"}];
+  CONTRIBUTOR_TYPE_REGISTRATION_AUTHORITY = 13 [(hub.v1.enum_value) = {target: "contributor"}];
+  CONTRIBUTOR_TYPE_RELATED_PERSON = 14 [(hub.v1.enum_value) = {target: "contributor"}];
+  CONTRIBUTOR_TYPE_RESEARCHER = 15 [(hub.v1.enum_value) = {target: "researcher"}];
+  CONTRIBUTOR_TYPE_RESEARCH_GROUP = 16 [(hub.v1.enum_value) = {target: "research_group"}];
+  CONTRIBUTOR_TYPE_RIGHTS_HOLDER = 17 [(hub.v1.enum_value) = {target: "rights_holder"}];
+  CONTRIBUTOR_TYPE_SPONSOR = 18 [(hub.v1.enum_value) = {target: "sponsor"}];
+  CONTRIBUTOR_TYPE_SUPERVISOR = 19 [(hub.v1.enum_value) = {target: "supervisor"}];
+  CONTRIBUTOR_TYPE_WORK_PACKAGE_LEADER = 20 [(hub.v1.enum_value) = {target: "contributor"}];
+  CONTRIBUTOR_TYPE_OTHER = 21 [(hub.v1.enum_value) = {target: "contributor"}];
+}
+
+// NameIdentifier - An identifier for a person or organization.
+message NameIdentifier {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "DataCite NameIdentifier maps to Hub Identifier"
+  };
+
+  // Identifier value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Scheme (e.g., ORCID, ISNI, ROR)
+  string name_identifier_scheme = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+  // Scheme URI
+  string scheme_uri = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+}
+
+// Affiliation - An organization affiliation.
+message Affiliation {
+  option (hub.v1.message) = {
+    target: "Affiliation"
+    description: "DataCite Affiliation maps to Hub Affiliation"
+  };
+
+  // Affiliation name
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+  }];
+  // Affiliation identifier
+  string affiliation_identifier = 2 [(hub.v1.field) = {
+    target: "identifier"
+  }];
+  // Identifier scheme (e.g., ROR)
+  string affiliation_identifier_scheme = 3 [(hub.v1.field) = {
+    target: "identifier_type"
+  }];
+  // Scheme URI
+  string scheme_uri = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+}
+
+// Title - A title of the resource.
+message Title {
+  option (hub.v1.message) = {
+    target: "string"
+    description: "DataCite Title extracts value"
+  };
+
+  // Title value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+    required: true
+  }];
+  // Title type
+  TitleType title_type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Title type"
+  }];
+  // Language (BCP 47)
+  string lang = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language"
+  }];
+}
+
+// TitleType - Types of titles.
+enum TitleType {
+  TITLE_TYPE_UNSPECIFIED = 0;
+  TITLE_TYPE_ALTERNATIVE_TITLE = 1;
+  TITLE_TYPE_SUBTITLE = 2;
+  TITLE_TYPE_TRANSLATED_TITLE = 3;
+  TITLE_TYPE_OTHER = 4;
+}
+
+// ResourceType - The type of resource.
+message ResourceType {
+  option (hub.v1.message) = {
+    target: "ResourceType"
+    description: "DataCite ResourceType maps to Hub ResourceType"
+  };
+
+  // Resource type general (required)
+  ResourceTypeGeneral resource_type_general = 1 [(hub.v1.field) = {
+    target: "type"
+    required: true
+  }];
+  // Free-text resource type
+  string value = 2 [(hub.v1.field) = {
+    target: "description"
+  }];
+}
+
+// ResourceTypeGeneral - Controlled vocabulary for resource types.
+enum ResourceTypeGeneral {
+  RESOURCE_TYPE_GENERAL_UNSPECIFIED = 0;
+  RESOURCE_TYPE_GENERAL_AUDIOVISUAL = 1 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_VIDEO"}];
+  RESOURCE_TYPE_GENERAL_BOOK = 2 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK"}];
+  RESOURCE_TYPE_GENERAL_BOOK_CHAPTER = 3 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK_CHAPTER"}];
+  RESOURCE_TYPE_GENERAL_COLLECTION = 4 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_COLLECTION"}];
+  RESOURCE_TYPE_GENERAL_COMPUTATIONAL_NOTEBOOK = 5 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  RESOURCE_TYPE_GENERAL_CONFERENCE_PAPER = 6 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_CONFERENCE_PAPER"}];
+  RESOURCE_TYPE_GENERAL_CONFERENCE_PROCEEDING = 7 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_CONFERENCE_PROCEEDING"}];
+  RESOURCE_TYPE_GENERAL_DATA_PAPER = 8 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  RESOURCE_TYPE_GENERAL_DATASET = 9 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DATASET"}];
+  RESOURCE_TYPE_GENERAL_DISSERTATION = 10 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DISSERTATION"}];
+  RESOURCE_TYPE_GENERAL_EVENT = 11 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_IMAGE = 12 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_IMAGE"}];
+  RESOURCE_TYPE_GENERAL_INSTRUMENT = 13 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_INTERACTIVE_RESOURCE = 14 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_INTERACTIVE"}];
+  RESOURCE_TYPE_GENERAL_JOURNAL = 15 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_JOURNAL"}];
+  RESOURCE_TYPE_GENERAL_JOURNAL_ARTICLE = 16 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  RESOURCE_TYPE_GENERAL_MODEL = 17 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_OUTPUT_MANAGEMENT_PLAN = 18 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_PEER_REVIEW = 19 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_PEER_REVIEW"}];
+  RESOURCE_TYPE_GENERAL_PHYSICAL_OBJECT = 20 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OBJECT"}];
+  RESOURCE_TYPE_GENERAL_PREPRINT = 21 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_PREPRINT"}];
+  RESOURCE_TYPE_GENERAL_REPORT = 22 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_REPORT"}];
+  RESOURCE_TYPE_GENERAL_SERVICE = 23 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_SOFTWARE = 24 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  RESOURCE_TYPE_GENERAL_SOUND = 25 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_AUDIO"}];
+  RESOURCE_TYPE_GENERAL_STANDARD = 26 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_STANDARD"}];
+  RESOURCE_TYPE_GENERAL_STUDY_REGISTRATION = 27 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  RESOURCE_TYPE_GENERAL_TEXT = 28 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_TEXT"}];
+  RESOURCE_TYPE_GENERAL_WORKFLOW = 29 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  RESOURCE_TYPE_GENERAL_OTHER = 30 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+}
+
+// Subject - A subject, keyword, or classification code.
+message Subject {
+  option (hub.v1.message) = {
+    target: "Subject"
+    description: "DataCite Subject maps to Hub Subject"
+  };
+
+  // Subject value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Subject scheme (e.g., LCSH, DDC)
+  string subject_scheme = 2 [(hub.v1.field) = {
+    target: "vocabulary"
+  }];
+  // Scheme URI
+  string scheme_uri = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+  // Value URI
+  string value_uri = 4 [(hub.v1.field) = {
+    target: "uri"
+  }];
+  // Classification code
+  string classification_code = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Classification code"
+  }];
+}
+
+// Date - A date associated with the resource.
+message Date {
+  option (hub.v1.message) = {
+    target: "DateValue"
+    description: "DataCite Date maps to Hub DateValue"
+  };
+
+  // Date value (ISO 8601)
+  string value = 1 [(hub.v1.field) = {
+    target: "raw"
+    parser: "iso8601"
+  }];
+  // Date type
+  DateType date_type = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+  // Date information (free text)
+  string date_information = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Date information"
+  }];
+}
+
+// DateType - Types of dates.
+enum DateType {
+  DATE_TYPE_UNSPECIFIED = 0;
+  DATE_TYPE_ACCEPTED = 1 [(hub.v1.enum_value) = {target: "DATE_TYPE_ACCEPTED"}];
+  DATE_TYPE_AVAILABLE = 2 [(hub.v1.enum_value) = {target: "DATE_TYPE_AVAILABLE"}];
+  DATE_TYPE_COPYRIGHTED = 3 [(hub.v1.enum_value) = {target: "DATE_TYPE_COPYRIGHT"}];
+  DATE_TYPE_COLLECTED = 4 [(hub.v1.enum_value) = {target: "DATE_TYPE_OTHER"}];
+  DATE_TYPE_CREATED = 5 [(hub.v1.enum_value) = {target: "DATE_TYPE_CREATED"}];
+  DATE_TYPE_ISSUED = 6 [(hub.v1.enum_value) = {target: "DATE_TYPE_ISSUED"}];
+  DATE_TYPE_SUBMITTED = 7 [(hub.v1.enum_value) = {target: "DATE_TYPE_SUBMITTED"}];
+  DATE_TYPE_UPDATED = 8 [(hub.v1.enum_value) = {target: "DATE_TYPE_UPDATED"}];
+  DATE_TYPE_VALID = 9 [(hub.v1.enum_value) = {target: "DATE_TYPE_OTHER"}];
+  DATE_TYPE_WITHDRAWN = 10 [(hub.v1.enum_value) = {target: "DATE_TYPE_OTHER"}];
+  DATE_TYPE_OTHER = 11 [(hub.v1.enum_value) = {target: "DATE_TYPE_OTHER"}];
+}
+
+// AlternateIdentifier - An identifier other than the DOI.
+message AlternateIdentifier {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "DataCite AlternateIdentifier maps to Hub Identifier"
+  };
+
+  // Identifier value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Identifier type
+  string alternate_identifier_type = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+}
+
+// RelatedIdentifier - An identifier for a related resource.
+message RelatedIdentifier {
+  option (hub.v1.message) = {
+    target: "Relation"
+    description: "DataCite RelatedIdentifier maps to Hub Relation"
+  };
+
+  // Identifier value
+  string value = 1 [(hub.v1.field) = {
+    target: "target_identifier"
+  }];
+  // Identifier type (DOI, URL, ARK, etc.)
+  RelatedIdentifierType related_identifier_type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Identifier type"
+  }];
+  // Relation type
+  RelationType relation_type = 3 [(hub.v1.field) = {
+    target: "type"
+  }];
+  // Related metadata scheme
+  string related_metadata_scheme = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Metadata scheme"
+  }];
+  // Scheme URI
+  string scheme_uri = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+  // Scheme type
+  string scheme_type = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme type"
+  }];
+  // Resource type general
+  ResourceTypeGeneral resource_type_general = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Related resource type"
+  }];
+}
+
+// RelatedIdentifierType - Types of related identifiers.
+enum RelatedIdentifierType {
+  RELATED_IDENTIFIER_TYPE_UNSPECIFIED = 0;
+  RELATED_IDENTIFIER_TYPE_ARK = 1;
+  RELATED_IDENTIFIER_TYPE_ARXIV = 2;
+  RELATED_IDENTIFIER_TYPE_BIBCODE = 3;
+  RELATED_IDENTIFIER_TYPE_DOI = 4;
+  RELATED_IDENTIFIER_TYPE_EAN13 = 5;
+  RELATED_IDENTIFIER_TYPE_EISSN = 6;
+  RELATED_IDENTIFIER_TYPE_HANDLE = 7;
+  RELATED_IDENTIFIER_TYPE_IGSN = 8;
+  RELATED_IDENTIFIER_TYPE_ISBN = 9;
+  RELATED_IDENTIFIER_TYPE_ISSN = 10;
+  RELATED_IDENTIFIER_TYPE_ISTC = 11;
+  RELATED_IDENTIFIER_TYPE_LISSN = 12;
+  RELATED_IDENTIFIER_TYPE_LSID = 13;
+  RELATED_IDENTIFIER_TYPE_PMID = 14;
+  RELATED_IDENTIFIER_TYPE_PURL = 15;
+  RELATED_IDENTIFIER_TYPE_UPC = 16;
+  RELATED_IDENTIFIER_TYPE_URL = 17;
+  RELATED_IDENTIFIER_TYPE_URN = 18;
+  RELATED_IDENTIFIER_TYPE_W3ID = 19;
+}
+
+// RelationType - Types of relations between resources.
+enum RelationType {
+  RELATION_TYPE_UNSPECIFIED = 0;
+  RELATION_TYPE_IS_CITED_BY = 1 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITED_BY"}];
+  RELATION_TYPE_CITES = 2 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITES"}];
+  RELATION_TYPE_IS_SUPPLEMENT_TO = 3 [(hub.v1.enum_value) = {target: "RELATION_TYPE_SUPPLEMENT_TO"}];
+  RELATION_TYPE_IS_SUPPLEMENTED_BY = 4 [(hub.v1.enum_value) = {target: "RELATION_TYPE_SUPPLEMENTED_BY"}];
+  RELATION_TYPE_IS_CONTINUED_BY = 5 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACED_BY"}];
+  RELATION_TYPE_CONTINUES = 6 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACES"}];
+  RELATION_TYPE_IS_DESCRIBED_BY = 7 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_DESCRIBES = 8 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_HAS_METADATA = 9 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_IS_METADATA_FOR = 10 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_HAS_VERSION = 11 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_VERSION"}];
+  RELATION_TYPE_IS_VERSION_OF = 12 [(hub.v1.enum_value) = {target: "RELATION_TYPE_VERSION_OF"}];
+  RELATION_TYPE_IS_NEW_VERSION_OF = 13 [(hub.v1.enum_value) = {target: "RELATION_TYPE_VERSION_OF"}];
+  RELATION_TYPE_IS_PREVIOUS_VERSION_OF = 14 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_VERSION"}];
+  RELATION_TYPE_IS_PART_OF = 15 [(hub.v1.enum_value) = {target: "RELATION_TYPE_PART_OF"}];
+  RELATION_TYPE_HAS_PART = 16 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_PART"}];
+  RELATION_TYPE_IS_PUBLISHED_IN = 17 [(hub.v1.enum_value) = {target: "RELATION_TYPE_PART_OF"}];
+  RELATION_TYPE_IS_REFERENCED_BY = 18 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITED_BY"}];
+  RELATION_TYPE_REFERENCES = 19 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITES"}];
+  RELATION_TYPE_IS_DOCUMENTED_BY = 20 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_DOCUMENTS = 21 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_IS_COMPILED_BY = 22 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_COMPILES = 23 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_IS_VARIANT_FORM_OF = 24 [(hub.v1.enum_value) = {target: "RELATION_TYPE_VERSION_OF"}];
+  RELATION_TYPE_IS_ORIGINAL_FORM_OF = 25 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_VERSION"}];
+  RELATION_TYPE_IS_IDENTICAL_TO = 26 [(hub.v1.enum_value) = {target: "RELATION_TYPE_SAME_AS"}];
+  RELATION_TYPE_IS_REVIEWED_BY = 27 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_REVIEWS = 28 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_IS_DERIVED_FROM = 29 [(hub.v1.enum_value) = {target: "RELATION_TYPE_DERIVED_FROM"}];
+  RELATION_TYPE_IS_SOURCE_OF = 30 [(hub.v1.enum_value) = {target: "RELATION_TYPE_SOURCE_OF"}];
+  RELATION_TYPE_IS_REQUIRED_BY = 31 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REQUIRED_BY"}];
+  RELATION_TYPE_REQUIRES = 32 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REQUIRES"}];
+  RELATION_TYPE_IS_OBSOLETED_BY = 33 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACED_BY"}];
+  RELATION_TYPE_OBSOLETES = 34 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACES"}];
+  RELATION_TYPE_IS_COLLECTED_BY = 35 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_COLLECTS = 36 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+}
+
+// Rights - Rights/license information.
+message Rights {
+  option (hub.v1.message) = {
+    target: "Rights"
+    description: "DataCite Rights maps to Hub Rights"
+  };
+
+  // Rights statement
+  string value = 1 [(hub.v1.field) = {
+    target: "statement"
+  }];
+  // Rights URI
+  string rights_uri = 2 [(hub.v1.field) = {
+    target: "uri"
+    validators: "url"
+  }];
+  // Rights identifier
+  string rights_identifier = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Rights identifier"
+  }];
+  // Rights identifier scheme
+  string rights_identifier_scheme = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Rights identifier scheme"
+  }];
+  // Scheme URI
+  string scheme_uri = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+  // Language
+  string lang = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language"
+  }];
+}
+
+// Description - A description of the resource.
+message Description {
+  option (hub.v1.message) = {
+    target: "string"
+    description: "DataCite Description extracts abstract"
+  };
+
+  // Description text
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Description type
+  DescriptionType description_type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Description type"
+  }];
+  // Language
+  string lang = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language"
+  }];
+}
+
+// DescriptionType - Types of descriptions.
+enum DescriptionType {
+  DESCRIPTION_TYPE_UNSPECIFIED = 0;
+  DESCRIPTION_TYPE_ABSTRACT = 1;
+  DESCRIPTION_TYPE_METHODS = 2;
+  DESCRIPTION_TYPE_SERIES_INFORMATION = 3;
+  DESCRIPTION_TYPE_TABLE_OF_CONTENTS = 4;
+  DESCRIPTION_TYPE_TECHNICAL_INFO = 5;
+  DESCRIPTION_TYPE_OTHER = 6;
+}
+
+// GeoLocation - Geographic location of the resource.
+message GeoLocation {
+  // Place name
+  string geo_location_place = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Place name"
+  }];
+  // Point coordinates
+  GeoLocationPoint geo_location_point = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Point coordinates"
+  }];
+  // Bounding box
+  GeoLocationBox geo_location_box = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Bounding box"
+  }];
+  // Polygon
+  repeated GeoLocationPolygon geo_location_polygons = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Polygons"
+  }];
+}
+
+// GeoLocationPoint - A geographic point.
+message GeoLocationPoint {
+  double point_longitude = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Longitude"
+  }];
+  double point_latitude = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Latitude"
+  }];
+}
+
+// GeoLocationBox - A geographic bounding box.
+message GeoLocationBox {
+  double west_bound_longitude = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "West longitude"
+  }];
+  double east_bound_longitude = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "East longitude"
+  }];
+  double south_bound_latitude = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "South latitude"
+  }];
+  double north_bound_latitude = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "North latitude"
+  }];
+}
+
+// GeoLocationPolygon - A geographic polygon.
+message GeoLocationPolygon {
+  repeated GeoLocationPoint polygon_points = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Polygon points"
+  }];
+  GeoLocationPoint in_polygon_point = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Point in polygon"
+  }];
+}
+
+// FundingReference - Funding information.
+message FundingReference {
+  option (hub.v1.message) = {
+    target: "Funder"
+    description: "DataCite FundingReference maps to Hub Funder"
+  };
+
+  // Funder name
+  string funder_name = 1 [(hub.v1.field) = {
+    target: "name"
+  }];
+  // Funder identifier
+  string funder_identifier = 2 [(hub.v1.field) = {
+    target: "identifier"
+  }];
+  // Funder identifier type (e.g., Crossref Funder ID)
+  string funder_identifier_type = 3 [(hub.v1.field) = {
+    target: "identifier_type"
+  }];
+  // Scheme URI
+  string scheme_uri = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Scheme URI"
+  }];
+  // Award number
+  string award_number = 5 [(hub.v1.field) = {
+    target: "award_numbers"
+  }];
+  // Award URI
+  string award_uri = 6 [(hub.v1.field) = {
+    target: "extra"
+    validators: "url"
+    description: "Award URI"
+  }];
+  // Award title
+  string award_title = 7 [(hub.v1.field) = {
+    target: "award_title"
+  }];
+}
+
+// RelatedItem - A related item (for fuller bibliographic citation).
+message RelatedItem {
+  option (hub.v1.message) = {
+    target: "Relation"
+    description: "DataCite RelatedItem maps to Hub Relation"
+  };
+
+  // Relation type
+  RelationType relation_type = 1 [(hub.v1.field) = {
+    target: "type"
+  }];
+  // Related item type
+  ResourceTypeGeneral related_item_type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Related item type"
+  }];
+  // Titles
+  repeated Title titles = 3 [(hub.v1.field) = {
+    target: "target_title"
+  }];
+  // Creators
+  repeated Creator creators = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Related item creators"
+  }];
+  // Publication year
+  string publication_year = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Publication year"
+  }];
+  // Volume
+  string volume = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume"
+  }];
+  // Issue
+  string issue = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue"
+  }];
+  // Number (e.g., report number)
+  string number = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "Number"
+  }];
+  // Number type
+  string number_type = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "Number type"
+  }];
+  // First page
+  string first_page = 10 [(hub.v1.field) = {
+    target: "extra"
+    description: "First page"
+  }];
+  // Last page
+  string last_page = 11 [(hub.v1.field) = {
+    target: "extra"
+    description: "Last page"
+  }];
+  // Publisher
+  string publisher = 12 [(hub.v1.field) = {
+    target: "extra"
+    description: "Publisher"
+  }];
+  // Edition
+  string edition = 13 [(hub.v1.field) = {
+    target: "extra"
+    description: "Edition"
+  }];
+  // Contributors
+  repeated Contributor contributors = 14 [(hub.v1.field) = {
+    target: "extra"
+    description: "Related item contributors"
+  }];
+}

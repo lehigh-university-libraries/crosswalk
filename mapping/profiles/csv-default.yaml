@@ -1,0 +1,106 @@
+name: csv-default
+format: csv
+description: Default CSV column mapping using IR field names
+
+options:
+  csv_delimiter: ","
+  multi_value_separator: "|"
+
+fields:
+  # Direct mappings from CSV columns to IR fields
+  title:
+    ir: Title
+
+  alt_title:
+    ir: AltTitle
+
+  contributors:
+    ir: Contributors
+    multi_value: true
+    delimiter: "|"
+
+  contributor_roles:
+    ir: ContributorRoles
+    multi_value: true
+    delimiter: "|"
+
+  date_issued:
+    ir: Dates
+    date_type: issued
+    parser: edtf
+
+  date_created:
+    ir: Dates
+    date_type: created
+    parser: edtf
+
+  resource_type:
+    ir: ResourceType
+
+  genre:
+    ir: Genre
+    multi_value: true
+    delimiter: "|"
+
+  language:
+    ir: Language
+
+  rights:
+    ir: Rights
+
+  abstract:
+    ir: Abstract
+
+  description:
+    ir: Description
+
+  identifiers:
+    ir: Identifiers
+    multi_value: true
+    delimiter: "|"
+
+  doi:
+    ir: Identifiers
+    type: doi
+
+  subjects:
+    ir: Subjects
+    multi_value: true
+    delimiter: "|"
+
+  keywords:
+    ir: Subjects
+    vocabulary: keywords
+    multi_value: true
+    delimiter: "|"
+
+  publisher:
+    ir: Publisher
+
+  place_published:
+    ir: PlacePublished
+
+  member_of:
+    ir: Relations
+    relation_type: member_of
+    multi_value: true
+
+  degree_name:
+    ir: DegreeInfo.DegreeName
+
+  degree_level:
+    ir: DegreeInfo.DegreeLevel
+
+  department:
+    ir: DegreeInfo.Department
+
+  notes:
+    ir: Notes
+    multi_value: true
+    delimiter: "|"
+
+  nid:
+    ir: Extra.nid
+
+  uuid:
+    ir: Extra.uuid

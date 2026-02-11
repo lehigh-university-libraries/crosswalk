@@ -1,0 +1,153 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/FieldOptions",
+    "definitions": {
+        "FieldOptions": {
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "Target Hub field path (e.g., \"title\", \"contributors\", \"dates\", \"identifiers\", \"extra\")"
+                },
+                "date_type": {
+                    "type": "string",
+                    "title": "===== Type-specific options =====\n These use string values that correspond to Hub enum names (lowercase, without prefix)\n e.g., \"issued\", \"created\" for date_type; \"doi\", \"isbn\" for identifier_type",
+                    "description": "===== Type-specific options ===== These use string values that correspond to Hub enum names (lowercase, without prefix) e.g., \"issued\", \"created\" for date_type; \"doi\", \"isbn\" for identifier_type  For dates: the semantic date type (issued, created, captured, copyright, modified, etc.)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "For identifiers: the identifier type (doi, url, handle, isbn, issn, orcid, etc.)"
+                },
+                "subject_vocabulary": {
+                    "type": "string",
+                    "description": "For subjects: the vocabulary (lcsh, mesh, aat, fast, ddc, lcc, keywords, genre, local)"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "For contributors: the default role (author, editor, translator, etc.)"
+                },
+                "contributor_type": {
+                    "type": "string",
+                    "description": "For contributors: the contributor type (person, organization)"
+                },
+                "relation_type": {
+                    "type": "string",
+                    "description": "For relations: the relation type (member_of, part_of, version_of, references, etc.)"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "description": "For resource types: map to Hub ResourceTypeValue (article, book, thesis, etc.)"
+                },
+                "parser": {
+                    "type": "string",
+                    "title": "===== Parsing options =====",
+                    "description": "===== Parsing options =====  Parser to apply when reading this field Values: passthrough, edtf, iso8601, year, bibtex_name, csl_name, split,         strip_html, normalize_whitespace, doi, isbn, orcid, url, relator, custom"
+                },
+                "custom_parser": {
+                    "type": "string",
+                    "description": "Custom parser name (when parser = \"custom\")"
+                },
+                "date_format": {
+                    "type": "string",
+                    "description": "Date format for parsing (e.g., \"2006-01-02\", \"January 2, 2006\")"
+                },
+                "delimiter": {
+                    "type": "string",
+                    "description": "Delimiter for splitting multi-value strings"
+                },
+                "validators": {
+                    "type": "string",
+                    "title": "===== Validation options =====",
+                    "description": "===== Validation options =====  Validators to apply (comma-separated) Values: required, doi, isbn, issn, orcid, url, email, iso8601, edtf, year_range, pattern, length, range"
+                },
+                "pattern": {
+                    "type": "string",
+                    "description": "Regular expression pattern for validation"
+                },
+                "min_length": {
+                    "type": "integer",
+                    "description": "Minimum length (for strings)"
+                },
+                "max_length": {
+                    "type": "integer",
+                    "description": "Maximum length (for strings)"
+                },
+                "min_value": {
+                    "type": "string",
+                    "description": "Minimum value (for numbers)"
+                },
+                "max_value": {
+                    "type": "string",
+                    "description": "Maximum value (for numbers)"
+                },
+                "min_count": {
+                    "type": "integer",
+                    "title": "===== Cardinality options =====",
+                    "description": "===== Cardinality options =====  Minimum number of values required"
+                },
+                "max_count": {
+                    "type": "integer",
+                    "description": "Maximum number of values allowed (-1 = unlimited)"
+                },
+                "serializer": {
+                    "type": "string",
+                    "title": "===== Serialization options =====",
+                    "description": "===== Serialization options =====  Serializer to apply when writing this field Values: passthrough, edtf, iso8601, year, bibtex_name, csl_name, join, custom"
+                },
+                "custom_serializer": {
+                    "type": "string",
+                    "description": "Custom serializer name (when serializer = \"custom\")"
+                },
+                "join_delimiter": {
+                    "type": "string",
+                    "description": "Join delimiter for serializing arrays"
+                },
+                "xml_name": {
+                    "type": "string",
+                    "title": "===== XML serialization options =====",
+                    "description": "===== XML serialization options =====  XML element name (if different from proto field name)"
+                },
+                "xml_ns": {
+                    "type": "string",
+                    "description": "XML namespace prefix (e.g., \"dc\", \"dcterms\", \"mods\")"
+                },
+                "xml_attr": {
+                    "type": "boolean",
+                    "description": "Serialize as XML attribute instead of element"
+                },
+                "xml_chardata": {
+                    "type": "boolean",
+                    "description": "XML character data (no element wrapper, just the value)"
+                },
+                "xml_omit": {
+                    "type": "boolean",
+                    "description": "Omit this field from XML output"
+                },
+                "rdf_predicate": {
+                    "type": "string",
+                    "title": "===== Metadata =====",
+                    "description": "===== Metadata =====  RDF predicate this field corresponds to (e.g., \"dcterms:title\")"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description"
+                },
+                "omit_empty": {
+                    "type": "boolean",
+                    "description": "Whether this field should be omitted if empty"
+                },
+                "required": {
+                    "type": "boolean",
+                    "description": "Whether this is a required field"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority when multiple sources map to same target (higher = preferred)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Field Options",
+            "description": "FieldOptions defines how a spoke field maps to the Hub schema."
+        }
+    }
+}

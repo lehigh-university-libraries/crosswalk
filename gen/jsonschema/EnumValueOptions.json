@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/EnumValueOptions",
+    "definitions": {
+        "EnumValueOptions": {
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "The Hub enum value this maps to (e.g., \"RESOURCE_TYPE_ARTICLE\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Enum Value Options",
+            "description": "EnumValueOptions for mapping spoke enum values to Hub enum values."
+        }
+    }
+}

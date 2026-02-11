@@ -1,0 +1,174 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/DegreeInfo",
+    "definitions": {
+        "DegreeInfo": {
+            "properties": {
+                "degree_name": {
+                    "type": "string",
+                    "description": "e.g., \"Master of Science\""
+                },
+                "degree_level": {
+                    "type": "string",
+                    "description": "e.g., \"Masters\", \"Doctoral\""
+                },
+                "department": {
+                    "type": "string",
+                    "description": "Granting department"
+                },
+                "institution": {
+                    "type": "string",
+                    "description": "Granting institution"
+                },
+                "date": {
+                    "$ref": "#/definitions/hub.v1.DateValue",
+                    "additionalProperties": true,
+                    "description": "Date degree was granted"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Degree Info",
+            "description": "DegreeInfo holds thesis/dissertation-specific metadata."
+        },
+        "hub.v1.DateValue": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "DATE_TYPE_UNSPECIFIED",
+                        0,
+                        "DATE_TYPE_ISSUED",
+                        1,
+                        "DATE_TYPE_CREATED",
+                        2,
+                        "DATE_TYPE_CAPTURED",
+                        3,
+                        "DATE_TYPE_COPYRIGHT",
+                        4,
+                        "DATE_TYPE_MODIFIED",
+                        5,
+                        "DATE_TYPE_AVAILABLE",
+                        6,
+                        "DATE_TYPE_SUBMITTED",
+                        7,
+                        "DATE_TYPE_ACCEPTED",
+                        8,
+                        "DATE_TYPE_PUBLISHED",
+                        9,
+                        "DATE_TYPE_OTHER",
+                        10,
+                        "DATE_TYPE_VALID",
+                        11,
+                        "DATE_TYPE_UPDATED",
+                        12,
+                        "DATE_TYPE_COLLECTED",
+                        13
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Type",
+                    "description": "DateType indicates the semantic meaning of a date."
+                },
+                "raw": {
+                    "type": "string",
+                    "description": "Raw is the original date string as provided"
+                },
+                "year": {
+                    "type": "integer",
+                    "description": "Year, Month, Day represent the parsed date components"
+                },
+                "month": {
+                    "type": "integer",
+                    "description": "1-12, or 0 if unspecified"
+                },
+                "day": {
+                    "type": "integer",
+                    "description": "1-31, or 0 if unspecified"
+                },
+                "end_year": {
+                    "type": "integer",
+                    "description": "End date for ranges/intervals"
+                },
+                "end_month": {
+                    "type": "integer"
+                },
+                "end_day": {
+                    "type": "integer"
+                },
+                "precision": {
+                    "enum": [
+                        "DATE_PRECISION_UNSPECIFIED",
+                        0,
+                        "DATE_PRECISION_YEAR",
+                        1,
+                        "DATE_PRECISION_MONTH",
+                        2,
+                        "DATE_PRECISION_DAY",
+                        3,
+                        "DATE_PRECISION_TIME",
+                        4,
+                        "DATE_PRECISION_DECADE",
+                        5,
+                        "DATE_PRECISION_CENTURY",
+                        6
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Precision",
+                    "description": "DatePrecision indicates the granularity of a date."
+                },
+                "qualifier": {
+                    "enum": [
+                        "DATE_QUALIFIER_UNSPECIFIED",
+                        0,
+                        "DATE_QUALIFIER_APPROXIMATE",
+                        1,
+                        "DATE_QUALIFIER_UNCERTAIN",
+                        2,
+                        "DATE_QUALIFIER_BOTH",
+                        3
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Qualifier",
+                    "description": "DateQualifier indicates uncertainty or approximation."
+                },
+                "is_range": {
+                    "type": "boolean",
+                    "description": "IsRange indicates this is a date range"
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time component if available",
+                    "format": "date-time"
+                },
+                "season": {
+                    "type": "string",
+                    "description": "Season (e.g., \"Spring\", \"Winter\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Date Value",
+            "description": "DateValue represents a date with varying levels of precision and uncertainty. Supports EDTF (Extended Date/Time Format) concepts."
+        }
+    }
+}

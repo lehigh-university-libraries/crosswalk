@@ -1,0 +1,169 @@
+// ProQuest ETD (Electronic Theses and Dissertations) format.
+// Source: ProQuest ETD Administrator XML schema
+// Spec: https://support.proquest.com/s/article/ProQuest-ETD-Administrator-XML-Guide
+// Note: ProQuest does not publish versioned XSD publicly. Awaiting fixture for verification.
+syntax = "proto3";
+
+package spoke.proquest.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/spoke/proquest/v1;proquestv1";
+
+import "hub/v1/options.proto";
+
+// Submission matches the DISS_submission XML root.
+message Submission {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "ProQuest ETD submission maps to Hub Record"
+    xml_name: "DISS_submission"
+    computed_fields: [
+      {
+        target: "dates"
+        date_type: "available"
+        computer: "proquest_embargo_date"
+        description: "Embargo end date computed from embargo_code + accept_date or explicit repository embargo"
+      }
+    ]
+  };
+
+  // DISS_submission attributes
+  // Stored in extra for round-trip preservation and used by proquest_embargo_date computed field
+  int32 embargo_code = 1 [(hub.v1.field) = { target: "extra" xml_attr: true xml_name: "embargo_code" description: "Embargo code: 0=none, 1=6months, 2=12months, 3=24months" }];
+
+  // DISS_authorship
+  Authorship authorship = 2 [(hub.v1.field) = { xml_name: "DISS_authorship" }];
+
+  // DISS_description
+  Description description = 3 [(hub.v1.field) = { xml_name: "DISS_description" }];
+
+  // DISS_repository
+  Repository repository = 4 [(hub.v1.field) = { xml_name: "DISS_repository" }];
+
+  // DISS_content
+  Content content = 5 [(hub.v1.field) = { xml_name: "DISS_content" }];
+}
+
+message Repository {
+  option (hub.v1.message) = { xml_name: "DISS_repository" };
+  // DISS_delayed_release
+  string embargo = 1 [(hub.v1.field) = { target: "access_condition" xml_name: "DISS_delayed_release" }];
+}
+
+message Authorship {
+  option (hub.v1.message) = { xml_name: "DISS_authorship" };
+  repeated Author authors = 1 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+    contributor_type: "person"
+    xml_name: "DISS_author"
+  }];
+}
+
+message Author {
+  option (hub.v1.message) = { xml_name: "DISS_author" };
+  string type = 1 [(hub.v1.field) = { xml_attr: true }];
+  string citizenship = 2 [(hub.v1.field) = { target: "extra" xml_name: "DISS_citizenship" }];
+  Name name = 3 [(hub.v1.field) = { xml_name: "DISS_name" }];
+  repeated Contact contacts = 4 [(hub.v1.field) = { xml_name: "DISS_contact" }];
+  string orcid = 5 [(hub.v1.field) = { target: "identifiers" identifier_type: "orcid" xml_name: "DISS_orcid" }];
+}
+
+message Name {
+  option (hub.v1.message) = { xml_name: "DISS_name" };
+  string surname = 1 [(hub.v1.field) = { target: "parsed_name.family" xml_name: "DISS_surname" }];
+  string first = 2 [(hub.v1.field) = { target: "parsed_name.given" xml_name: "DISS_fname" }];
+  string middle = 3 [(hub.v1.field) = { target: "parsed_name.middle" xml_name: "DISS_middle" }];
+  string suffix = 4 [(hub.v1.field) = { target: "parsed_name.suffix" xml_name: "DISS_suffix" }];
+}
+
+message Contact {
+  option (hub.v1.message) = { xml_name: "DISS_contact" };
+  string type = 1 [(hub.v1.field) = { xml_attr: true }];
+  string email = 2 [(hub.v1.field) = { target: "extra" xml_name: "DISS_email" }];
+  Address address = 3 [(hub.v1.field) = { xml_name: "DISS_address" }];
+  PhoneFax phone = 4 [(hub.v1.field) = { xml_name: "DISS_phone_fax" }];
+}
+
+message Address {
+  option (hub.v1.message) = { xml_name: "DISS_address" };
+  string line = 1 [(hub.v1.field) = { xml_name: "DISS_addrline" }];
+  string city = 2 [(hub.v1.field) = { xml_name: "DISS_city" }];
+  string state = 3 [(hub.v1.field) = { xml_name: "DISS_st" }];
+  string zip = 4 [(hub.v1.field) = { xml_name: "DISS_pcode" }];
+  string country = 5 [(hub.v1.field) = { xml_name: "DISS_country" }];
+}
+
+message PhoneFax {
+  option (hub.v1.message) = { xml_name: "DISS_phone_fax" };
+  string type = 1 [(hub.v1.field) = { xml_attr: true }];
+  string country = 2 [(hub.v1.field) = { xml_name: "DISS_cntry_cd" }];
+  string area_code = 3 [(hub.v1.field) = { xml_name: "DISS_area_code" }];
+  string number = 4 [(hub.v1.field) = { xml_name: "DISS_phone_num" }];
+  string ext = 5 [(hub.v1.field) = { xml_name: "DISS_phone_ext" }];
+}
+
+message Description {
+  option (hub.v1.message) = { xml_name: "DISS_description" };
+  string title = 1 [(hub.v1.field) = { target: "title" xml_name: "DISS_title" }];
+  string degree = 2 [(hub.v1.field) = { target: "degree_info.degree_name" xml_name: "DISS_degree" }];
+  string degree_level = 3 [(hub.v1.field) = { target: "degree_info.degree_level" xml_omit: true }];
+  string discipline = 4 [(hub.v1.field) = { target: "degree_info.department" xml_name: "DISS_categorization/DISS_discipline" }];
+  Institution institution = 5 [(hub.v1.field) = { xml_name: "DISS_institution" }];
+  int32 page_count = 6 [(hub.v1.field) = { target: "page_count" xml_attr: true xml_name: "page_count" }];
+  string department = 7 [(hub.v1.field) = { target: "extra" xml_omit: true }]; // lehigh_departments/lehigh_department
+  repeated Advisor advisors = 8 [(hub.v1.field) = {
+    target: "contributors"
+    role: "advisor"
+    contributor_type: "person"
+    xml_name: "DISS_advisor"
+  }];
+  Categorization categorization = 9 [(hub.v1.field) = { xml_name: "DISS_categorization" }];
+  Dates dates = 10 [(hub.v1.field) = { xml_name: "DISS_dates" }];
+}
+
+message Institution {
+  option (hub.v1.message) = { xml_name: "DISS_institution" };
+  string name = 1 [(hub.v1.field) = { target: "degree_info.institution" xml_name: "DISS_inst_name" }];
+  string department = 2 [(hub.v1.field) = { target: "extra" xml_name: "DISS_inst_contact" }]; // DISS_inst_contact
+}
+
+message Advisor {
+  option (hub.v1.message) = { xml_name: "DISS_advisor" };
+  Name name = 1 [(hub.v1.field) = { xml_name: "DISS_name" }];
+}
+
+message Categorization {
+  option (hub.v1.message) = { xml_name: "DISS_categorization" };
+  repeated Category categories = 1 [(hub.v1.field) = { xml_name: "DISS_category" }];
+  repeated string keywords = 2 [(hub.v1.field) = { target: "subjects" subject_vocabulary: "keywords" xml_name: "DISS_keyword" }];
+  string language = 3 [(hub.v1.field) = { target: "language" xml_name: "DISS_language" }];
+}
+
+message Category {
+  option (hub.v1.message) = { xml_name: "DISS_category" };
+  string description = 1 [(hub.v1.field) = { target: "subjects" subject_vocabulary: "local" xml_name: "DISS_cat_desc" }];
+}
+
+message Dates {
+  option (hub.v1.message) = { xml_name: "DISS_dates" };
+  string accept_date = 1 [(hub.v1.field) = { target: "dates" date_type: "accepted" xml_name: "DISS_accept_date" }];
+  string completion_date = 2 [(hub.v1.field) = { target: "dates" date_type: "issued" xml_name: "DISS_comp_date" }];
+}
+
+message Content {
+  option (hub.v1.message) = { xml_name: "DISS_content" };
+  Abstract abstract = 1 [(hub.v1.field) = { xml_name: "DISS_abstract" }];
+  Binary binary = 2 [(hub.v1.field) = { xml_name: "DISS_binary" }];
+}
+
+message Abstract {
+  option (hub.v1.message) = { xml_name: "DISS_abstract" };
+  repeated string paragraphs = 1 [(hub.v1.field) = { target: "abstract" xml_name: "DISS_para" }];
+}
+
+message Binary {
+  option (hub.v1.message) = { xml_name: "DISS_binary" };
+  string type = 1 [(hub.v1.field) = { xml_attr: true }];
+  string file_name = 2 [(hub.v1.field) = { target: "files" xml_chardata: true }];
+}

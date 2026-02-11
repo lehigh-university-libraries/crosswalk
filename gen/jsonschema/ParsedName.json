@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ParsedName",
+    "definitions": {
+        "ParsedName": {
+            "properties": {
+                "family": {
+                    "type": "string",
+                    "description": "Last name / surname"
+                },
+                "given": {
+                    "type": "string",
+                    "description": "First name(s)"
+                },
+                "middle": {
+                    "type": "string",
+                    "description": "Middle name(s) or initial(s)"
+                },
+                "suffix": {
+                    "type": "string",
+                    "description": "Jr., Sr., III, etc."
+                },
+                "prefix": {
+                    "type": "string",
+                    "description": "von, van, de, etc."
+                },
+                "full_name": {
+                    "type": "string",
+                    "description": "Original full name string"
+                },
+                "normalized": {
+                    "type": "string",
+                    "description": "Normalized form: \"Family, Given Middle Suffix\""
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parsed Name",
+            "description": "ParsedName contains parsed components of a personal name."
+        }
+    }
+}

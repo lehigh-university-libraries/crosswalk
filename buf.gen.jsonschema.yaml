@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - remote: buf.build/community/chrusty-jsonschema
+    out: gen/jsonschema
+    opt:
+      - all_fields_required=false
+      - disallow_additional_properties=false
+      - json_fieldnames=true

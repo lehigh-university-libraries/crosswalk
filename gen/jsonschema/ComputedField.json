@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ComputedField",
+    "definitions": {
+        "ComputedField": {
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "Target Hub field path (e.g., \"dates\", \"extra.embargo_date\")"
+                },
+                "computer": {
+                    "type": "string",
+                    "description": "Name of the registered computation function The function must be registered with ComputedFieldRegistry"
+                },
+                "date_type": {
+                    "type": "string",
+                    "title": "===== Type-specific options (same as FieldOptions) =====",
+                    "description": "===== Type-specific options (same as FieldOptions) =====  For dates: the semantic date type (issued, created, available, etc.)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "For identifiers: the identifier type (doi, url, etc.)"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of this computed field"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Computed Field",
+            "description": "ComputedField defines a field derived from multiple source fields. Used for values that require access to the full source message during parsing. Example: ProQuest embargo date is computed from embargo_code + accept_date"
+        }
+    }
+}

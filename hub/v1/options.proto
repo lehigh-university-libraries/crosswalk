@@ -1,0 +1,216 @@
+// Hub field options for spoke proto definitions.
+// These annotations define how spoke fields map to the Hub schema.
+//
+// Usage in spoke protos:
+//
+//   import "hub/v1/options.proto";
+//
+//   message Entry {
+//     string title = 1 [(hub.v1.field) = {target: "title"}];
+//     repeated Person author = 2 [(hub.v1.field) = {target: "contributors", role: "author"}];
+//     string year = 3 [(hub.v1.field) = {target: "dates", date_type: "issued", parser: "year"}];
+//     string doi = 4 [(hub.v1.field) = {target: "identifiers", identifier_type: "doi"}];
+//   }
+//
+syntax = "proto3";
+
+package hub.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/hub/v1;hubv1";
+
+import "google/protobuf/descriptor.proto";
+
+// FieldOptions defines how a spoke field maps to the Hub schema.
+message FieldOptions {
+  // Target Hub field path (e.g., "title", "contributors", "dates", "identifiers", "extra")
+  string target = 1;
+
+  // ===== Type-specific options =====
+  // These use string values that correspond to Hub enum names (lowercase, without prefix)
+  // e.g., "issued", "created" for date_type; "doi", "isbn" for identifier_type
+
+  // For dates: the semantic date type (issued, created, captured, copyright, modified, etc.)
+  string date_type = 10;
+
+  // For identifiers: the identifier type (doi, url, handle, isbn, issn, orcid, etc.)
+  string identifier_type = 11;
+
+  // For subjects: the vocabulary (lcsh, mesh, aat, fast, ddc, lcc, keywords, genre, local)
+  string subject_vocabulary = 12;
+
+  // For contributors: the default role (author, editor, translator, etc.)
+  string role = 13;
+
+  // For contributors: the contributor type (person, organization)
+  string contributor_type = 14;
+
+  // For relations: the relation type (member_of, part_of, version_of, references, etc.)
+  string relation_type = 15;
+
+  // For resource types: map to Hub ResourceTypeValue (article, book, thesis, etc.)
+  string resource_type = 16;
+
+  // ===== Parsing options =====
+
+  // Parser to apply when reading this field
+  // Values: passthrough, edtf, iso8601, year, bibtex_name, csl_name, split,
+  //         strip_html, normalize_whitespace, doi, isbn, orcid, url, relator, custom
+  string parser = 20;
+
+  // Custom parser name (when parser = "custom")
+  string custom_parser = 21;
+
+  // Date format for parsing (e.g., "2006-01-02", "January 2, 2006")
+  string date_format = 22;
+
+  // Delimiter for splitting multi-value strings
+  string delimiter = 23;
+
+  // ===== Validation options =====
+
+  // Validators to apply (comma-separated)
+  // Values: required, doi, isbn, issn, orcid, url, email, iso8601, edtf, year_range, pattern, length, range
+  string validators = 30;
+
+  // Regular expression pattern for validation
+  string pattern = 31;
+
+  // Minimum length (for strings)
+  int32 min_length = 32;
+
+  // Maximum length (for strings)
+  int32 max_length = 33;
+
+  // Minimum value (for numbers)
+  int64 min_value = 34;
+
+  // Maximum value (for numbers)
+  int64 max_value = 35;
+
+  // ===== Cardinality options =====
+
+  // Minimum number of values required
+  int32 min_count = 40;
+
+  // Maximum number of values allowed (-1 = unlimited)
+  int32 max_count = 41;
+
+  // ===== Serialization options =====
+
+  // Serializer to apply when writing this field
+  // Values: passthrough, edtf, iso8601, year, bibtex_name, csl_name, join, custom
+  string serializer = 50;
+
+  // Custom serializer name (when serializer = "custom")
+  string custom_serializer = 51;
+
+  // Join delimiter for serializing arrays
+  string join_delimiter = 52;
+
+  // ===== XML serialization options =====
+
+  // XML element name (if different from proto field name)
+  string xml_name = 70;
+
+  // XML namespace prefix (e.g., "dc", "dcterms", "mods")
+  string xml_ns = 71;
+
+  // Serialize as XML attribute instead of element
+  bool xml_attr = 72;
+
+  // XML character data (no element wrapper, just the value)
+  bool xml_chardata = 73;
+
+  // Omit this field from XML output
+  bool xml_omit = 74;
+
+  // ===== Metadata =====
+
+  // RDF predicate this field corresponds to (e.g., "dcterms:title")
+  string rdf_predicate = 60;
+
+  // Human-readable description
+  string description = 61;
+
+  // Whether this field should be omitted if empty
+  bool omit_empty = 62;
+
+  // Whether this is a required field
+  bool required = 63;
+
+  // Priority when multiple sources map to same target (higher = preferred)
+  int32 priority = 64;
+}
+
+// MessageOptions defines message-level Hub mapping options.
+message MessageOptions {
+  // The Hub message this spoke message maps to (e.g., "Record", "Contributor")
+  string target = 1;
+
+  // Whether to preserve unmapped fields in Extra
+  bool preserve_unmapped = 2;
+
+  // Description of this message's purpose
+  string description = 3;
+
+  // Computed fields that derive values from multiple source fields.
+  // These are evaluated after all individual field mappings are processed.
+  repeated ComputedField computed_fields = 4;
+
+  // ===== XML serialization options =====
+
+  // XML element name for this message type
+  string xml_name = 10;
+
+  // XML namespaces to declare on this element
+  // Format: "prefix=uri" (e.g., "dc=http://purl.org/dc/elements/1.1/")
+  repeated string xml_namespaces = 11;
+
+  // Default XML namespace URI
+  string xml_default_ns = 12;
+}
+
+// ComputedField defines a field derived from multiple source fields.
+// Used for values that require access to the full source message during parsing.
+//
+// Example: ProQuest embargo date is computed from embargo_code + accept_date
+message ComputedField {
+  // Target Hub field path (e.g., "dates", "extra.embargo_date")
+  string target = 1;
+
+  // Name of the registered computation function
+  // The function must be registered with ComputedFieldRegistry
+  string computer = 2;
+
+  // ===== Type-specific options (same as FieldOptions) =====
+
+  // For dates: the semantic date type (issued, created, available, etc.)
+  string date_type = 10;
+
+  // For identifiers: the identifier type (doi, url, etc.)
+  string identifier_type = 11;
+
+  // Description of this computed field
+  string description = 20;
+}
+
+// EnumValueOptions for mapping spoke enum values to Hub enum values.
+message EnumValueOptions {
+  // The Hub enum value this maps to (e.g., "RESOURCE_TYPE_ARTICLE")
+  string target = 1;
+}
+
+// Extend field options to add Hub mapping.
+extend google.protobuf.FieldOptions {
+  FieldOptions field = 50001;
+}
+
+// Extend message options to add Hub mapping.
+extend google.protobuf.MessageOptions {
+  MessageOptions message = 50001;
+}
+
+// Extend enum value options to add Hub mapping.
+extend google.protobuf.EnumValueOptions {
+  EnumValueOptions enum_value = 50001;
+}

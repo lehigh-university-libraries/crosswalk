@@ -1,0 +1,872 @@
+// Schema.org JSON-LD types for scholarly metadata.
+// Source: schema.org release 29.4
+// Spec: https://schema.org/version/29.4/
+syntax = "proto3";
+
+package spoke.schemaorg.v29_4;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/schemaorg/v29.4;schemaorgv29_4";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the schema.org version this proto implements.
+// Value: "29.4"
+
+// Thing is the base schema.org type.
+message Thing {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Thing provides base identifiers"
+  };
+
+  // JSON-LD @type value
+  string type = 1 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Schema.org type"
+  }];
+  // JSON-LD @id (URI identifier)
+  string id = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "uri"
+  }];
+  // The name of the item
+  string name = 3 [(hub.v1.field) = {
+    target: "title"
+  }];
+  // A description of the item
+  string description = 4 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+  // URL of the item
+  string url = 5 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    validators: "url"
+  }];
+  // URL of a reference page that identifies the item
+  repeated string same_as = 6 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "uri"
+    description: "Equivalent URIs"
+  }];
+  // Identifiers for the item
+  repeated PropertyValue identifier = 7 [(hub.v1.field) = {
+    target: "identifiers"
+    description: "Structured identifiers"
+  }];
+}
+
+// CreativeWork - The most generic kind of creative work.
+message CreativeWork {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org CreativeWork maps to Hub Record"
+  };
+
+  Thing thing = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base Thing properties"
+  }];
+
+  // Headline of the article
+  string headline = 2 [(hub.v1.field) = {
+    target: "title"
+    description: "Headline as title"
+  }];
+  // Alternative headline
+  string alternative_headline = 3 [(hub.v1.field) = {
+    target: "alt_title"
+    description: "Alternative headline"
+  }];
+  // Abstract
+  string abstract = 4 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+
+  // Authors
+  repeated PersonOrOrganization author = 5 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+    description: "Authors"
+  }];
+  // Creators (if different from author)
+  repeated PersonOrOrganization creator = 6 [(hub.v1.field) = {
+    target: "contributors"
+    role: "creator"
+    description: "Creators"
+  }];
+  // Contributors
+  repeated PersonOrOrganization contributor = 7 [(hub.v1.field) = {
+    target: "contributors"
+    role: "contributor"
+    description: "Contributors"
+  }];
+  // Editors
+  repeated Person editor = 8 [(hub.v1.field) = {
+    target: "contributors"
+    role: "editor"
+    description: "Editors"
+  }];
+  // Publisher
+  PersonOrOrganization publisher = 9 [(hub.v1.field) = {
+    target: "publisher"
+    description: "Publisher"
+  }];
+
+  // Date published (ISO 8601)
+  string date_published = 10 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    parser: "iso8601"
+  }];
+  // Date created
+  string date_created = 11 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "created"
+    parser: "iso8601"
+  }];
+  // Date modified
+  string date_modified = 12 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "updated"
+    parser: "iso8601"
+  }];
+  // Copyright year
+  int32 copyright_year = 13 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "copyright"
+    description: "Copyright year"
+  }];
+  // Copyright holder
+  PersonOrOrganization copyright_holder = 14 [(hub.v1.field) = {
+    target: "rights"
+    description: "Copyright holder"
+  }];
+
+  // Genre
+  repeated string genre = 15 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "local"
+    description: "Genre"
+  }];
+  // Keywords
+  repeated string keywords = 16 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "keywords"
+  }];
+  // About (subjects)
+  repeated Thing about = 17 [(hub.v1.field) = {
+    target: "subjects"
+    description: "About/subject"
+  }];
+  // Language (BCP 47 code)
+  string in_language = 18 [(hub.v1.field) = {
+    target: "language"
+  }];
+
+  // License URL or text
+  string license = 19 [(hub.v1.field) = {
+    target: "rights"
+    description: "License"
+  }];
+  // Conditions of access
+  string conditions_of_access = 20 [(hub.v1.field) = {
+    target: "rights"
+    description: "Access conditions"
+  }];
+
+  // Part of (parent work)
+  CreativeWork is_part_of = 21 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Part of parent work"
+  }];
+  // Has parts (child works)
+  repeated CreativeWork has_part = 22 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "has_part"
+    description: "Has parts"
+  }];
+  // Citations
+  repeated CreativeWork citation = 23 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "cites"
+    description: "Citations"
+  }];
+
+  // Encoding format (MIME type)
+  string encoding_format = 24 [(hub.v1.field) = {
+    target: "extra"
+    description: "MIME type"
+  }];
+  // Content URL
+  string content_url = 25 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    description: "Content URL"
+  }];
+
+  // Funder
+  PersonOrOrganization funder = 26 [(hub.v1.field) = {
+    target: "funders"
+    description: "Funder"
+  }];
+  // Sponsor
+  PersonOrOrganization sponsor = 27 [(hub.v1.field) = {
+    target: "funders"
+    description: "Sponsor"
+  }];
+}
+
+// ScholarlyArticle - A scholarly article.
+message ScholarlyArticle {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org ScholarlyArticle maps to Hub Record with ARTICLE type"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Article body text
+  string article_body = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Article body text"
+  }];
+  // Article section
+  string article_section = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Article section"
+  }];
+  // Page start
+  string page_start = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Starting page"
+  }];
+  // Page end
+  string page_end = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Ending page"
+  }];
+  // Pagination (e.g., "pp. 1-10")
+  string pagination = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Pagination string"
+  }];
+  // Word count
+  int32 word_count = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Word count"
+  }];
+}
+
+// Book - A book.
+message Book {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Book maps to Hub Record with BOOK type"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // ISBN
+  string isbn = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    validators: "isbn"
+  }];
+  // Number of pages
+  int32 number_of_pages = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Number of pages"
+  }];
+  // Book edition
+  string book_edition = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Book edition"
+  }];
+  // Book format (EBook, Hardcover, Paperback)
+  string book_format = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Book format"
+  }];
+  // Illustrator
+  Person illustrator = 6 [(hub.v1.field) = {
+    target: "contributors"
+    role: "illustrator"
+  }];
+  // Is abridged
+  bool abridged = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Is abridged"
+  }];
+}
+
+// Dataset - A body of structured information.
+message Dataset {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Dataset maps to Hub Record with DATASET type"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Data distribution
+  repeated DataDownload distribution = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Data distribution"
+  }];
+  // Measurement technique
+  string measurement_technique = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Measurement technique"
+  }];
+  // Variables measured
+  repeated PropertyValue variable_measured = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Variables measured"
+  }];
+  // Temporal coverage
+  string temporal_coverage = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Temporal coverage"
+  }];
+  // Spatial coverage
+  Place spatial_coverage = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Spatial coverage"
+  }];
+}
+
+// Collection - A collection of creative works.
+message Collection {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Collection maps to Hub Record with COLLECTION type"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Number of items in collection
+  int32 collection_size = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Collection size"
+  }];
+}
+
+// DigitalDocument - An electronic document.
+message DigitalDocument {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org DigitalDocument maps to Hub Record"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+}
+
+// Manuscript - A book, document, or record written by hand.
+message Manuscript {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Manuscript maps to Hub Record"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+}
+
+// Thesis - A thesis or dissertation.
+message Thesis {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Thesis maps to Hub Record with THESIS/DISSERTATION type"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Degree type (e.g., "PhD", "Masters")
+  string in_support_of = 2 [(hub.v1.field) = {
+    target: "degree_info.degree_name"
+    description: "Degree type"
+  }];
+}
+
+// MediaObject - A media object.
+message MediaObject {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org MediaObject maps to Hub Record"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Direct URL to media
+  string content_url = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    description: "Content URL"
+  }];
+  // Embed URL
+  string embed_url = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Embed URL"
+  }];
+  // Encoding format (MIME type)
+  string encoding_format = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "MIME type"
+  }];
+  // Duration (ISO 8601)
+  string duration = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Duration"
+  }];
+  // Width
+  string width = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Width"
+  }];
+  // Height
+  string height = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Height"
+  }];
+  // Bitrate
+  string bitrate = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "Bitrate"
+  }];
+  // Upload date
+  string upload_date = 9 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "created"
+    parser: "iso8601"
+  }];
+}
+
+// AudioObject - An audio file.
+message AudioObject {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org AudioObject maps to Hub Record with AUDIO type"
+  };
+
+  MediaObject media_object = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base MediaObject properties"
+  }];
+
+  // Transcript
+  string transcript = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Transcript"
+  }];
+}
+
+// ImageObject - An image file.
+message ImageObject {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org ImageObject maps to Hub Record with IMAGE type"
+  };
+
+  MediaObject media_object = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base MediaObject properties"
+  }];
+
+  // Caption
+  string caption = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Caption"
+  }];
+  // EXIF data
+  string exif_data = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "EXIF data"
+  }];
+  // Is representative of page
+  bool representative_of_page = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Is representative of page"
+  }];
+}
+
+// VideoObject - A video file.
+message VideoObject {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org VideoObject maps to Hub Record with VIDEO type"
+  };
+
+  MediaObject media_object = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base MediaObject properties"
+  }];
+
+  // Transcript
+  string transcript = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Transcript"
+  }];
+  // Thumbnail
+  ImageObject thumbnail = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Thumbnail"
+  }];
+  // Video frame size
+  string video_frame_size = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Video frame size"
+  }];
+  // Video quality
+  string video_quality = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Video quality"
+  }];
+  // Director
+  Person director = 6 [(hub.v1.field) = {
+    target: "contributors"
+    role: "director"
+  }];
+  // Actors
+  repeated Person actor = 7 [(hub.v1.field) = {
+    target: "contributors"
+    role: "actor"
+  }];
+}
+
+// PublicationIssue - A single issue of a periodical.
+message PublicationIssue {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org PublicationIssue"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Issue number
+  string issue_number = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue number"
+  }];
+  // Page start
+  string page_start = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page start"
+  }];
+  // Page end
+  string page_end = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page end"
+  }];
+}
+
+// PublicationVolume - A single volume of a periodical.
+message PublicationVolume {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org PublicationVolume"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // Volume number
+  string volume_number = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume number"
+  }];
+  // Page start
+  string page_start = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page start"
+  }];
+  // Page end
+  string page_end = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page end"
+  }];
+}
+
+// Periodical - A publication in any medium with regular issues.
+message Periodical {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Schema.org Periodical"
+  };
+
+  CreativeWork creative_work = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base CreativeWork properties"
+  }];
+
+  // ISSN
+  string issn = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "issn"
+    validators: "issn"
+  }];
+}
+
+// Person - A person.
+message Person {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "Schema.org Person maps to Hub Contributor"
+  };
+
+  Thing thing = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base Thing properties"
+  }];
+
+  // Given name (first name)
+  string given_name = 2 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+  // Family name (last name)
+  string family_name = 3 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+  // Additional name (middle name)
+  string additional_name = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Middle name"
+  }];
+  // Honorific prefix (Dr., Prof.)
+  string honorific_prefix = 5 [(hub.v1.field) = {
+    target: "parsed_name.dropping_particle"
+    description: "Honorific prefix"
+  }];
+  // Honorific suffix (Jr., PhD)
+  string honorific_suffix = 6 [(hub.v1.field) = {
+    target: "parsed_name.suffix"
+  }];
+  // Email
+  string email = 7 [(hub.v1.field) = {
+    target: "extra"
+    validators: "email"
+  }];
+  // Affiliation
+  repeated Organization affiliation = 8 [(hub.v1.field) = {
+    target: "affiliations"
+  }];
+  // Job title
+  string job_title = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "Job title"
+  }];
+  // Works for
+  Organization works_for = 10 [(hub.v1.field) = {
+    target: "affiliations"
+    description: "Works for organization"
+  }];
+}
+
+// Organization - An organization.
+message Organization {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "Schema.org Organization maps to Hub Contributor"
+  };
+
+  Thing thing = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base Thing properties"
+  }];
+
+  // Legal name
+  string legal_name = 2 [(hub.v1.field) = {
+    target: "name"
+    description: "Legal name"
+  }];
+  // Email
+  string email = 3 [(hub.v1.field) = {
+    target: "extra"
+    validators: "email"
+  }];
+  // Telephone
+  string telephone = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Telephone"
+  }];
+  // Address
+  PostalAddress address = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Address"
+  }];
+  // Parent organization
+  Organization parent_organization = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Parent organization"
+  }];
+  // Department
+  Organization department = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Department"
+  }];
+}
+
+// PersonOrOrganization - Union type for Person or Organization.
+message PersonOrOrganization {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "Schema.org PersonOrOrganization union maps to Hub Contributor"
+  };
+
+  oneof entity {
+    Person person = 1;
+    Organization organization = 2;
+  }
+}
+
+// PropertyValue - A property-value pair for identifiers.
+message PropertyValue {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "Schema.org PropertyValue maps to Hub Identifier"
+  };
+
+  // Property ID (e.g., "doi", "orcid")
+  string property_id = 1 [(hub.v1.field) = {
+    target: "type"
+    description: "Identifier type"
+  }];
+  // Value
+  string value = 2 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Name
+  string name = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Property name"
+  }];
+  // Description
+  string description = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Property description"
+  }];
+}
+
+// PostalAddress - A mailing address.
+message PostalAddress {
+  string street_address = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Street address"
+  }];
+  string address_locality = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Locality/city"
+  }];
+  string address_region = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Region/state"
+  }];
+  string postal_code = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Postal code"
+  }];
+  string address_country = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Country"
+  }];
+}
+
+// Place - A geographic location.
+message Place {
+  Thing thing = 1 [(hub.v1.field) = {
+    target: "self"
+    description: "Base Thing properties"
+  }];
+
+  // Geo coordinates
+  GeoCoordinates geo = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Geographic coordinates"
+  }];
+  // Address
+  PostalAddress address = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Address"
+  }];
+}
+
+// GeoCoordinates - Geographic coordinates.
+message GeoCoordinates {
+  double latitude = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Latitude"
+  }];
+  double longitude = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Longitude"
+  }];
+  double elevation = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Elevation"
+  }];
+}
+
+// DataDownload - A dataset in downloadable form.
+message DataDownload {
+  // Content URL
+  string content_url = 1 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    validators: "url"
+  }];
+  // Encoding format (MIME type)
+  string encoding_format = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "MIME type"
+  }];
+  // Content size
+  string content_size = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Content size"
+  }];
+}

@@ -1,0 +1,534 @@
+
+<schema targetNamespace="http://arXiv.org/arXivRecord"
+  xmlns:arXivRecord="http://arXiv.org/arXivRecord"
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified"
+  version="1.0">
+
+<annotation>
+<documentation>
+Schema for arXiv metadata records
+
+Notes:
+
+1) all the comments should be rewritten as annotation/documentation
+elements and enclosed within the appropriate blocks. However, that
+is only really useful with automated editing tools that use these
+conventions. While I'm using emacs it is much easier to use
+comments.
+
+2) not all elements are appropriately constrained at this stage.
+Type "string" has been used in a number of places where further
+constraint is probably appropriate. Notes about this and other
+problems are marked with ###FIXME### in the comments.
+
+3) top element is called &lt;arXivRecord&gt; and has a version
+attribute which must be "1.0" for records corresponding to this
+schema.
+
+4) QUESTION - should we ditch the &lt;history&gt; section? Is the
+convenience of being able to display information for all versions
+after reading just one metadata file worth the duplication of
+information?  If information is duplicated, which copy should be
+considered authoritative? (Probably the metadata record for that
+version.) Note that a side effect of ditching this section would be
+that all mirrors must then have all versions, currently mirrors can
+display version information and link to the main site even if they
+don't have local copies (I don't think this is a big issue).
+
+5) QUESTION - should we include a field for copyright statements?
+
+6) QUESTION - we usually say 'date' when we actually mean a
+complete timestamp which is a dateTime object in XML. I have used
+'date' in this schema but perhaps we should change to either
+'timestamp' or 'datestamp'?
+
+Schema validated along with example (arXivRecord-example1.xml) with
+Xerces (J-2.2.1) and XSV (2.2-1 of 2002/12/01 21:59:33, web version)
+26Feb2003
+
+Simeon Warner $Date: 2005/11/29 21:14:37 $
+</documentation>
+</annotation>
+
+
+<element name="arXivRecord" type="arXivRecord:arXivRecordType"/>
+
+<!--
+An arXivRecord element contains all the metadata associated with
+a particular version of a paper on arXiv.
+-->
+<complexType name="arXivRecordType">
+  <sequence>
+    <element name="identifier" minOccurs="1" maxOccurs="1" 
+             type="arXivRecord:paperidType"/>
+    <element name="primary" minOccurs="1" maxOccurs="1" 
+             type="arXivRecord:classType"/>
+    <element name="cross" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:classType"/>
+    <element name="submitter" minOccurs="1" maxOccurs="1" 
+             type="arXivRecord:submitterType"/>
+    <element name="proxy" minOccurs="0" maxOccurs="1"
+             type="arXivRecord:proxyType"/>
+    <element name="version" minOccurs="1" maxOccurs="1"
+             type="integer"/>
+    <element name="date" minOccurs="1" maxOccurs="1"
+             type="arXivRecord:dateTimeZuluType"/>
+    <element name="source" minOccurs="1" maxOccurs="1"
+             type="arXivRecord:sourceType"/>
+    <element name="history" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:historyType"/>
+    <element name="title" minOccurs="1" maxOccurs="1"
+             type="arXivRecord:markupStringType"/>
+    <element name="authorship" minOccurs="1" maxOccurs="1"
+             type="arXivRecord:authorshipType"/>
+    <element name="classification" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:classificationType"/>
+    <element name="alternate" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:alternateType"/>
+    <element name="comments" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:markupStringType"/>
+    <element name="abstract" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:markupStringType"/>
+    <element name="attic" minOccurs="0" maxOccurs="unbounded"
+             type="arXivRecord:atticType"/>
+  </sequence>
+  <attribute name="version" type="decimal" use="required" fixed="1.0"/>
+</complexType>
+
+<!--
+This is the paperid in 'canonical form' which means that for math, cs, 
+nlin the two-letter subject class must be included. For all the archives 
+in the physics group, the subject class must be omitted. Examples include: 
+hep-th/9901001, math.AG/0101001, cs.PL/0202002
+-->
+  <simpleType name="paperidType">
+    <restriction base="string">
+      <pattern value="[a-z\-]+(\.[A-Z][A-Z])?\/\d\d\d\d\d\d\d"/>
+    </restriction>
+  </simpleType>
+
+<!--
+This type is used both for the primary and secondary (crosses)
+classifications. Classifications take the form of and archive 
+and subject class or possibly just an archive (if there are
+no subject classes). Examples include
+hep-th, math.AG, cond-mat.supr-con, nlin.SI
+-->
+  <simpleType name="classType">
+    <restriction base="string">
+      <pattern value="[a-z\-]+(\.[A-Za-z\-]+)?"/>
+    </restriction>
+  </simpleType>
+
+<!--
+Submitter information for this version of this paper.
+The 'identifier' is the userid in the user authentication system, 
+this must be optional since we don't have a userid for all 
+old submissions.
+-->
+  <complexType name="submitterType">
+    <sequence>
+      <element name="email" type="string"/>
+      <element name="identifier" minOccurs="0" maxOccurs="1"
+               type="arXivRecord:userIdType"/>
+    </sequence> 
+  </complexType>
+
+<!--
+Restricted string type for userid in the user authentication system.
+Current database of userids match the pattern below, tested with:
+  dbmmanage author_passwords view | 
+  perl -ne '($u,$r)=split; 
+            print "MISMATCH $u\n" unless ($u=~/^[a-z0-9#\.\-_+%\!]+$/);'
+-->
+  <simpleType name="userIdType">
+    <restriction base="string">
+      <pattern value="[a-z0-9#\.\-_+%!]+"/>
+    </restriction>
+  </simpleType>
+    
+<!--
+Proxy submitter information for this version of this paper.
+The 'identifier' is the userid of the proxy submitter.
+The 'remoteIdentifier' is optional record of the identifier within the proxy's
+database. This will be used in communications with the proxy regarding
+admin actions (move, remove, edit) as a way to enable back-propagation
+of changes.
+-->
+  <complexType name="proxyType">
+    <sequence>
+      <element name="identifier" type="arXivRecord:userIdType"/>
+      <element name="remoteIdentifier" minOccurs="0" maxOccurs="1"
+               type="string"/>
+    </sequence> 
+  </complexType>
+
+<!--
+Information about the source for full content of the submission. 
+(This model should be extended at some time.)
+
+The size and the MD5 sum are for the complete submission stored 
+in its normal one-file format (e.g. .pdf or .gz or .tar.gz...).
+-->
+  <complexType name="sourceType">
+    <sequence>
+      <element name="type" type="arXivRecord:typeType"/>
+      <element name="size" type="integer"/> <!--bytes-->
+      <element name="md5" type="arXivRecord:md5Type"/>
+    </sequence> 
+  </complexType>
+
+
+<!--
+Type of submission. Currently use a simple controlled vocab, should
+at some stage extend this to permit a more complex document model
+to be used (say a cut-down version of METS).
+-->
+  <simpleType name="typeType">
+    <restriction base="string">
+      <enumeration value="tex"/>
+      <enumeration value="encrypted-tex"/>
+      <enumeration value="ps"/>
+      <enumeration value="pdf"/>
+      <enumeration value="html"/>
+      <enumeration value="ignore"/>
+    </restriction>
+  </simpleType>
+
+
+<!-- 
+MD5 sum type, 32 hex characters
+-->
+  <simpleType name="md5Type">
+    <restriction base="string">
+      <pattern value="[0-9a-f]{32}"/>
+    </restriction>
+  </simpleType>
+
+
+<!--
+Type to store information for another version necessary to display the
+current abstract pages.
+-->
+  <complexType name="historyType">
+    <sequence>
+      <element name="version" minOccurs="1" maxOccurs="1"
+               type="integer"/>
+      <element name="date" minOccurs="1" maxOccurs="1"
+               type="arXivRecord:dateTimeZuluType"/>
+      <element name="source" minOccurs="1" maxOccurs="1"
+               type="arXivRecord:sourceType"/>
+    </sequence>
+  </complexType>
+
+
+
+<!--
+Type for strings that include markup (currently just TeX).
+###FIXME### must extend this type to include PaulH's markup scheme
+-->
+  <simpleType name="markupStringType">
+    <restriction base="string">
+      <!--Put restrictions in here...-->
+    </restriction>
+  </simpleType>
+
+
+<!--
+Encapsulation of author and affiliation information for a paper.
+-->
+  <complexType name="authorshipType">
+    <sequence>
+      <element name="affiliation" minOccurs="0" maxOccurs="unbounded"
+               type="arXivRecord:affiliationType"/>
+      <element name="author" minOccurs="0" maxOccurs="unbounded"
+               type="arXivRecord:authorType"/>
+    </sequence>
+  </complexType>
+
+
+<!--
+A single affiliation with an index attribute that is used to associate
+it with one or more authors. All indexes should appear in one or more 
+affiliation child elements in the author elements, this is not enforced
+by the schema.
+
+The institution must be included for all affiliations, an address element
+may optionally be included.
+-->
+  <complexType name="affiliationType">
+    <sequence>
+      <element name="institution" type="arXivRecord:instAddType"/>
+      <element name="address" minOccurs="0" type="arXivRecord:instAddType"/>
+    </sequence>
+    <attribute name="affid" use="required" type="integer"/>
+  </complexType>
+
+  <simpleType name="instAddType">
+    <restriction base="string">
+      <!--###FIXME### should constrain to subset of 'string'-->
+      <!--pattern value=".+"/-->
+    </restriction>
+  </simpleType>
+
+
+<!--
+The authorType is used to record information about a single author.
+The name is split into three parts: beforekey, keyname and afterkey,
+and may be followed by zero or more affiliation elements which encode 
+the indexes of separate affiliationType elements. There may also be
+a single role element that describes the role of that author.
+
+It is not intended that the element names beforekey, keyname and 
+afterkey be exposed to users. Likely displayed text for the 
+different fields would be
+  beforekey - "forename/given name"
+  keyname   - "surname/family name"
+  afterkey  - "suffix"
+
+Semantics:
+
+'keyname' is the name or names under which the author entry should
+be indexed. In European cultures this is usually the family name
+although it may consist of more than one word (e.g. Spanish names
+often have multi-word surnames which are not hyphenated). The
+keyname (or any other part of the name) should not be all uppercase
+as is common in France/Japan (i.e should be "Voltaire" and not
+"VOLTAIRE").
+
+'beforekey' are any parts of the name which would usually be
+displayed before the keyname. In European cultures this is usally
+one or more given names. Initials may be used instead of names and
+the initials may be followed by periods. Multiple initials must be
+separated by periods and/or spaces, otherwise they will be
+interpreted as a single name.
+
+'afterkey' are any parts of the name which would usually be
+displayed after the keyname. This includes the common suffixes in
+the US (Jr, Sr, II, III, IV, V). It is not appropriate to put
+forenames/given names in afterkey as a way of altering the
+formatting - cases where a submitter fills in afterkey but not
+beforekey should be flagged with a warning. The naming of the
+fields on the entry screen should also be used to discourage this.
+
+All three name fields may contain spaces. There should never be
+spaces at the start or the end of the individual elements; there
+should never be two or more spaces together.
+
+A 'role' element may be used to describe the role of a particular
+author in the production of the submission. In math, common roles 
+are "appendix", "edited by". In large physics collaborations we
+see "convened by" for working groups and such. 
+
+Rendering and data export:
+
+In arXiv, author names are usually presented in the form:
+  'beforekey keyname afterkey'
+
+Alternately, the keyname may be displayed first in the "French" style:
+  'keyname afterkey, beforekey'
+The second form will be used to export data in formats where the
+keyname is usually presented first (including the Creator and
+Contributor fields of Dublin Core metadata).
+
+Examples of correct use (bars indicate split
+|beforekey|keyname|afterkey|):
+
+Simeon Warner             - |Simeon|Warner||
+John von Neumann          - |John|von Neumann||
+Washington Tailor III     - |Washington|Tailor|III|
+Sumedha                   - ||Sumedha||
+  (single name, see cond-mat/0303450) 
+P.G. De Sanctis Lucentini - |P. G.|De Sanctis Lucentini||
+  (multi-word keyname, see astro-ph/0303233, gr-qc/0303095)
+J. L. Lucio M.            - |J. L.|Lucio|M.|
+  (initials after keyname,
+   see hep-ph/0204339, quant-ph/0303051, quant-ph/0303123)
+Sarasij R C               - ||Sarisij|R C|   
+  (initials after keyname, no first name, see cond-mat/0009167
+   Tanmoy says that although this is unusual it does occur in India.
+   also cond-mat/0304179)
+
+Special cases:
+
+1) keyname == 'et al' is used to allow the import of existing data
+which does not include a complete author list. No period should
+follow 'al' (and of course not 'et' either).
+
+2) names of working groups, collaborations that are "the author"
+(in the same sense that a corporation in the US is considered to
+have the same legal standing as an individual). The name should be
+split so that the keyname correctly includes the parts that should
+be indexed, e.g.
+
+  the Belle Collaboration - |the|Belle Collaboration||
+  the LEP Working Group   - |the|LEP Working Group||
+
+It is not correct to attempt to combine collaboration names in text
+such as "the H1 and DZero Collaborations", this should be split
+into two enteies: |the|H1 Collaboration|| and |the|DZero
+Collaboration||.  This format does not provide support to
+distinguish between "the X collaboration: A, B, C" (the X
+collaboration which comprises A, B, C - should probably be written
+"A, B, C (the X collaboration)")  and "the X collaboration, A, B,
+C" (the X collaboration and A and B and C). (examples:
+hep-ex/0211001 hep-ex/0211022 hep-ex/0211024)
+
+Bugs/limitations:
+
+1) there is no way to encode the roles of particular authors. This
+could be added later by adding and additional element (role?). It
+is quite common in mathematics for papers to include an appendix
+authored by someone other than the author(s) of the main paper.  
+In this case all authors should be listed (without qualification)
+in the author list, roles must be assigned within the comments.
+
+###FIXME### should constrain so that only whitespace permitted is a 
+###FIXME### normal space and these must not be repeated
+-->
+  <complexType name="authorType">
+    <sequence>
+      <element name="beforekey" type="arXivRecord:nameType" minOccurs="0"/>
+      <element name="keyname" type="arXivRecord:nameType"/>
+      <element name="afterkey" type="arXivRecord:nameType" minOccurs="0"/>
+      <element name="affiliation" minOccurs="0" maxOccurs="unbounded"
+               type="integer"/>
+      <element name="role" type="arXivRecord:roleType" minOccurs="0"/>
+    </sequence>
+    <attribute name="affref" use="required" type="string"/> <!--can we say whitespace separated integers?-->
+  </complexType>
+
+  <simpleType name="nameType">
+    <restriction base="normalizedString"> <!--whitespace normalized-->
+      <!--###FIXME### should constrain to subset of 'normalizedString'-->
+      <!--pattern value="..."/-->
+    </restriction>
+  </simpleType>
+
+  <simpleType name="roleType">
+    <restriction base="normalizedString"> <!--whitespace normalized-->
+      <!--###FIXME### should constrain to subset of 'normalizedString'-->
+      <!--pattern value="..."/-->
+    </restriction>
+  </simpleType>
+
+
+<!--
+Classification within one scheme. Content may contain one or more
+values that apply within the scheme. The values form an ordered
+list, the first is considered the primary classification and
+the rest are secondary. (Different sematics could be inferred if
+we later supported a scheme that had (say) primary, secondary,
+tertiary. The key point is that the list is ordered.)
+
+Examples:
+
+math.NA/0212035 currently has
+ 33F05 (Primary) 05A30, 11F20, 11P82, 33D99, 65D20, 82B23 (Secondary)
+which would become
+  &lt;classification scheme="MSC1991"&gt;
+    &lt;value&gt;33F05&lt;/value&gt; 
+    &lt;value&gt;05A30&lt;/value&gt; 
+    &lt;value&gt;11F20&lt;/value&gt; 
+    &lt;value&gt;11P82&lt;/value&gt; 
+    &lt;value&gt;33D99&lt;/value&gt; 
+    &lt;value&gt;65D20&lt;/value&gt; 
+    &lt;value&gt;82B23&lt;/value&gt; 
+  &lt;/classification&gt;
+
+Information on different schemes at:
+
+MSC  - see http://www.ams.org/msc/
+ACM  - see http://www.acm.org/class/1998/ccs98.html
+PACS - see http://www.aip.org/pacs/ http://publish.aps.org/PACS/
+
+Translation of existing data:
+
+MSC: What are we to do about math papers submitted before and after 2000? 
+Should we assume they are MSC1991 or MSC2000 depending on submission date?
+
+ACM: Will have to canonocalize existing entries to fit either 
+ [A-Z] [A-Z]\.[\dm] or [A-Z]\.\d\.[\dm]
+-->
+  <complexType name="classificationType">
+    <sequence>
+      <element name="value" maxOccurs="unbounded" type="arXivRecord:classificationValueType"/>
+    </sequence>
+    <attribute name="scheme" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="MSC1991"/>
+          <enumeration value="MSC2000"/>
+          <enumeration value="ACM1998"/>
+          <enumeration value="PACS2003"/> 
+        </restriction>
+      </simpleType> 
+    </attribute>
+    <!--attribute name="version" use="required" type="string" -Put in enumeration instead-->
+  </complexType>
+
+<!--
+Simple set of restrictions on string type that apply to all supported
+classifications. 
+-->
+  <simpleType name="classificationValueType">
+    <restriction base="string">
+      <!--###FIXME### may need to extend this pattern-->
+      <pattern value="[\w\.\+\-]+"/>
+    </restriction>
+  </simpleType>
+  
+   
+<!--
+Alternate identifiers for this content.
+###FIXME### restrict character sets?
+###FIXME### maybe add URL?
+-->
+  <complexType name="alternateType">
+    <sequence>
+      <element name="report-no" minOccurs="0" maxOccurs="unbounded"
+               type="normalizedString"/>
+      <element name="journal-ref" minOccurs="0" maxOccurs="unbounded"
+               type="normalizedString"/> 
+      <element name="DOI" minOccurs="0" maxOccurs="unbounded"
+               type="normalizedString"/> 
+    </sequence>
+  </complexType>
+
+
+<!--
+Restrict dateTime to allow only "Zulu" format specification
+of dateTime in UTC. This requires simply that we demand that
+the last character is a 'Z' since that is the only valid use
+of Z in dateTime. 
+-->
+  <simpleType name="dateTimeZuluType">
+    <restriction base="dateTime">
+      <pattern value=".+Z"/>
+    </restriction>
+  </simpleType>
+
+
+<!-- 
+A place to store an the old arXiv record for new records automatically
+generated from existing metadata. Content must be appropriately XML
+encoded (&lt; &gt; &quot; &amp;).
+
+The 'date' and 'note' attributes should contain the date of conversion
+and notes about the conversion respectively.
+-->
+  <complexType name="atticType">
+    <simpleContent>
+      <extension base="string">
+        <attribute name="date" use="required" type="arXivRecord:dateTimeZuluType"/>
+        <attribute name="note" use="optional" type="string"/>
+      </extension>
+    </simpleContent>
+  </complexType>
+   
+</schema>
+
+
+

@@ -1,0 +1,649 @@
+// Dublin Core Metadata Element Set.
+// Source: DCMI Metadata Terms 2020-01-20
+// Spec: https://www.dublincore.org/specifications/dublin-core/dcmi-terms/2020-01-20/
+syntax = "proto3";
+
+package spoke.dublincore.v20200120;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/spoke/dublincore/v20200120;dublincorev20200120";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the Dublin Core terms version this proto implements.
+// Value: "2020-01-20"
+
+// Record - A Dublin Core metadata record.
+// Contains the 15 core elements plus qualified Dublin Core terms.
+message Record {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "Dublin Core record maps to Hub Record"
+  };
+
+  // ===== Core 15 Dublin Core Elements =====
+
+  // Title - A name given to the resource.
+  repeated LocalizedString title = 1 [(hub.v1.field) = {
+    target: "title"
+    required: true
+    description: "Primary title of the resource"
+  }];
+
+  // Creator - An entity primarily responsible for making the resource.
+  repeated Agent creator = 2 [(hub.v1.field) = {
+    target: "contributors"
+    role: "creator"
+    description: "Primary creator/author"
+  }];
+
+  // Subject - The topic of the resource.
+  repeated Subject subject = 3 [(hub.v1.field) = {
+    target: "subjects"
+    description: "Subject/topic of the resource"
+  }];
+
+  // Description - An account of the resource.
+  repeated LocalizedString description = 4 [(hub.v1.field) = {
+    target: "abstract"
+    description: "Description or abstract"
+  }];
+
+  // Publisher - An entity responsible for making the resource available.
+  repeated Agent publisher = 5 [(hub.v1.field) = {
+    target: "publisher"
+    description: "Publisher of the resource"
+  }];
+
+  // Contributor - An entity responsible for making contributions to the resource.
+  repeated Agent contributor = 6 [(hub.v1.field) = {
+    target: "contributors"
+    role: "contributor"
+    description: "Other contributors"
+  }];
+
+  // Date - A point or period of time associated with the resource.
+  repeated Date date = 7 [(hub.v1.field) = {
+    target: "dates"
+    description: "Associated dates"
+  }];
+
+  // Type - The nature or genre of the resource.
+  repeated TypeValue type = 8 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "Resource type/genre"
+  }];
+
+  // Format - The file format, physical medium, or dimensions.
+  repeated string format = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "File format or physical medium"
+  }];
+
+  // Identifier - An unambiguous reference to the resource.
+  repeated Identifier identifier = 10 [(hub.v1.field) = {
+    target: "identifiers"
+    description: "Resource identifiers"
+  }];
+
+  // Source - A related resource from which the described resource is derived.
+  repeated string source = 11 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "derived_from"
+    description: "Source resource"
+  }];
+
+  // Language - A language of the resource.
+  repeated string language = 12 [(hub.v1.field) = {
+    target: "language"
+    description: "Language of the resource"
+  }];
+
+  // Relation - A related resource.
+  repeated Relation relation = 13 [(hub.v1.field) = {
+    target: "relations"
+    description: "Related resources"
+  }];
+
+  // Coverage - Spatial or temporal topic, jurisdiction.
+  repeated Coverage coverage = 14 [(hub.v1.field) = {
+    target: "extra"
+    description: "Spatial or temporal coverage"
+  }];
+
+  // Rights - Information about rights held in and over the resource.
+  repeated Rights rights = 15 [(hub.v1.field) = {
+    target: "rights"
+    description: "Rights information"
+  }];
+
+  // ===== Qualified Dublin Core Terms =====
+
+  // Alternative title
+  repeated LocalizedString alternative = 16 [(hub.v1.field) = {
+    target: "alt_title"
+    description: "Alternative title"
+  }];
+
+  // Table of contents
+  repeated LocalizedString table_of_contents = 17 [(hub.v1.field) = {
+    target: "table_of_contents"
+    description: "Table of contents"
+  }];
+
+  // Abstract
+  repeated LocalizedString abstract = 18 [(hub.v1.field) = {
+    target: "abstract"
+    description: "Abstract of the resource"
+  }];
+
+  // Date created
+  string created = 19 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "created"
+    parser: "iso8601"
+  }];
+
+  // Date valid
+  string valid = 20 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "other"
+    description: "Date valid"
+  }];
+
+  // Date available
+  string available = 21 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "available"
+    parser: "iso8601"
+  }];
+
+  // Date issued
+  string issued = 22 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+    parser: "iso8601"
+  }];
+
+  // Date modified
+  string modified = 23 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "updated"
+    parser: "iso8601"
+  }];
+
+  // Extent (size or duration)
+  repeated string extent = 24 [(hub.v1.field) = {
+    target: "extra"
+    description: "Size or duration"
+  }];
+
+  // Medium (physical carrier)
+  repeated string medium = 25 [(hub.v1.field) = {
+    target: "extra"
+    description: "Physical medium"
+  }];
+
+  // Is version of
+  repeated string is_version_of = 26 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "version_of"
+    description: "Is version of"
+  }];
+
+  // Has version
+  repeated string has_version = 27 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "has_version"
+    description: "Has version"
+  }];
+
+  // Is replaced by
+  repeated string is_replaced_by = 28 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "replaced_by"
+    description: "Is replaced by"
+  }];
+
+  // Replaces
+  repeated string replaces = 29 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "replaces"
+    description: "Replaces"
+  }];
+
+  // Is required by
+  repeated string is_required_by = 30 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "required_by"
+    description: "Is required by"
+  }];
+
+  // Requires
+  repeated string requires = 31 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "requires"
+    description: "Requires"
+  }];
+
+  // Is part of
+  repeated string is_part_of = 32 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Is part of"
+  }];
+
+  // Has part
+  repeated string has_part = 33 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "has_part"
+    description: "Has part"
+  }];
+
+  // Is referenced by
+  repeated string is_referenced_by = 34 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "cited_by"
+    description: "Is referenced by"
+  }];
+
+  // References
+  repeated string references = 35 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "cites"
+    description: "References"
+  }];
+
+  // Is format of
+  repeated string is_format_of = 36 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "other"
+    description: "Is format of"
+  }];
+
+  // Has format
+  repeated string has_format = 37 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "other"
+    description: "Has format"
+  }];
+
+  // Conforms to (standard)
+  repeated string conforms_to = 38 [(hub.v1.field) = {
+    target: "extra"
+    description: "Conforms to standard"
+  }];
+
+  // Spatial coverage
+  repeated SpatialCoverage spatial = 39 [(hub.v1.field) = {
+    target: "extra"
+    description: "Spatial coverage"
+  }];
+
+  // Temporal coverage
+  repeated string temporal = 40 [(hub.v1.field) = {
+    target: "extra"
+    description: "Temporal coverage"
+  }];
+
+  // Audience
+  repeated string audience = 41 [(hub.v1.field) = {
+    target: "extra"
+    description: "Intended audience"
+  }];
+
+  // Accrual method
+  string accrual_method = 42 [(hub.v1.field) = {
+    target: "extra"
+    description: "Accrual method"
+  }];
+
+  // Accrual periodicity
+  string accrual_periodicity = 43 [(hub.v1.field) = {
+    target: "extra"
+    description: "Accrual periodicity"
+  }];
+
+  // Accrual policy
+  string accrual_policy = 44 [(hub.v1.field) = {
+    target: "extra"
+    description: "Accrual policy"
+  }];
+
+  // Instructional method
+  string instructional_method = 45 [(hub.v1.field) = {
+    target: "extra"
+    description: "Instructional method"
+  }];
+
+  // Provenance
+  repeated LocalizedString provenance = 46 [(hub.v1.field) = {
+    target: "extra"
+    description: "Provenance statement"
+  }];
+
+  // Rights holder
+  repeated Agent rights_holder = 47 [(hub.v1.field) = {
+    target: "rights"
+    description: "Rights holder"
+  }];
+
+  // Mediator
+  repeated Agent mediator = 48 [(hub.v1.field) = {
+    target: "extra"
+    description: "Mediator"
+  }];
+
+  // Education level
+  repeated string education_level = 49 [(hub.v1.field) = {
+    target: "extra"
+    description: "Education level"
+  }];
+
+  // Access rights
+  repeated string access_rights = 50 [(hub.v1.field) = {
+    target: "rights"
+    description: "Access rights"
+  }];
+
+  // License
+  repeated string license = 51 [(hub.v1.field) = {
+    target: "rights"
+    description: "License information"
+  }];
+
+  // Bibliographic citation
+  string bibliographic_citation = 52 [(hub.v1.field) = {
+    target: "extra"
+    description: "Bibliographic citation"
+  }];
+}
+
+// LocalizedString - A string with optional language tag.
+message LocalizedString {
+  option (hub.v1.message) = {
+    target: "string"
+    description: "Localized string extracts value"
+  };
+
+  // The value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Language tag (BCP 47)
+  string lang = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language tag"
+  }];
+}
+
+// Agent - A person, organization, or service.
+message Agent {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "Dublin Core agent maps to Hub Contributor"
+  };
+
+  // Name of the agent
+  string name = 1 [(hub.v1.field) = {
+    target: "name"
+    parser: "bibtex_name"
+  }];
+  // URI identifying the agent
+  string uri = 2 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "uri"
+  }];
+  // Agent type
+  AgentType type = 3 [(hub.v1.field) = {
+    target: "contributor_type"
+  }];
+}
+
+// AgentType - Types of agents.
+enum AgentType {
+  AGENT_TYPE_UNSPECIFIED = 0;
+  AGENT_TYPE_PERSON = 1 [(hub.v1.enum_value) = {target: "CONTRIBUTOR_TYPE_PERSON"}];
+  AGENT_TYPE_ORGANIZATION = 2 [(hub.v1.enum_value) = {target: "CONTRIBUTOR_TYPE_ORGANIZATION"}];
+  AGENT_TYPE_SERVICE = 3 [(hub.v1.enum_value) = {target: "CONTRIBUTOR_TYPE_ORGANIZATION"}];
+}
+
+// Subject - A topic with optional vocabulary.
+message Subject {
+  option (hub.v1.message) = {
+    target: "Subject"
+    description: "Dublin Core subject maps to Hub Subject"
+  };
+
+  // Subject value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Subject scheme/vocabulary (e.g., LCSH, DDC)
+  string scheme = 2 [(hub.v1.field) = {
+    target: "vocabulary"
+    description: "Subject vocabulary scheme"
+  }];
+  // URI for the subject term
+  string uri = 3 [(hub.v1.field) = {
+    target: "uri"
+  }];
+  // Language
+  string lang = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language of subject term"
+  }];
+}
+
+// Date - A date with optional type qualification.
+message Date {
+  option (hub.v1.message) = {
+    target: "DateValue"
+    description: "Dublin Core date maps to Hub DateValue"
+  };
+
+  // Date value (ISO 8601 or free text)
+  string value = 1 [(hub.v1.field) = {
+    target: "raw"
+    parser: "iso8601"
+  }];
+  // Date type
+  DateType type = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+}
+
+// DateType - Types of dates.
+enum DateType {
+  DATE_TYPE_UNSPECIFIED = 0;
+  DATE_TYPE_CREATED = 1 [(hub.v1.enum_value) = {target: "DATE_TYPE_CREATED"}];
+  DATE_TYPE_VALID = 2 [(hub.v1.enum_value) = {target: "DATE_TYPE_OTHER"}];
+  DATE_TYPE_AVAILABLE = 3 [(hub.v1.enum_value) = {target: "DATE_TYPE_AVAILABLE"}];
+  DATE_TYPE_ISSUED = 4 [(hub.v1.enum_value) = {target: "DATE_TYPE_ISSUED"}];
+  DATE_TYPE_MODIFIED = 5 [(hub.v1.enum_value) = {target: "DATE_TYPE_UPDATED"}];
+  DATE_TYPE_DATE_ACCEPTED = 6 [(hub.v1.enum_value) = {target: "DATE_TYPE_ACCEPTED"}];
+  DATE_TYPE_DATE_COPYRIGHTED = 7 [(hub.v1.enum_value) = {target: "DATE_TYPE_COPYRIGHT"}];
+  DATE_TYPE_DATE_SUBMITTED = 8 [(hub.v1.enum_value) = {target: "DATE_TYPE_SUBMITTED"}];
+}
+
+// TypeValue - Resource type with vocabulary.
+message TypeValue {
+  option (hub.v1.message) = {
+    target: "ResourceType"
+    description: "Dublin Core type maps to Hub ResourceType"
+  };
+
+  // Type value
+  string value = 1 [(hub.v1.field) = {
+    target: "description"
+  }];
+  // Type scheme (e.g., DCMI Type Vocabulary)
+  string scheme = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Type vocabulary scheme"
+  }];
+  // URI for the type
+  string uri = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Type URI"
+  }];
+}
+
+// DCMIType - DCMI Type Vocabulary values.
+enum DCMIType {
+  DCMI_TYPE_UNSPECIFIED = 0;
+  DCMI_TYPE_COLLECTION = 1 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_COLLECTION"}];
+  DCMI_TYPE_DATASET = 2 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DATASET"}];
+  DCMI_TYPE_EVENT = 3 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  DCMI_TYPE_IMAGE = 4 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_IMAGE"}];
+  DCMI_TYPE_INTERACTIVE_RESOURCE = 5 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_INTERACTIVE"}];
+  DCMI_TYPE_MOVING_IMAGE = 6 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_VIDEO"}];
+  DCMI_TYPE_PHYSICAL_OBJECT = 7 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OBJECT"}];
+  DCMI_TYPE_SERVICE = 8 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  DCMI_TYPE_SOFTWARE = 9 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  DCMI_TYPE_SOUND = 10 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_AUDIO"}];
+  DCMI_TYPE_STILL_IMAGE = 11 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_IMAGE"}];
+  DCMI_TYPE_TEXT = 12 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_TEXT"}];
+}
+
+// Identifier - A resource identifier.
+message Identifier {
+  option (hub.v1.message) = {
+    target: "Identifier"
+    description: "Dublin Core identifier maps to Hub Identifier"
+  };
+
+  // Identifier value
+  string value = 1 [(hub.v1.field) = {
+    target: "value"
+  }];
+  // Identifier type (e.g., DOI, URI, ISBN)
+  string type = 2 [(hub.v1.field) = {
+    target: "type"
+    description: "Identifier type string"
+  }];
+}
+
+// Relation - A related resource.
+message Relation {
+  option (hub.v1.message) = {
+    target: "Relation"
+    description: "Dublin Core relation maps to Hub Relation"
+  };
+
+  // Related resource identifier or description
+  string value = 1 [(hub.v1.field) = {
+    target: "target_identifier"
+  }];
+  // Relation type
+  RelationType type = 2 [(hub.v1.field) = {
+    target: "type"
+  }];
+}
+
+// RelationType - Types of relations.
+enum RelationType {
+  RELATION_TYPE_UNSPECIFIED = 0;
+  RELATION_TYPE_IS_VERSION_OF = 1 [(hub.v1.enum_value) = {target: "RELATION_TYPE_VERSION_OF"}];
+  RELATION_TYPE_HAS_VERSION = 2 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_VERSION"}];
+  RELATION_TYPE_IS_REPLACED_BY = 3 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACED_BY"}];
+  RELATION_TYPE_REPLACES = 4 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REPLACES"}];
+  RELATION_TYPE_IS_REQUIRED_BY = 5 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REQUIRED_BY"}];
+  RELATION_TYPE_REQUIRES = 6 [(hub.v1.enum_value) = {target: "RELATION_TYPE_REQUIRES"}];
+  RELATION_TYPE_IS_PART_OF = 7 [(hub.v1.enum_value) = {target: "RELATION_TYPE_PART_OF"}];
+  RELATION_TYPE_HAS_PART = 8 [(hub.v1.enum_value) = {target: "RELATION_TYPE_HAS_PART"}];
+  RELATION_TYPE_IS_REFERENCED_BY = 9 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITED_BY"}];
+  RELATION_TYPE_REFERENCES = 10 [(hub.v1.enum_value) = {target: "RELATION_TYPE_CITES"}];
+  RELATION_TYPE_IS_FORMAT_OF = 11 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_HAS_FORMAT = 12 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+  RELATION_TYPE_CONFORMS_TO = 13 [(hub.v1.enum_value) = {target: "RELATION_TYPE_OTHER"}];
+}
+
+// Coverage - Spatial or temporal coverage.
+message Coverage {
+  // Coverage value
+  string value = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Coverage value"
+  }];
+  // Coverage type
+  CoverageType type = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Coverage type"
+  }];
+}
+
+// CoverageType - Types of coverage.
+enum CoverageType {
+  COVERAGE_TYPE_UNSPECIFIED = 0;
+  COVERAGE_TYPE_SPATIAL = 1;
+  COVERAGE_TYPE_TEMPORAL = 2;
+  COVERAGE_TYPE_JURISDICTION = 3;
+}
+
+// SpatialCoverage - Geographic coverage.
+message SpatialCoverage {
+  // Place name
+  string place = 1 [(hub.v1.field) = {
+    target: "extra"
+    description: "Place name"
+  }];
+  // Point coordinates
+  Point point = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Geographic point"
+  }];
+  // Bounding box
+  Box box = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Bounding box"
+  }];
+  // Named place URI (e.g., GeoNames)
+  string uri = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Place URI"
+  }];
+}
+
+// Point - A geographic point.
+message Point {
+  // Latitude (WGS84)
+  double latitude = 1;
+  // Longitude (WGS84)
+  double longitude = 2;
+}
+
+// Box - A geographic bounding box.
+message Box {
+  // Western boundary (longitude)
+  double west = 1;
+  // Eastern boundary (longitude)
+  double east = 2;
+  // Northern boundary (latitude)
+  double north = 3;
+  // Southern boundary (latitude)
+  double south = 4;
+}
+
+// Rights - Rights information.
+message Rights {
+  option (hub.v1.message) = {
+    target: "Rights"
+    description: "Dublin Core rights maps to Hub Rights"
+  };
+
+  // Rights statement
+  string statement = 1 [(hub.v1.field) = {
+    target: "statement"
+  }];
+  // Rights URI (license URL)
+  string uri = 2 [(hub.v1.field) = {
+    target: "uri"
+    validators: "url"
+  }];
+  // Language
+  string lang = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Language of rights statement"
+  }];
+}

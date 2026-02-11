@@ -1,0 +1,1247 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Group",
+    "definitions": {
+        "Group": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "GROUP_TYPE_UNSPECIFIED",
+                        0,
+                        "GROUP_TYPE_ISSUE",
+                        1,
+                        "GROUP_TYPE_COLLECTION",
+                        2,
+                        "GROUP_TYPE_SERIES",
+                        3,
+                        "GROUP_TYPE_VOLUME",
+                        4
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Group Type",
+                    "description": "GroupType identifies the type of grouping."
+                },
+                "container": {
+                    "$ref": "#/definitions/hub.v1.Record",
+                    "additionalProperties": true,
+                    "description": "Parent record (e.g., journal issue)"
+                },
+                "members": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Record"
+                    },
+                    "type": "array",
+                    "description": "Child records (e.g., articles)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Group",
+            "description": "Group represents a container with child records. Used for hierarchical outputs like CrossRef XML (issue + articles)."
+        },
+        "hub.v1.Affiliation": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Affiliation name"
+                },
+                "identifier": {
+                    "type": "string",
+                    "description": "Affiliation identifier (e.g., ROR)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "Type of identifier (e.g., \"ROR\", \"ISNI\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Affiliation",
+            "description": "Affiliation represents an institutional affiliation for a contributor."
+        },
+        "hub.v1.ArchivalLocation": {
+            "properties": {
+                "collection": {
+                    "type": "string"
+                },
+                "series": {
+                    "type": "string"
+                },
+                "box": {
+                    "type": "string"
+                },
+                "folder": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Archival Location",
+            "description": "ArchivalLocation represents physical archival location."
+        },
+        "hub.v1.Contributor": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the full name as a single string (e.g., \"Fries, Albert F. Jr.\")"
+                },
+                "parsed_name": {
+                    "$ref": "#/definitions/hub.v1.ParsedName",
+                    "additionalProperties": true,
+                    "description": "ParsedName contains parsed name components if available"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "Role is the contributor's role (e.g., \"creator\", \"author\", \"editor\")"
+                },
+                "role_code": {
+                    "type": "string",
+                    "description": "RoleCode is the original role code (e.g., \"relators:cre\")"
+                },
+                "type": {
+                    "enum": [
+                        "CONTRIBUTOR_TYPE_UNSPECIFIED",
+                        0,
+                        "CONTRIBUTOR_TYPE_PERSON",
+                        1,
+                        "CONTRIBUTOR_TYPE_ORGANIZATION",
+                        2
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Contributor Type",
+                    "description": "ContributorType indicates whether a contributor is a person or organization."
+                },
+                "identifiers": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Identifier"
+                    },
+                    "type": "array",
+                    "description": "Identifiers for the contributor (ORCID, ISNI, etc.)"
+                },
+                "affiliation": {
+                    "type": "string",
+                    "description": "Affiliation is the contributor's institutional affiliation (deprecated, use affiliations)"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "SourceID is the original ID from the source system"
+                },
+                "affiliations": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Affiliation"
+                    },
+                    "type": "array",
+                    "description": "Affiliations for the contributor (preferred over single affiliation field)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contributor",
+            "description": "Contributor represents a person or organization that contributed to a work."
+        },
+        "hub.v1.DateValue": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "DATE_TYPE_UNSPECIFIED",
+                        0,
+                        "DATE_TYPE_ISSUED",
+                        1,
+                        "DATE_TYPE_CREATED",
+                        2,
+                        "DATE_TYPE_CAPTURED",
+                        3,
+                        "DATE_TYPE_COPYRIGHT",
+                        4,
+                        "DATE_TYPE_MODIFIED",
+                        5,
+                        "DATE_TYPE_AVAILABLE",
+                        6,
+                        "DATE_TYPE_SUBMITTED",
+                        7,
+                        "DATE_TYPE_ACCEPTED",
+                        8,
+                        "DATE_TYPE_PUBLISHED",
+                        9,
+                        "DATE_TYPE_OTHER",
+                        10,
+                        "DATE_TYPE_VALID",
+                        11,
+                        "DATE_TYPE_UPDATED",
+                        12,
+                        "DATE_TYPE_COLLECTED",
+                        13
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Type",
+                    "description": "DateType indicates the semantic meaning of a date."
+                },
+                "raw": {
+                    "type": "string",
+                    "description": "Raw is the original date string as provided"
+                },
+                "year": {
+                    "type": "integer",
+                    "description": "Year, Month, Day represent the parsed date components"
+                },
+                "month": {
+                    "type": "integer",
+                    "description": "1-12, or 0 if unspecified"
+                },
+                "day": {
+                    "type": "integer",
+                    "description": "1-31, or 0 if unspecified"
+                },
+                "end_year": {
+                    "type": "integer",
+                    "description": "End date for ranges/intervals"
+                },
+                "end_month": {
+                    "type": "integer"
+                },
+                "end_day": {
+                    "type": "integer"
+                },
+                "precision": {
+                    "enum": [
+                        "DATE_PRECISION_UNSPECIFIED",
+                        0,
+                        "DATE_PRECISION_YEAR",
+                        1,
+                        "DATE_PRECISION_MONTH",
+                        2,
+                        "DATE_PRECISION_DAY",
+                        3,
+                        "DATE_PRECISION_TIME",
+                        4,
+                        "DATE_PRECISION_DECADE",
+                        5,
+                        "DATE_PRECISION_CENTURY",
+                        6
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Precision",
+                    "description": "DatePrecision indicates the granularity of a date."
+                },
+                "qualifier": {
+                    "enum": [
+                        "DATE_QUALIFIER_UNSPECIFIED",
+                        0,
+                        "DATE_QUALIFIER_APPROXIMATE",
+                        1,
+                        "DATE_QUALIFIER_UNCERTAIN",
+                        2,
+                        "DATE_QUALIFIER_BOTH",
+                        3
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Date Qualifier",
+                    "description": "DateQualifier indicates uncertainty or approximation."
+                },
+                "is_range": {
+                    "type": "boolean",
+                    "description": "IsRange indicates this is a date range"
+                },
+                "time": {
+                    "type": "string",
+                    "description": "Time component if available",
+                    "format": "date-time"
+                },
+                "season": {
+                    "type": "string",
+                    "description": "Season (e.g., \"Spring\", \"Winter\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Date Value",
+            "description": "DateValue represents a date with varying levels of precision and uncertainty. Supports EDTF (Extended Date/Time Format) concepts."
+        },
+        "hub.v1.DegreeInfo": {
+            "properties": {
+                "degree_name": {
+                    "type": "string",
+                    "description": "e.g., \"Master of Science\""
+                },
+                "degree_level": {
+                    "type": "string",
+                    "description": "e.g., \"Masters\", \"Doctoral\""
+                },
+                "department": {
+                    "type": "string",
+                    "description": "Granting department"
+                },
+                "institution": {
+                    "type": "string",
+                    "description": "Granting institution"
+                },
+                "date": {
+                    "$ref": "#/definitions/hub.v1.DateValue",
+                    "additionalProperties": true,
+                    "description": "Date degree was granted"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Degree Info",
+            "description": "DegreeInfo holds thesis/dissertation-specific metadata."
+        },
+        "hub.v1.File": {
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "size_bytes": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "description": "e.g. \"supplemental\", \"service\", \"thumbnail\""
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "File",
+            "description": "File represents a file associated with the record."
+        },
+        "hub.v1.Funder": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Funder name (e.g., \"National Science Foundation\")"
+                },
+                "identifier": {
+                    "type": "string",
+                    "description": "Funder identifier (e.g., Crossref Funder ID, ROR)"
+                },
+                "identifier_type": {
+                    "type": "string",
+                    "description": "Type of funder identifier"
+                },
+                "award_numbers": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Grant/award numbers"
+                },
+                "award_title": {
+                    "type": "string",
+                    "description": "Title of the funded project/award"
+                },
+                "award_uri": {
+                    "type": "string",
+                    "description": "URI for the award"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Funder",
+            "description": "Funder represents funding information for a resource."
+        },
+        "hub.v1.HierarchicalGeographic": {
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string",
+                    "description": "State/province"
+                },
+                "county": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "area": {
+                    "type": "string",
+                    "description": "Neighborhood/area"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Hierarchical Geographic",
+            "description": "HierarchicalGeographic represents structured geographic location data. Used for geographic subjects in MODS and similar formats."
+        },
+        "hub.v1.Identifier": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "IDENTIFIER_TYPE_UNSPECIFIED",
+                        0,
+                        "IDENTIFIER_TYPE_DOI",
+                        1,
+                        "IDENTIFIER_TYPE_URL",
+                        2,
+                        "IDENTIFIER_TYPE_HANDLE",
+                        3,
+                        "IDENTIFIER_TYPE_ISBN",
+                        4,
+                        "IDENTIFIER_TYPE_ISSN",
+                        5,
+                        "IDENTIFIER_TYPE_ORCID",
+                        6,
+                        "IDENTIFIER_TYPE_PMID",
+                        7,
+                        "IDENTIFIER_TYPE_PMCID",
+                        8,
+                        "IDENTIFIER_TYPE_ARXIV",
+                        9,
+                        "IDENTIFIER_TYPE_LOCAL",
+                        10,
+                        "IDENTIFIER_TYPE_PID",
+                        11,
+                        "IDENTIFIER_TYPE_NID",
+                        12,
+                        "IDENTIFIER_TYPE_UUID",
+                        13,
+                        "IDENTIFIER_TYPE_ISNI",
+                        14,
+                        "IDENTIFIER_TYPE_REPORT_NUMBER",
+                        15,
+                        "IDENTIFIER_TYPE_CALL_NUMBER",
+                        16
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Identifier Type",
+                    "description": "IdentifierType represents the type of identifier."
+                },
+                "value": {
+                    "type": "string"
+                },
+                "display": {
+                    "type": "string",
+                    "description": "Optional human-readable display form"
+                },
+                "is_preferred": {
+                    "type": "boolean",
+                    "description": "Is this the preferred identifier of its type?"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Identifier",
+            "description": "Identifier represents a typed identifier for a scholarly work."
+        },
+        "hub.v1.ParsedName": {
+            "properties": {
+                "family": {
+                    "type": "string",
+                    "description": "Last name / surname"
+                },
+                "given": {
+                    "type": "string",
+                    "description": "First name(s)"
+                },
+                "middle": {
+                    "type": "string",
+                    "description": "Middle name(s) or initial(s)"
+                },
+                "suffix": {
+                    "type": "string",
+                    "description": "Jr., Sr., III, etc."
+                },
+                "prefix": {
+                    "type": "string",
+                    "description": "von, van, de, etc."
+                },
+                "full_name": {
+                    "type": "string",
+                    "description": "Original full name string"
+                },
+                "normalized": {
+                    "type": "string",
+                    "description": "Normalized form: \"Family, Given Middle Suffix\""
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parsed Name",
+            "description": "ParsedName contains parsed components of a personal name."
+        },
+        "hub.v1.PublicationDetails": {
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Container title"
+                },
+                "volume": {
+                    "type": "string"
+                },
+                "issue": {
+                    "type": "string"
+                },
+                "pages": {
+                    "type": "string"
+                },
+                "issn": {
+                    "type": "string"
+                },
+                "l_issn": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Publication Details",
+            "description": "PublicationDetails holds specific publication metadata often found in citations."
+        },
+        "hub.v1.Record": {
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Core metadata"
+                },
+                "alt_title": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "abstract": {
+                    "type": "string"
+                },
+                "contributors": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Contributor"
+                    },
+                    "type": "array",
+                    "description": "Contributors (authors, editors, etc.)"
+                },
+                "dates": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.DateValue"
+                    },
+                    "type": "array",
+                    "description": "Dates with semantic types"
+                },
+                "resource_type": {
+                    "$ref": "#/definitions/hub.v1.ResourceType",
+                    "additionalProperties": true,
+                    "description": "Resource classification"
+                },
+                "genres": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Subject"
+                    },
+                    "type": "array"
+                },
+                "subjects": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Subject"
+                    },
+                    "type": "array",
+                    "description": "Subject access"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "publisher": {
+                    "type": "string",
+                    "description": "Publication info"
+                },
+                "place_published": {
+                    "type": "string"
+                },
+                "publication": {
+                    "$ref": "#/definitions/hub.v1.PublicationDetails",
+                    "additionalProperties": true
+                },
+                "rights": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Rights"
+                    },
+                    "type": "array",
+                    "description": "Rights and access"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "access_condition": {
+                    "type": "string"
+                },
+                "identifiers": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Identifier"
+                    },
+                    "type": "array",
+                    "description": "Identifiers"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Descriptions and notes"
+                },
+                "physical_desc": {
+                    "type": "string"
+                },
+                "notes": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "table_of_contents": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "digital_origin": {
+                    "type": "string"
+                },
+                "edition": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "preferred_citation": {
+                    "type": "string"
+                },
+                "object_model": {
+                    "type": "string",
+                    "description": "Technical Metadata"
+                },
+                "add_coverpage": {
+                    "type": "boolean"
+                },
+                "capture_device": {
+                    "type": "string"
+                },
+                "ppi": {
+                    "type": "integer"
+                },
+                "page_count": {
+                    "type": "integer",
+                    "description": "Physical description details"
+                },
+                "dimensions": {
+                    "type": "string"
+                },
+                "duration": {
+                    "type": "string"
+                },
+                "archival_location": {
+                    "$ref": "#/definitions/hub.v1.ArchivalLocation",
+                    "additionalProperties": true,
+                    "description": "Archival info"
+                },
+                "files": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.File"
+                    },
+                    "type": "array",
+                    "description": "Files"
+                },
+                "physical_form": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Subject"
+                    },
+                    "type": "array",
+                    "description": "Physical form (e.g. Getty AAT)"
+                },
+                "relations": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Relation"
+                    },
+                    "type": "array",
+                    "description": "Relations to other works"
+                },
+                "degree_info": {
+                    "$ref": "#/definitions/hub.v1.DegreeInfo",
+                    "additionalProperties": true,
+                    "description": "Thesis/dissertation specific"
+                },
+                "funders": {
+                    "items": {
+                        "$ref": "#/definitions/hub.v1.Funder"
+                    },
+                    "type": "array",
+                    "description": "Funding information"
+                },
+                "full_title": {
+                    "type": "string",
+                    "description": "Full title (when different from display title)"
+                },
+                "departments": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Related departments/units (for non-thesis items like faculty publications)"
+                },
+                "local_restriction": {
+                    "type": "string",
+                    "description": "Local access restrictions beyond rights statements"
+                },
+                "geographic": {
+                    "$ref": "#/definitions/hub.v1.HierarchicalGeographic",
+                    "additionalProperties": true,
+                    "description": "Structured geographic location"
+                },
+                "extra": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "Extra holds additional fields that don't map to standard Hub fields. Used for round-trip preservation and format-specific data. 1. This is a TEMPORARY home - if a field appears in \u003e50% of records,    promote it to a first-class field in the Hub schema. 2. Enforce consistent types - don't let spokes mix string \"10\" and int 10. 3. Use machine names as keys (dc_creator), never human labels (\"Creator\"). 4. Data here is NOT indexed/searchable - only use for pass-through. 5. Store semantics, not presentation (ISO dates, not \"March 15, 2024\"). Periodic audit: Run `crosswalk audit-extras` to find promotion candidates."
+                },
+                "source_info": {
+                    "$ref": "#/definitions/hub.v1.SourceInfo",
+                    "additionalProperties": true,
+                    "description": "Source metadata - tracks where this record came from for auditing."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Record",
+            "description": "Record represents a single scholarly work with its metadata. This is the central type of the hub - all formats convert to/from this."
+        },
+        "hub.v1.Relation": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "RELATION_TYPE_UNSPECIFIED",
+                        0,
+                        "RELATION_TYPE_MEMBER_OF",
+                        1,
+                        "RELATION_TYPE_HAS_MEMBER",
+                        2,
+                        "RELATION_TYPE_PART_OF",
+                        3,
+                        "RELATION_TYPE_HAS_PART",
+                        4,
+                        "RELATION_TYPE_VERSION_OF",
+                        5,
+                        "RELATION_TYPE_HAS_VERSION",
+                        6,
+                        "RELATION_TYPE_REPLACES",
+                        7,
+                        "RELATION_TYPE_IS_REPLACED_BY",
+                        8,
+                        "RELATION_TYPE_FORMAT_OF",
+                        9,
+                        "RELATION_TYPE_HAS_FORMAT",
+                        10,
+                        "RELATION_TYPE_REFERENCES",
+                        11,
+                        "RELATION_TYPE_IS_CITED_BY",
+                        12,
+                        "RELATION_TYPE_CITES",
+                        13,
+                        "RELATION_TYPE_DERIVED_FROM",
+                        14,
+                        "RELATION_TYPE_SOURCE_OF",
+                        15,
+                        "RELATION_TYPE_BASED_ON",
+                        16,
+                        "RELATION_TYPE_IS_BASIS_FOR",
+                        17,
+                        "RELATION_TYPE_SUPPLEMENTS",
+                        18,
+                        "RELATION_TYPE_IS_SUPPLEMENT_TO",
+                        19,
+                        "RELATION_TYPE_DOCUMENTS",
+                        20,
+                        "RELATION_TYPE_IS_DOCUMENTED_BY",
+                        21,
+                        "RELATION_TYPE_DESCRIBES",
+                        22,
+                        "RELATION_TYPE_IS_DESCRIBED_BY",
+                        23,
+                        "RELATION_TYPE_IDENTICAL_TO",
+                        24,
+                        "RELATION_TYPE_SAME_AS",
+                        25,
+                        "RELATION_TYPE_SERIES_OF",
+                        26,
+                        "RELATION_TYPE_IN_SERIES",
+                        27,
+                        "RELATION_TYPE_RELATED_TO",
+                        28,
+                        "RELATION_TYPE_OTHER",
+                        29,
+                        "RELATION_TYPE_SUPPLEMENTED_BY",
+                        30,
+                        "RELATION_TYPE_REQUIRED_BY",
+                        31,
+                        "RELATION_TYPE_REQUIRES",
+                        32,
+                        "RELATION_TYPE_REVIEWS",
+                        33
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Relation Type",
+                    "description": "RelationType represents the type of relationship between resources."
+                },
+                "target_title": {
+                    "type": "string"
+                },
+                "target_id": {
+                    "type": "string"
+                },
+                "target_id_type": {
+                    "enum": [
+                        "IDENTIFIER_TYPE_UNSPECIFIED",
+                        0,
+                        "IDENTIFIER_TYPE_DOI",
+                        1,
+                        "IDENTIFIER_TYPE_URL",
+                        2,
+                        "IDENTIFIER_TYPE_HANDLE",
+                        3,
+                        "IDENTIFIER_TYPE_ISBN",
+                        4,
+                        "IDENTIFIER_TYPE_ISSN",
+                        5,
+                        "IDENTIFIER_TYPE_ORCID",
+                        6,
+                        "IDENTIFIER_TYPE_PMID",
+                        7,
+                        "IDENTIFIER_TYPE_PMCID",
+                        8,
+                        "IDENTIFIER_TYPE_ARXIV",
+                        9,
+                        "IDENTIFIER_TYPE_LOCAL",
+                        10,
+                        "IDENTIFIER_TYPE_PID",
+                        11,
+                        "IDENTIFIER_TYPE_NID",
+                        12,
+                        "IDENTIFIER_TYPE_UUID",
+                        13,
+                        "IDENTIFIER_TYPE_ISNI",
+                        14,
+                        "IDENTIFIER_TYPE_REPORT_NUMBER",
+                        15,
+                        "IDENTIFIER_TYPE_CALL_NUMBER",
+                        16
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Identifier Type",
+                    "description": "IdentifierType represents the type of identifier."
+                },
+                "target_uri": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original ID from the source system"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Additional context about the relationship"
+                },
+                "target_resource_type": {
+                    "enum": [
+                        "RESOURCE_TYPE_UNSPECIFIED",
+                        0,
+                        "RESOURCE_TYPE_ARTICLE",
+                        1,
+                        "RESOURCE_TYPE_BOOK",
+                        2,
+                        "RESOURCE_TYPE_BOOK_CHAPTER",
+                        3,
+                        "RESOURCE_TYPE_CONFERENCE_PAPER",
+                        4,
+                        "RESOURCE_TYPE_DATASET",
+                        5,
+                        "RESOURCE_TYPE_DISSERTATION",
+                        6,
+                        "RESOURCE_TYPE_THESIS",
+                        7,
+                        "RESOURCE_TYPE_IMAGE",
+                        8,
+                        "RESOURCE_TYPE_JOURNAL",
+                        9,
+                        "RESOURCE_TYPE_REPORT",
+                        10,
+                        "RESOURCE_TYPE_TECHNICAL_REPORT",
+                        11,
+                        "RESOURCE_TYPE_WORKING_PAPER",
+                        12,
+                        "RESOURCE_TYPE_PREPRINT",
+                        13,
+                        "RESOURCE_TYPE_POSTER",
+                        14,
+                        "RESOURCE_TYPE_PRESENTATION",
+                        15,
+                        "RESOURCE_TYPE_SOFTWARE",
+                        16,
+                        "RESOURCE_TYPE_VIDEO",
+                        17,
+                        "RESOURCE_TYPE_AUDIO",
+                        18,
+                        "RESOURCE_TYPE_MAP",
+                        19,
+                        "RESOURCE_TYPE_NEWSPAPER",
+                        20,
+                        "RESOURCE_TYPE_NEWSPAPER_ARTICLE",
+                        21,
+                        "RESOURCE_TYPE_PERIODICAL",
+                        22,
+                        "RESOURCE_TYPE_COLLECTION",
+                        23,
+                        "RESOURCE_TYPE_ARCHIVAL_MATERIAL",
+                        24,
+                        "RESOURCE_TYPE_MANUSCRIPT",
+                        25,
+                        "RESOURCE_TYPE_PATENT",
+                        26,
+                        "RESOURCE_TYPE_STANDARD",
+                        27,
+                        "RESOURCE_TYPE_WEBPAGE",
+                        28,
+                        "RESOURCE_TYPE_OTHER",
+                        29,
+                        "RESOURCE_TYPE_PEER_REVIEW",
+                        30,
+                        "RESOURCE_TYPE_INTERACTIVE",
+                        31,
+                        "RESOURCE_TYPE_OBJECT",
+                        32,
+                        "RESOURCE_TYPE_CONFERENCE_PROCEEDING",
+                        33,
+                        "RESOURCE_TYPE_TEXT",
+                        34
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Resource Type Value",
+                    "description": "ResourceTypeValue is a normalized resource type."
+                },
+                "target_type_uri": {
+                    "type": "string",
+                    "description": "External URI for target's type (e.g., \"https://schema.org/Collection\")"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Relation",
+            "description": "Relation represents a relationship between this record and another resource."
+        },
+        "hub.v1.ResourceType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "RESOURCE_TYPE_UNSPECIFIED",
+                        0,
+                        "RESOURCE_TYPE_ARTICLE",
+                        1,
+                        "RESOURCE_TYPE_BOOK",
+                        2,
+                        "RESOURCE_TYPE_BOOK_CHAPTER",
+                        3,
+                        "RESOURCE_TYPE_CONFERENCE_PAPER",
+                        4,
+                        "RESOURCE_TYPE_DATASET",
+                        5,
+                        "RESOURCE_TYPE_DISSERTATION",
+                        6,
+                        "RESOURCE_TYPE_THESIS",
+                        7,
+                        "RESOURCE_TYPE_IMAGE",
+                        8,
+                        "RESOURCE_TYPE_JOURNAL",
+                        9,
+                        "RESOURCE_TYPE_REPORT",
+                        10,
+                        "RESOURCE_TYPE_TECHNICAL_REPORT",
+                        11,
+                        "RESOURCE_TYPE_WORKING_PAPER",
+                        12,
+                        "RESOURCE_TYPE_PREPRINT",
+                        13,
+                        "RESOURCE_TYPE_POSTER",
+                        14,
+                        "RESOURCE_TYPE_PRESENTATION",
+                        15,
+                        "RESOURCE_TYPE_SOFTWARE",
+                        16,
+                        "RESOURCE_TYPE_VIDEO",
+                        17,
+                        "RESOURCE_TYPE_AUDIO",
+                        18,
+                        "RESOURCE_TYPE_MAP",
+                        19,
+                        "RESOURCE_TYPE_NEWSPAPER",
+                        20,
+                        "RESOURCE_TYPE_NEWSPAPER_ARTICLE",
+                        21,
+                        "RESOURCE_TYPE_PERIODICAL",
+                        22,
+                        "RESOURCE_TYPE_COLLECTION",
+                        23,
+                        "RESOURCE_TYPE_ARCHIVAL_MATERIAL",
+                        24,
+                        "RESOURCE_TYPE_MANUSCRIPT",
+                        25,
+                        "RESOURCE_TYPE_PATENT",
+                        26,
+                        "RESOURCE_TYPE_STANDARD",
+                        27,
+                        "RESOURCE_TYPE_WEBPAGE",
+                        28,
+                        "RESOURCE_TYPE_OTHER",
+                        29,
+                        "RESOURCE_TYPE_PEER_REVIEW",
+                        30,
+                        "RESOURCE_TYPE_INTERACTIVE",
+                        31,
+                        "RESOURCE_TYPE_OBJECT",
+                        32,
+                        "RESOURCE_TYPE_CONFERENCE_PROCEEDING",
+                        33,
+                        "RESOURCE_TYPE_TEXT",
+                        34
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Resource Type Value",
+                    "description": "ResourceTypeValue is a normalized resource type."
+                },
+                "original": {
+                    "type": "string",
+                    "description": "Original type string from the source"
+                },
+                "vocabulary": {
+                    "type": "string",
+                    "description": "Vocabulary the original type came from"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Resource Type",
+            "description": "ResourceType represents the type of a scholarly resource."
+        },
+        "hub.v1.Rights": {
+            "properties": {
+                "statement": {
+                    "type": "string",
+                    "description": "Rights statement text"
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "URI for standardized rights statement"
+                },
+                "license": {
+                    "type": "string",
+                    "description": "License identifier (e.g., \"CC-BY-4.0\")"
+                },
+                "holder": {
+                    "type": "string",
+                    "description": "Rights holder name"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rights",
+            "description": "Rights represents rights information for a resource."
+        },
+        "hub.v1.SourceInfo": {
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "description": "Format name (e.g., \"drupal\", \"csv\", \"datacite\")"
+                },
+                "format_version": {
+                    "type": "string",
+                    "description": "Format version if applicable (e.g., \"5.3.1\" for CrossRef)"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original identifier in source system"
+                },
+                "parsed_at": {
+                    "type": "string",
+                    "description": "Timestamp when parsed into Hub format",
+                    "format": "date-time"
+                },
+                "profile": {
+                    "type": "string",
+                    "description": "Profile used for parsing (if any)"
+                },
+                "unmapped_fields": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Fields that were placed in 'extra' (for audit purposes)"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Source Info",
+            "description": "SourceInfo tracks the origin of a record for auditing and debugging."
+        },
+        "hub.v1.Subject": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "vocabulary": {
+                    "enum": [
+                        "SUBJECT_VOCABULARY_UNSPECIFIED",
+                        0,
+                        "SUBJECT_VOCABULARY_LCSH",
+                        1,
+                        "SUBJECT_VOCABULARY_MESH",
+                        2,
+                        "SUBJECT_VOCABULARY_AAT",
+                        3,
+                        "SUBJECT_VOCABULARY_FAST",
+                        4,
+                        "SUBJECT_VOCABULARY_DDC",
+                        5,
+                        "SUBJECT_VOCABULARY_LCC",
+                        6,
+                        "SUBJECT_VOCABULARY_KEYWORDS",
+                        7,
+                        "SUBJECT_VOCABULARY_GENRE",
+                        8,
+                        "SUBJECT_VOCABULARY_LOCAL",
+                        9,
+                        "SUBJECT_VOCABULARY_GETTY_TGN",
+                        10,
+                        "SUBJECT_VOCABULARY_LCNAF",
+                        11,
+                        "SUBJECT_VOCABULARY_ARXIV",
+                        12,
+                        "SUBJECT_VOCABULARY_MSC",
+                        13,
+                        "SUBJECT_VOCABULARY_ACM",
+                        14,
+                        "SUBJECT_VOCABULARY_PACS",
+                        15
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Subject Vocabulary",
+                    "description": "SubjectVocabulary identifies the vocabulary a subject term comes from."
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "Optional URI for the subject term"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original ID from the source system"
+                },
+                "type": {
+                    "enum": [
+                        "SUBJECT_TYPE_UNSPECIFIED",
+                        0,
+                        "SUBJECT_TYPE_TOPIC",
+                        1,
+                        "SUBJECT_TYPE_NAME",
+                        2,
+                        "SUBJECT_TYPE_GEOGRAPHIC",
+                        3,
+                        "SUBJECT_TYPE_TEMPORAL",
+                        4,
+                        "SUBJECT_TYPE_GENRE",
+                        5,
+                        "SUBJECT_TYPE_TITLE",
+                        6
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Subject Type",
+                    "description": "SubjectType indicates the type of subject (topic, name, place)."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Subject",
+            "description": "Subject represents a subject, keyword, or topic classification."
+        }
+    }
+}

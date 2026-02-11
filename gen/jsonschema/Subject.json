@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Subject",
+    "definitions": {
+        "Subject": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "vocabulary": {
+                    "enum": [
+                        "SUBJECT_VOCABULARY_UNSPECIFIED",
+                        0,
+                        "SUBJECT_VOCABULARY_LCSH",
+                        1,
+                        "SUBJECT_VOCABULARY_MESH",
+                        2,
+                        "SUBJECT_VOCABULARY_AAT",
+                        3,
+                        "SUBJECT_VOCABULARY_FAST",
+                        4,
+                        "SUBJECT_VOCABULARY_DDC",
+                        5,
+                        "SUBJECT_VOCABULARY_LCC",
+                        6,
+                        "SUBJECT_VOCABULARY_KEYWORDS",
+                        7,
+                        "SUBJECT_VOCABULARY_GENRE",
+                        8,
+                        "SUBJECT_VOCABULARY_LOCAL",
+                        9,
+                        "SUBJECT_VOCABULARY_GETTY_TGN",
+                        10,
+                        "SUBJECT_VOCABULARY_LCNAF",
+                        11,
+                        "SUBJECT_VOCABULARY_ARXIV",
+                        12,
+                        "SUBJECT_VOCABULARY_MSC",
+                        13,
+                        "SUBJECT_VOCABULARY_ACM",
+                        14,
+                        "SUBJECT_VOCABULARY_PACS",
+                        15
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Subject Vocabulary",
+                    "description": "SubjectVocabulary identifies the vocabulary a subject term comes from."
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "Optional URI for the subject term"
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "Original ID from the source system"
+                },
+                "type": {
+                    "enum": [
+                        "SUBJECT_TYPE_UNSPECIFIED",
+                        0,
+                        "SUBJECT_TYPE_TOPIC",
+                        1,
+                        "SUBJECT_TYPE_NAME",
+                        2,
+                        "SUBJECT_TYPE_GEOGRAPHIC",
+                        3,
+                        "SUBJECT_TYPE_TEMPORAL",
+                        4,
+                        "SUBJECT_TYPE_GENRE",
+                        5,
+                        "SUBJECT_TYPE_TITLE",
+                        6
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Subject Type",
+                    "description": "SubjectType indicates the type of subject (topic, name, place)."
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Subject",
+            "description": "Subject represents a subject, keyword, or topic classification."
+        }
+    }
+}

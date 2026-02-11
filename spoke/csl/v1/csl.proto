@@ -1,0 +1,643 @@
+// CSL-JSON (Citation Style Language JSON) format.
+// Source: CSL 1.0.2 specification
+// Spec: https://github.com/citation-style-language/schema/blob/v1.0.2/schemas/input/csl-data.json
+// Note: Awaiting fixture file for verification. Update version when spec is verified.
+syntax = "proto3";
+
+package spoke.csl.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/spoke/csl/v1;cslv1";
+
+import "hub/v1/options.proto";
+
+// SCHEMA_VERSION is the CSL schema version this proto targets.
+// Value: "1.0.2" (pending verification against fixture)
+
+// Item - A CSL-JSON citation item.
+message Item {
+  option (hub.v1.message) = {
+    target: "Record"
+    preserve_unmapped: true
+    description: "CSL-JSON item maps to Hub Record"
+  };
+
+  // Unique identifier for the item
+  string id = 1 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "local"
+    description: "CSL item ID"
+  }];
+
+  // Item type
+  ItemType type = 2 [(hub.v1.field) = {
+    target: "resource_type"
+    description: "CSL item type maps to resource type"
+  }];
+
+  // ===== Core Fields =====
+
+  // Title of the item
+  string title = 3 [(hub.v1.field) = {
+    target: "title"
+    required: true
+  }];
+
+  // Short title
+  string title_short = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Short title"
+  }];
+
+  // Container title (journal, book, etc.)
+  string container_title = 5 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "part_of"
+    description: "Container title (journal, book)"
+  }];
+
+  // Short container title
+  string container_title_short = 6 [(hub.v1.field) = {
+    target: "extra"
+    description: "Short container title"
+  }];
+
+  // Collection title (series)
+  string collection_title = 7 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "in_series"
+    description: "Series title"
+  }];
+
+  // ===== Contributors =====
+
+  // Authors
+  repeated Name author = 8 [(hub.v1.field) = {
+    target: "contributors"
+    role: "author"
+    contributor_type: "person"
+  }];
+
+  // Editors
+  repeated Name editor = 9 [(hub.v1.field) = {
+    target: "contributors"
+    role: "editor"
+    contributor_type: "person"
+  }];
+
+  // Translators
+  repeated Name translator = 10 [(hub.v1.field) = {
+    target: "contributors"
+    role: "translator"
+    contributor_type: "person"
+  }];
+
+  // Reviewers
+  repeated Name reviewed_author = 11 [(hub.v1.field) = {
+    target: "extra"
+    description: "Reviewed work author"
+  }];
+
+  // Container authors (for chapter in edited book)
+  repeated Name container_author = 12 [(hub.v1.field) = {
+    target: "extra"
+    description: "Container author"
+  }];
+
+  // Collection editors (series editors)
+  repeated Name collection_editor = 13 [(hub.v1.field) = {
+    target: "contributors"
+    role: "editor"
+    contributor_type: "person"
+    description: "Series editor"
+  }];
+
+  // Composers
+  repeated Name composer = 14 [(hub.v1.field) = {
+    target: "contributors"
+    role: "composer"
+    contributor_type: "person"
+  }];
+
+  // Directors
+  repeated Name director = 15 [(hub.v1.field) = {
+    target: "contributors"
+    role: "director"
+    contributor_type: "person"
+  }];
+
+  // Interviewers
+  repeated Name interviewer = 16 [(hub.v1.field) = {
+    target: "contributors"
+    role: "interviewer"
+    contributor_type: "person"
+  }];
+
+  // Recipients (for correspondence)
+  repeated Name recipient = 17 [(hub.v1.field) = {
+    target: "contributors"
+    role: "recipient"
+    contributor_type: "person"
+  }];
+
+  // ===== Dates =====
+
+  // Date of publication
+  Date issued = 18 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "issued"
+  }];
+
+  // Date accessed (for online resources)
+  Date accessed = 19 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "captured"
+    description: "Access date"
+  }];
+
+  // Original date
+  Date original_date = 20 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "created"
+    description: "Original publication date"
+  }];
+
+  // Submitted date
+  Date submitted = 21 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "other"
+    description: "Submission date"
+  }];
+
+  // Event date
+  Date event_date = 22 [(hub.v1.field) = {
+    target: "dates"
+    date_type: "other"
+    description: "Event date"
+  }];
+
+  // ===== Locators =====
+
+  // Page numbers
+  string page = 23 [(hub.v1.field) = {
+    target: "extra"
+    description: "Page range"
+  }];
+
+  // First page
+  string page_first = 24 [(hub.v1.field) = {
+    target: "extra"
+    description: "First page"
+  }];
+
+  // Volume
+  string volume = 25 [(hub.v1.field) = {
+    target: "extra"
+    description: "Volume number"
+  }];
+
+  // Issue
+  string issue = 26 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issue number"
+  }];
+
+  // Number
+  string number = 27 [(hub.v1.field) = {
+    target: "extra"
+    description: "Number"
+  }];
+
+  // Chapter number
+  string chapter_number = 28 [(hub.v1.field) = {
+    target: "extra"
+    description: "Chapter number"
+  }];
+
+  // Edition
+  string edition = 29 [(hub.v1.field) = {
+    target: "extra"
+    description: "Edition"
+  }];
+
+  // Number of volumes
+  string number_of_volumes = 30 [(hub.v1.field) = {
+    target: "extra"
+    description: "Number of volumes"
+  }];
+
+  // Number of pages
+  string number_of_pages = 31 [(hub.v1.field) = {
+    target: "extra"
+    description: "Total page count"
+  }];
+
+  // ===== Identifiers =====
+
+  // DOI
+  string doi = 32 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "doi"
+    parser: "doi"
+    validators: "doi"
+  }];
+
+  // ISBN
+  string isbn = 33 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isbn"
+    parser: "isbn"
+    validators: "isbn"
+  }];
+
+  // ISSN
+  string issn = 34 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "issn"
+    validators: "issn"
+  }];
+
+  // PMID
+  string pmid = 35 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "pmid"
+    description: "PubMed ID"
+  }];
+
+  // PMCID
+  string pmcid = 36 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "pmcid"
+    description: "PubMed Central ID"
+  }];
+
+  // URL
+  string url = 37 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "url"
+    validators: "url"
+  }];
+
+  // ===== Publisher Info =====
+
+  // Publisher
+  string publisher = 38 [(hub.v1.field) = {
+    target: "publisher"
+  }];
+
+  // Publisher place
+  string publisher_place = 39 [(hub.v1.field) = {
+    target: "place_published"
+  }];
+
+  // Original publisher
+  string original_publisher = 40 [(hub.v1.field) = {
+    target: "extra"
+    description: "Original publisher"
+  }];
+
+  // Original publisher place
+  string original_publisher_place = 41 [(hub.v1.field) = {
+    target: "extra"
+    description: "Original publisher place"
+  }];
+
+  // ===== Other Fields =====
+
+  // Abstract
+  string abstract = 42 [(hub.v1.field) = {
+    target: "abstract"
+  }];
+
+  // Notes
+  string note = 43 [(hub.v1.field) = {
+    target: "notes"
+  }];
+
+  // Annotation
+  string annote = 44 [(hub.v1.field) = {
+    target: "notes"
+  }];
+
+  // Language
+  string language = 45 [(hub.v1.field) = {
+    target: "language"
+  }];
+
+  // Original title
+  string original_title = 46 [(hub.v1.field) = {
+    target: "extra"
+    description: "Original language title"
+  }];
+
+  // Genre
+  string genre = 47 [(hub.v1.field) = {
+    target: "genre"
+  }];
+
+  // Medium
+  string medium = 48 [(hub.v1.field) = {
+    target: "extra"
+    description: "Medium/format"
+  }];
+
+  // Dimensions
+  string dimensions = 49 [(hub.v1.field) = {
+    target: "physical_desc"
+    description: "Physical dimensions"
+  }];
+
+  // Scale (for maps)
+  string scale = 50 [(hub.v1.field) = {
+    target: "extra"
+    description: "Map scale"
+  }];
+
+  // Version
+  string version = 51 [(hub.v1.field) = {
+    target: "extra"
+    description: "Version number"
+  }];
+
+  // Status
+  string status = 52 [(hub.v1.field) = {
+    target: "extra"
+    description: "Publication status"
+  }];
+
+  // Source (database or archive)
+  string source = 53 [(hub.v1.field) = {
+    target: "source"
+  }];
+
+  // Archive
+  string archive = 54 [(hub.v1.field) = {
+    target: "extra"
+    description: "Archive name"
+  }];
+
+  // Archive location
+  string archive_location = 55 [(hub.v1.field) = {
+    target: "extra"
+    description: "Location in archive"
+  }];
+
+  // Archive place
+  string archive_place = 56 [(hub.v1.field) = {
+    target: "extra"
+    description: "Archive location"
+  }];
+
+  // Call number
+  string call_number = 57 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "local"
+    description: "Library call number"
+  }];
+
+  // Citation key (for BibTeX compatibility)
+  string citation_key = 58 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "local"
+    description: "Citation key"
+  }];
+
+  // Citation label
+  string citation_label = 59 [(hub.v1.field) = {
+    target: "extra"
+    description: "Citation label"
+  }];
+
+  // Event name
+  string event = 60 [(hub.v1.field) = {
+    target: "extra"
+    description: "Event/conference name"
+  }];
+
+  // Event place
+  string event_place = 61 [(hub.v1.field) = {
+    target: "extra"
+    description: "Event location"
+  }];
+
+  // Jurisdiction
+  string jurisdiction = 62 [(hub.v1.field) = {
+    target: "extra"
+    description: "Legal jurisdiction"
+  }];
+
+  // Keyword
+  string keyword = 63 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "keywords"
+    delimiter: ","
+    parser: "split"
+  }];
+
+  // References
+  string references = 64 [(hub.v1.field) = {
+    target: "extra"
+    description: "References text"
+  }];
+
+  // Reviewed title
+  string reviewed_title = 65 [(hub.v1.field) = {
+    target: "relations"
+    relation_type: "reviews"
+    description: "Title of reviewed work"
+  }];
+
+  // Section
+  string section = 66 [(hub.v1.field) = {
+    target: "extra"
+    description: "Section"
+  }];
+
+  // Authority
+  string authority = 67 [(hub.v1.field) = {
+    target: "extra"
+    description: "Issuing authority"
+  }];
+
+  // ===== Custom Fields =====
+
+  // Custom fields as key-value pairs
+  map<string, string> custom = 68 [(hub.v1.field) = {
+    target: "extra"
+    description: "Custom fields"
+  }];
+
+  // ===== Categories =====
+
+  // Categories/tags
+  repeated string categories = 69 [(hub.v1.field) = {
+    target: "subjects"
+    subject_vocabulary: "local"
+    description: "Categories/tags"
+  }];
+}
+
+// ItemType - CSL item types.
+enum ItemType {
+  ITEM_TYPE_UNSPECIFIED = 0;
+  ITEM_TYPE_ARTICLE = 1 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  ITEM_TYPE_ARTICLE_JOURNAL = 2 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  ITEM_TYPE_ARTICLE_MAGAZINE = 3 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  ITEM_TYPE_ARTICLE_NEWSPAPER = 4 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_ARTICLE"}];
+  ITEM_TYPE_BILL = 5 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_BOOK = 6 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK"}];
+  ITEM_TYPE_BROADCAST = 7 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_CHAPTER = 8 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_BOOK_CHAPTER"}];
+  ITEM_TYPE_CLASSIC = 9 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_COLLECTION = 10 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_COLLECTION"}];
+  ITEM_TYPE_DATASET = 11 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_DATASET"}];
+  ITEM_TYPE_DOCUMENT = 12 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_ENTRY = 13 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_ENTRY_DICTIONARY = 14 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_ENTRY_ENCYCLOPEDIA = 15 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_EVENT = 16 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_FIGURE = 17 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_IMAGE"}];
+  ITEM_TYPE_GRAPHIC = 18 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_IMAGE"}];
+  ITEM_TYPE_HEARING = 19 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_INTERVIEW = 20 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_LEGAL_CASE = 21 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_LEGISLATION = 22 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_MANUSCRIPT = 23 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_MANUSCRIPT"}];
+  ITEM_TYPE_MAP = 24 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_MAP"}];
+  ITEM_TYPE_MOTION_PICTURE = 25 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_VIDEO"}];
+  ITEM_TYPE_MUSICAL_SCORE = 26 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_PAMPHLET = 27 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_PAPER_CONFERENCE = 28 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_CONFERENCE_PAPER"}];
+  ITEM_TYPE_PATENT = 29 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_PATENT"}];
+  ITEM_TYPE_PERFORMANCE = 30 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_PERIODICAL = 31 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_JOURNAL"}];
+  ITEM_TYPE_PERSONAL_COMMUNICATION = 32 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_POST = 33 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_WEBPAGE"}];
+  ITEM_TYPE_POST_WEBLOG = 34 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_WEBPAGE"}];
+  ITEM_TYPE_REGULATION = 35 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_REPORT = 36 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_REPORT"}];
+  ITEM_TYPE_REVIEW = 37 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_REVIEW_BOOK = 38 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_SOFTWARE = 39 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_SOFTWARE"}];
+  ITEM_TYPE_SONG = 40 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_AUDIO"}];
+  ITEM_TYPE_SPEECH = 41 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_PRESENTATION"}];
+  ITEM_TYPE_STANDARD = 42 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_THESIS = 43 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_THESIS"}];
+  ITEM_TYPE_TREATY = 44 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_OTHER"}];
+  ITEM_TYPE_WEBPAGE = 45 [(hub.v1.enum_value) = {target: "RESOURCE_TYPE_WEBPAGE"}];
+}
+
+// Name - A person or organization name.
+message Name {
+  option (hub.v1.message) = {
+    target: "Contributor"
+    description: "CSL name maps to Hub Contributor"
+  };
+
+  // Family name (surname)
+  string family = 1 [(hub.v1.field) = {
+    target: "parsed_name.family"
+  }];
+
+  // Given name (first name)
+  string given = 2 [(hub.v1.field) = {
+    target: "parsed_name.given"
+  }];
+
+  // Dropping particle (e.g., "van" in "van Gogh" when sorting)
+  string dropping_particle = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Dropping particle"
+  }];
+
+  // Non-dropping particle (e.g., "de" in "de la Cruz")
+  string non_dropping_particle = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Non-dropping particle"
+  }];
+
+  // Suffix (Jr., III, etc.)
+  string suffix = 5 [(hub.v1.field) = {
+    target: "parsed_name.suffix"
+  }];
+
+  // Literal name (for organizations or single-string names)
+  string literal = 6 [(hub.v1.field) = {
+    target: "name"
+    description: "Literal/organizational name"
+  }];
+
+  // Comma suffix (for inverted names)
+  bool comma_suffix = 7 [(hub.v1.field) = {
+    target: "extra"
+    description: "Comma suffix flag"
+  }];
+
+  // Static ordering (don't reorder name parts)
+  bool static_ordering = 8 [(hub.v1.field) = {
+    target: "extra"
+    description: "Static ordering flag"
+  }];
+
+  // Parse names (whether to parse literal into parts)
+  bool parse_names = 9 [(hub.v1.field) = {
+    target: "extra"
+    description: "Parse names flag"
+  }];
+
+  // ISNI
+  string isni = 10 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "isni"
+    description: "ISNI identifier"
+  }];
+
+  // ORCID
+  string orcid = 11 [(hub.v1.field) = {
+    target: "identifiers"
+    identifier_type: "orcid"
+    parser: "orcid"
+    validators: "orcid"
+  }];
+}
+
+// Date - A CSL date.
+message Date {
+  // Date parts: [[year, month, day]] or [[year1, month1, day1], [year2, month2, day2]] for ranges
+  repeated DateParts date_parts = 1;
+
+  // Literal date string (when unparseable)
+  string literal = 2 [(hub.v1.field) = {
+    target: "extra"
+    description: "Literal date string"
+  }];
+
+  // Raw date string
+  string raw = 3 [(hub.v1.field) = {
+    target: "extra"
+    description: "Raw date string"
+  }];
+
+  // Season (1=spring, 2=summer, 3=fall, 4=winter)
+  int32 season = 4 [(hub.v1.field) = {
+    target: "extra"
+    description: "Season"
+  }];
+
+  // Circa (approximate date)
+  bool circa = 5 [(hub.v1.field) = {
+    target: "extra"
+    description: "Approximate date flag"
+  }];
+}
+
+// DateParts - A single date (year, month, day).
+message DateParts {
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+}
+
+// Bibliography - A collection of CSL items.
+message Bibliography {
+  repeated Item items = 1;
+}

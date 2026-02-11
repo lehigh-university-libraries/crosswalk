@@ -1,0 +1,106 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ResourceType",
+    "definitions": {
+        "ResourceType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "RESOURCE_TYPE_UNSPECIFIED",
+                        0,
+                        "RESOURCE_TYPE_ARTICLE",
+                        1,
+                        "RESOURCE_TYPE_BOOK",
+                        2,
+                        "RESOURCE_TYPE_BOOK_CHAPTER",
+                        3,
+                        "RESOURCE_TYPE_CONFERENCE_PAPER",
+                        4,
+                        "RESOURCE_TYPE_DATASET",
+                        5,
+                        "RESOURCE_TYPE_DISSERTATION",
+                        6,
+                        "RESOURCE_TYPE_THESIS",
+                        7,
+                        "RESOURCE_TYPE_IMAGE",
+                        8,
+                        "RESOURCE_TYPE_JOURNAL",
+                        9,
+                        "RESOURCE_TYPE_REPORT",
+                        10,
+                        "RESOURCE_TYPE_TECHNICAL_REPORT",
+                        11,
+                        "RESOURCE_TYPE_WORKING_PAPER",
+                        12,
+                        "RESOURCE_TYPE_PREPRINT",
+                        13,
+                        "RESOURCE_TYPE_POSTER",
+                        14,
+                        "RESOURCE_TYPE_PRESENTATION",
+                        15,
+                        "RESOURCE_TYPE_SOFTWARE",
+                        16,
+                        "RESOURCE_TYPE_VIDEO",
+                        17,
+                        "RESOURCE_TYPE_AUDIO",
+                        18,
+                        "RESOURCE_TYPE_MAP",
+                        19,
+                        "RESOURCE_TYPE_NEWSPAPER",
+                        20,
+                        "RESOURCE_TYPE_NEWSPAPER_ARTICLE",
+                        21,
+                        "RESOURCE_TYPE_PERIODICAL",
+                        22,
+                        "RESOURCE_TYPE_COLLECTION",
+                        23,
+                        "RESOURCE_TYPE_ARCHIVAL_MATERIAL",
+                        24,
+                        "RESOURCE_TYPE_MANUSCRIPT",
+                        25,
+                        "RESOURCE_TYPE_PATENT",
+                        26,
+                        "RESOURCE_TYPE_STANDARD",
+                        27,
+                        "RESOURCE_TYPE_WEBPAGE",
+                        28,
+                        "RESOURCE_TYPE_OTHER",
+                        29,
+                        "RESOURCE_TYPE_PEER_REVIEW",
+                        30,
+                        "RESOURCE_TYPE_INTERACTIVE",
+                        31,
+                        "RESOURCE_TYPE_OBJECT",
+                        32,
+                        "RESOURCE_TYPE_CONFERENCE_PROCEEDING",
+                        33,
+                        "RESOURCE_TYPE_TEXT",
+                        34
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Resource Type Value",
+                    "description": "ResourceTypeValue is a normalized resource type."
+                },
+                "original": {
+                    "type": "string",
+                    "description": "Original type string from the source"
+                },
+                "vocabulary": {
+                    "type": "string",
+                    "description": "Vocabulary the original type came from"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Resource Type",
+            "description": "ResourceType represents the type of a scholarly resource."
+        }
+    }
+}
