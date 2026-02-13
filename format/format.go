@@ -79,6 +79,11 @@ type SerializeOptions struct {
 
 	// Pretty enables pretty-printing (for JSON/XML formats)
 	Pretty bool
+
+	// ExtraWriters holds additional output writers for formats that produce
+	// more than one output file. Keys are format-specific names.
+	// Example: the islandora-workbench format writes an agents CSV to ExtraWriters["agents"].
+	ExtraWriters map[string]io.Writer
 }
 
 // TaxonomyResolver resolves taxonomy term IDs to their values.

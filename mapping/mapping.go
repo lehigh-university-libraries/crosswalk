@@ -133,7 +133,6 @@ func DefaultCSVColumns() []string {
 	return []string{
 		"title",
 		"contributors",
-		"contributor_roles",
 		"date_issued",
 		"date_created",
 		"resource_type",

@@ -67,6 +67,15 @@ For Drupal:
   This reads the Drupal configuration export directory and auto-generates
   field mappings based on field names and types.
 
+For Islandora Workbench:
+  crosswalk profile create islandora-workbench islandora-workbench \
+    --bundle islandora_object --from-config ./config/sync
+
+  This reads the Drupal configuration and generates a profile that maps
+  Workbench CSV column names (Drupal field names) to hub fields.
+  Use this when you want to import/export content via Islandora Workbench CSV
+  without needing to write Go code or define protobuf schemas.
+
 For CSV:
   crosswalk profile create csv my-template --from-file sample.csv
 
@@ -79,7 +88,9 @@ For CSV:
 var (
 	profileFromConfig string
 	profileFromFile   string
+	profileBundle     string
 	profileAutoMap    bool
+	profileForce      bool
 )
 
 func init() {
@@ -92,7 +103,9 @@ func init() {
 
 	profileCreateCmd.Flags().StringVar(&profileFromConfig, "from-config", "", "Path to Drupal config/sync directory")
 	profileCreateCmd.Flags().StringVar(&profileFromFile, "from-file", "", "Path to sample CSV file")
+	profileCreateCmd.Flags().StringVar(&profileBundle, "bundle", "", "Drupal bundle/content type (e.g., islandora_object)")
 	profileCreateCmd.Flags().BoolVar(&profileAutoMap, "auto", false, "Auto-generate mappings without interactive prompts")
+	profileCreateCmd.Flags().BoolVarP(&profileForce, "force", "f", false, "Overwrite existing profile")
 }
 
 func runProfileList(cmd *cobra.Command, args []string) error {
@@ -223,8 +236,8 @@ func runProfileCreate(cmd *cobra.Command, args []string) error {
 	name := args[1]
 
 	// Check if profile already exists
-	if profile.Exists(name) {
-		return fmt.Errorf("profile %q already exists; delete it first or choose a different name", name)
+	if profile.Exists(name) && !profileForce {
+		return fmt.Errorf("profile %q already exists; use --force to overwrite", name)
 	}
 
 	var p *profile.Profile
@@ -238,6 +251,18 @@ func runProfileCreate(cmd *cobra.Command, args []string) error {
 		p, err = profile.CreateDrupalProfile(name, profileFromConfig)
 		if err != nil {
 			return fmt.Errorf("creating Drupal profile: %w", err)
+		}
+
+	case "islandora-workbench":
+		if profileFromConfig == "" {
+			return fmt.Errorf("--from-config is required for islandora-workbench profiles")
+		}
+		if profileBundle == "" {
+			return fmt.Errorf("--bundle is required for islandora-workbench profiles (e.g., --bundle islandora_object)")
+		}
+		p, err = profile.CreateWorkbenchProfile(name, profileBundle, profileFromConfig)
+		if err != nil {
+			return fmt.Errorf("creating islandora-workbench profile: %w", err)
 		}
 
 	case "csv":
@@ -260,7 +285,7 @@ func runProfileCreate(cmd *cobra.Command, args []string) error {
 		}
 
 	default:
-		return fmt.Errorf("unknown format: %s (use 'drupal' or 'csv')", format)
+		return fmt.Errorf("unknown format: %s (use 'drupal', 'islandora-workbench', or 'csv')", format)
 	}
 
 	if err := p.Save(); err != nil {
