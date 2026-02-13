@@ -18,12 +18,16 @@ message Record {
     target: "Record"
     preserve_unmapped: true
     description: "MODS Record maps to Hub Record"
+    xml_name: "mods"
+    xml_default_ns: "http://www.loc.gov/mods/v3"
+    xml_namespaces: ["xsi=http://www.w3.org/2001/XMLSchema-instance", "xlink=http://www.w3.org/1999/xlink"]
   };
 
   // Title information
   repeated TitleInfo title_info = 1 [(hub.v1.field) = {
     target: "title"
     required: true
+    xml_name: "titleInfo"
   }];
   // Name (person, organization, etc.)
   repeated Name name = 2 [(hub.v1.field) = {
@@ -32,6 +36,7 @@ message Record {
   // Type of resource
   repeated TypeOfResource type_of_resource = 3 [(hub.v1.field) = {
     target: "resource_type"
+    xml_name: "typeOfResource"
   }];
   // Genre
   repeated Genre genre = 4 [(hub.v1.field) = {
@@ -43,6 +48,7 @@ message Record {
   repeated OriginInfo origin_info = 5 [(hub.v1.field) = {
     target: "self"
     description: "Publication information"
+    xml_name: "originInfo"
   }];
   // Language
   repeated Language language = 6 [(hub.v1.field) = {
@@ -52,6 +58,7 @@ message Record {
   repeated PhysicalDescription physical_description = 7 [(hub.v1.field) = {
     target: "extra"
     description: "Physical description"
+    xml_name: "physicalDescription"
   }];
   // Abstract
   repeated Abstract abstract = 8 [(hub.v1.field) = {
@@ -61,11 +68,13 @@ message Record {
   repeated TableOfContents table_of_contents = 9 [(hub.v1.field) = {
     target: "extra"
     description: "Table of contents"
+    xml_name: "tableOfContents"
   }];
   // Target audience
   repeated TargetAudience target_audience = 10 [(hub.v1.field) = {
     target: "extra"
     description: "Target audience"
+    xml_name: "targetAudience"
   }];
   // Note
   repeated Note note = 11 [(hub.v1.field) = {
@@ -83,6 +92,7 @@ message Record {
   // Related item
   repeated RelatedItem related_item = 14 [(hub.v1.field) = {
     target: "relations"
+    xml_name: "relatedItem"
   }];
   // Identifier
   repeated Identifier identifier = 15 [(hub.v1.field) = {
@@ -96,6 +106,7 @@ message Record {
   // Access condition
   repeated AccessCondition access_condition = 17 [(hub.v1.field) = {
     target: "rights"
+    xml_name: "accessCondition"
   }];
   // Part
   repeated Part part = 18 [(hub.v1.field) = {
@@ -111,6 +122,7 @@ message Record {
   RecordInfo record_info = 20 [(hub.v1.field) = {
     target: "extra"
     description: "Record metadata"
+    xml_name: "recordInfo"
   }];
 }
 
@@ -119,12 +131,14 @@ message TitleInfo {
   option (hub.v1.message) = {
     target: "string"
     description: "MODS TitleInfo extracts title"
+    xml_name: "titleInfo"
   };
 
   // Title type
   TitleType type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Title type"
+    xml_attr: true
   }];
   // Title text
   string title = 2 [(hub.v1.field) = {
@@ -135,36 +149,45 @@ message TitleInfo {
   string sub_title = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Subtitle"
+    xml_name: "subTitle"
   }];
   // Part number
   string part_number = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Part number"
+    xml_name: "partNumber"
   }];
   // Part name
   string part_name = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Part name"
+    xml_name: "partName"
   }];
   // Non-sort characters (e.g., "The ")
   string non_sort = 6 [(hub.v1.field) = {
     target: "extra"
     description: "Non-sort prefix"
+    xml_name: "nonSort"
   }];
   // Display label
   string display_label = 7 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_name: "displayLabel"
+    xml_attr: true
   }];
   // Language
   string lang = 8 [(hub.v1.field) = {
     target: "extra"
     description: "Title language"
+    xml_attr: true
+    xml_name: "xml:lang"
   }];
   // Authority
   string authority = 9 [(hub.v1.field) = {
     target: "extra"
     description: "Authority"
+    xml_attr: true
   }];
 }
 
@@ -182,20 +205,24 @@ message Name {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "MODS Name maps to Hub Contributor"
+    xml_name: "name"
   };
 
   // Name type
   NameType type = 1 [(hub.v1.field) = {
     target: "contributor_type"
+    xml_attr: true
   }];
   // Name parts
   repeated NamePart name_part = 2 [(hub.v1.field) = {
     target: "parsed_name"
     description: "Name parts"
+    xml_name: "namePart"
   }];
   // Display form
   string display_form = 3 [(hub.v1.field) = {
     target: "name"
+    xml_name: "displayForm"
   }];
   // Affiliation
   repeated string affiliation = 4 [(hub.v1.field) = {
@@ -213,21 +240,27 @@ message Name {
   // Name identifier (e.g., ORCID URI)
   repeated NameIdentifier name_identifier = 7 [(hub.v1.field) = {
     target: "identifiers"
+    xml_name: "nameIdentifier"
   }];
   // Authority
   string authority = 8 [(hub.v1.field) = {
     target: "extra"
     description: "Name authority"
+    xml_attr: true
   }];
   // Authority URI
   string authority_uri = 9 [(hub.v1.field) = {
     target: "extra"
     description: "Authority URI"
+    xml_attr: true
+    xml_name: "authorityURI"
   }];
   // Value URI
   string value_uri = 10 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "uri"
+    xml_attr: true
+    xml_name: "valueURI"
   }];
 }
 
@@ -242,14 +275,20 @@ enum NameType {
 
 // NamePart - A part of a name.
 message NamePart {
+  option (hub.v1.message) = {
+    xml_name: "namePart"
+  };
+
   // Part type
   NamePartType type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Name part type"
+    xml_attr: true
   }];
   // Value
   string value = 2 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
 }
 
@@ -267,42 +306,57 @@ message NameIdentifier {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "MODS NameIdentifier maps to Hub Identifier"
+    xml_name: "nameIdentifier"
   };
 
   // Identifier value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Type (e.g., "orcid", "isni")
   string type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
   }];
 }
 
 // Role - A role associated with a name.
 message Role {
+  option (hub.v1.message) = {
+    xml_name: "role"
+  };
+
   repeated RoleTerm role_term = 1 [(hub.v1.field) = {
     target: "value"
     parser: "relator"
     description: "Role terms"
+    xml_name: "roleTerm"
   }];
 }
 
 // RoleTerm - A role term.
 message RoleTerm {
+  option (hub.v1.message) = {
+    xml_name: "roleTerm"
+  };
+
   // Role type
   RoleTermType type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Role term type"
+    xml_attr: true
   }];
   // Authority (e.g., "marcrelator")
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Role authority"
+    xml_attr: true
   }];
   // Value
   string value = 3 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
 }
 
@@ -318,21 +372,25 @@ message TypeOfResource {
   option (hub.v1.message) = {
     target: "ResourceType"
     description: "MODS TypeOfResource maps to Hub ResourceType"
+    xml_name: "typeOfResource"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "description"
+    xml_chardata: true
   }];
   // Collection
   bool collection = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Is collection"
+    xml_attr: true
   }];
   // Manuscript
   bool manuscript = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Is manuscript"
+    xml_attr: true
   }];
 }
 
@@ -341,29 +399,39 @@ message Genre {
   option (hub.v1.message) = {
     target: "Subject"
     description: "MODS Genre maps to Hub Subject"
+    xml_name: "genre"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Authority
   string authority = 2 [(hub.v1.field) = {
     target: "vocabulary"
+    xml_attr: true
   }];
   // Type
   string type = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Genre type"
+    xml_attr: true
   }];
 }
 
 // OriginInfo - Origin/publication information.
 message OriginInfo {
+  option (hub.v1.message) = {
+    xml_name: "originInfo"
+  };
+
   // Event type
   OriginEventType event_type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Event type"
+    xml_attr: true
+    xml_name: "eventType"
   }];
   // Place of publication
   repeated Place place = 2 [(hub.v1.field) = {
@@ -377,38 +445,45 @@ message OriginInfo {
   repeated DateElement date_issued = 4 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "dateIssued"
   }];
   // Date created
   repeated DateElement date_created = 5 [(hub.v1.field) = {
     target: "dates"
     date_type: "created"
+    xml_name: "dateCreated"
   }];
   // Date captured
   repeated DateElement date_captured = 6 [(hub.v1.field) = {
     target: "dates"
     date_type: "other"
     description: "Date captured"
+    xml_name: "dateCaptured"
   }];
   // Date valid
   repeated DateElement date_valid = 7 [(hub.v1.field) = {
     target: "dates"
     date_type: "other"
     description: "Date valid"
+    xml_name: "dateValid"
   }];
   // Date modified
   repeated DateElement date_modified = 8 [(hub.v1.field) = {
     target: "dates"
     date_type: "updated"
+    xml_name: "dateModified"
   }];
   // Copyright date
   repeated DateElement copyright_date = 9 [(hub.v1.field) = {
     target: "dates"
     date_type: "copyright"
+    xml_name: "copyrightDate"
   }];
   // Date other
   repeated DateElement date_other = 10 [(hub.v1.field) = {
     target: "dates"
     date_type: "other"
+    xml_name: "dateOther"
   }];
   // Edition
   string edition = 11 [(hub.v1.field) = {
@@ -438,27 +513,39 @@ enum OriginEventType {
 
 // Place - A place.
 message Place {
+  option (hub.v1.message) = {
+    xml_name: "place"
+  };
+
   repeated PlaceTerm place_term = 1 [(hub.v1.field) = {
     target: "value"
     description: "Place terms"
+    xml_name: "placeTerm"
   }];
 }
 
 // PlaceTerm - A place term.
 message PlaceTerm {
+  option (hub.v1.message) = {
+    xml_name: "placeTerm"
+  };
+
   // Type
   PlaceTermType type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Place term type"
+    xml_attr: true
   }];
   // Authority (e.g., "marccountry")
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Place authority"
+    xml_attr: true
   }];
   // Value
   string value = 3 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
 }
 
@@ -480,26 +567,32 @@ message DateElement {
   string value = 1 [(hub.v1.field) = {
     target: "raw"
     parser: "edtf"
+    xml_chardata: true
   }];
   // Encoding (e.g., "w3cdtf", "iso8601", "marc")
   string encoding = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Date encoding"
+    xml_attr: true
   }];
   // Point (start, end)
   DatePoint point = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Date point"
+    xml_attr: true
   }];
   // Key date
   bool key_date = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Is key date"
+    xml_attr: true
+    xml_name: "keyDate"
   }];
   // Qualifier
   DateQualifier qualifier = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Date qualifier"
+    xml_attr: true
   }];
 }
 
@@ -531,32 +624,45 @@ enum Issuance {
 
 // Language - Language information.
 message Language {
+  option (hub.v1.message) = {
+    xml_name: "language"
+  };
+
   repeated LanguageTerm language_term = 1 [(hub.v1.field) = {
     target: "value"
     description: "Language terms"
+    xml_name: "languageTerm"
   }];
   // Script term
   repeated ScriptTerm script_term = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Script terms"
+    xml_name: "scriptTerm"
   }];
 }
 
 // LanguageTerm - A language term.
 message LanguageTerm {
+  option (hub.v1.message) = {
+    xml_name: "languageTerm"
+  };
+
   // Type
   LanguageTermType type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Language term type"
+    xml_attr: true
   }];
   // Authority (e.g., "iso639-2b")
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Language authority"
+    xml_attr: true
   }];
   // Value
   string value = 3 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
 }
 
@@ -569,24 +675,35 @@ enum LanguageTermType {
 
 // ScriptTerm - A script term.
 message ScriptTerm {
+  option (hub.v1.message) = {
+    xml_name: "scriptTerm"
+  };
+
   // Type
   string type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Script term type"
+    xml_attr: true
   }];
   // Authority
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Script authority"
+    xml_attr: true
   }];
   // Value
   string value = 3 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
 }
 
 // PhysicalDescription - Physical description.
 message PhysicalDescription {
+  option (hub.v1.message) = {
+    xml_name: "physicalDescription"
+  };
+
   // Form
   repeated Form form = 1 [(hub.v1.field) = {
     target: "extra"
@@ -596,11 +713,13 @@ message PhysicalDescription {
   string reformatting_quality = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Reformatting quality"
+    xml_name: "reformattingQuality"
   }];
   // Internet media type
   repeated string internet_media_type = 3 [(hub.v1.field) = {
     target: "extra"
     description: "MIME type"
+    xml_name: "internetMediaType"
   }];
   // Extent
   repeated string extent = 4 [(hub.v1.field) = {
@@ -611,6 +730,7 @@ message PhysicalDescription {
   string digital_origin = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Digital origin"
+    xml_name: "digitalOrigin"
   }];
   // Note
   repeated Note note = 6 [(hub.v1.field) = {
@@ -621,19 +741,26 @@ message PhysicalDescription {
 
 // Form - Form of resource.
 message Form {
+  option (hub.v1.message) = {
+    xml_name: "form"
+  };
+
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Type
   string type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Form type"
+    xml_attr: true
   }];
   // Authority
   string authority = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Form authority"
+    xml_attr: true
   }];
 }
 
@@ -642,52 +769,72 @@ message Abstract {
   option (hub.v1.message) = {
     target: "string"
     description: "MODS Abstract extracts value"
+    xml_name: "abstract"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Display label
   string display_label = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
   // Type
   string type = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Abstract type"
+    xml_attr: true
   }];
   // Language
   string lang = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Abstract language"
+    xml_attr: true
+    xml_name: "xml:lang"
   }];
 }
 
 // TableOfContents - Table of contents.
 message TableOfContents {
+  option (hub.v1.message) = {
+    xml_name: "tableOfContents"
+  };
+
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Display label
   string display_label = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
 }
 
 // TargetAudience - Target audience.
 message TargetAudience {
+  option (hub.v1.message) = {
+    xml_name: "targetAudience"
+  };
+
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Authority
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Audience authority"
+    xml_attr: true
   }];
 }
 
@@ -696,20 +843,25 @@ message Note {
   option (hub.v1.message) = {
     target: "Note"
     description: "MODS Note maps to Hub Note"
+    xml_name: "note"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "content"
+    xml_chardata: true
   }];
   // Type
   string type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
   }];
   // Display label
   string display_label = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
 }
 
@@ -718,20 +870,26 @@ message Subject {
   option (hub.v1.message) = {
     target: "Subject"
     description: "MODS Subject maps to Hub Subject"
+    xml_name: "subject"
   };
 
   // Authority
   string authority = 1 [(hub.v1.field) = {
     target: "vocabulary"
+    xml_attr: true
   }];
   // Authority URI
   string authority_uri = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Authority URI"
+    xml_attr: true
+    xml_name: "authorityURI"
   }];
   // Value URI
   string value_uri = 3 [(hub.v1.field) = {
     target: "uri"
+    xml_attr: true
+    xml_name: "valueURI"
   }];
   // Topic
   repeated string topic = 4 [(hub.v1.field) = {
@@ -752,6 +910,7 @@ message Subject {
   repeated TitleInfo title_info = 7 [(hub.v1.field) = {
     target: "extra"
     description: "Subject title info"
+    xml_name: "titleInfo"
   }];
   // Name
   repeated Name name = 8 [(hub.v1.field) = {
@@ -767,6 +926,7 @@ message Subject {
   HierarchicalGeographic hierarchical_geographic = 10 [(hub.v1.field) = {
     target: "extra"
     description: "Hierarchical geographic"
+    xml_name: "hierarchicalGeographic"
   }];
   // Cartographics
   Cartographics cartographics = 11 [(hub.v1.field) = {
@@ -782,6 +942,10 @@ message Subject {
 
 // HierarchicalGeographic - Hierarchical geographic information.
 message HierarchicalGeographic {
+  option (hub.v1.message) = {
+    xml_name: "hierarchicalGeographic"
+  };
+
   string continent = 1 [(hub.v1.field) = {target: "extra" description: "Continent"}];
   string country = 2 [(hub.v1.field) = {target: "extra" description: "Country"}];
   string province = 3 [(hub.v1.field) = {target: "extra" description: "Province"}];
@@ -790,10 +954,10 @@ message HierarchicalGeographic {
   string territory = 6 [(hub.v1.field) = {target: "extra" description: "Territory"}];
   string county = 7 [(hub.v1.field) = {target: "extra" description: "County"}];
   string city = 8 [(hub.v1.field) = {target: "extra" description: "City"}];
-  string city_section = 9 [(hub.v1.field) = {target: "extra" description: "City section"}];
+  string city_section = 9 [(hub.v1.field) = {target: "extra" description: "City section" xml_name: "citySection"}];
   string island = 10 [(hub.v1.field) = {target: "extra" description: "Island"}];
   string area = 11 [(hub.v1.field) = {target: "extra" description: "Area"}];
-  string extraterrestrial_area = 12 [(hub.v1.field) = {target: "extra" description: "Extraterrestrial area"}];
+  string extraterrestrial_area = 12 [(hub.v1.field) = {target: "extra" description: "Extraterrestrial area" xml_name: "extraterrestrialArea"}];
 }
 
 // Cartographics - Cartographic information.
@@ -808,25 +972,31 @@ message Classification {
   option (hub.v1.message) = {
     target: "Subject"
     description: "MODS Classification maps to Hub Subject"
+    xml_name: "classification"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Authority (e.g., "lcc", "ddc")
   string authority = 2 [(hub.v1.field) = {
     target: "vocabulary"
+    xml_attr: true
   }];
   // Edition
   string edition = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Classification edition"
+    xml_attr: true
   }];
   // Display label
   string display_label = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
 }
 
@@ -835,16 +1005,20 @@ message RelatedItem {
   option (hub.v1.message) = {
     target: "Relation"
     description: "MODS RelatedItem maps to Hub Relation"
+    xml_name: "relatedItem"
   };
 
   // Type
   RelatedItemType type = 1 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
   }];
   // Display label
   string display_label = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
   // Embedded record (recursive)
   Record record = 3 [(hub.v1.field) = {
@@ -874,39 +1048,51 @@ message Identifier {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "MODS Identifier maps to Hub Identifier"
+    xml_name: "identifier"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Type (doi, isbn, issn, etc.)
   string type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
   }];
   // Invalid
   bool invalid = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Invalid flag"
+    xml_attr: true
   }];
   // Display label
   string display_label = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
 }
 
 // Location - Location information.
 message Location {
+  option (hub.v1.message) = {
+    xml_name: "location"
+  };
+
   // Physical location
   repeated PhysicalLocation physical_location = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Physical location"
+    xml_name: "physicalLocation"
   }];
   // Shelf locator
   repeated string shelf_locator = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Shelf locator"
+    xml_name: "shelfLocator"
   }];
   // URL
   repeated Url url = 3 [(hub.v1.field) = {
@@ -917,24 +1103,33 @@ message Location {
   repeated Holding holding_simple = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Holdings"
+    xml_name: "holdingSimple"
   }];
 }
 
 // PhysicalLocation - A physical location.
 message PhysicalLocation {
+  option (hub.v1.message) = {
+    xml_name: "physicalLocation"
+  };
+
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Authority
   string authority = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Location authority"
+    xml_attr: true
   }];
   // Display label
   string display_label = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
 }
 
@@ -943,37 +1138,46 @@ message Url {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "MODS URL maps to Hub Identifier"
+    xml_name: "url"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "value"
     validators: "url"
+    xml_chardata: true
   }];
   // Usage
   UrlUsage usage = 2 [(hub.v1.field) = {
     target: "extra"
     description: "URL usage"
+    xml_attr: true
   }];
   // Access
   UrlAccess access = 3 [(hub.v1.field) = {
     target: "extra"
     description: "URL access type"
+    xml_attr: true
   }];
   // Display label
   string display_label = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
   // Date last accessed
   string date_last_accessed = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Date last accessed"
+    xml_attr: true
+    xml_name: "dateLastAccessed"
   }];
   // Note
   string note = 6 [(hub.v1.field) = {
     target: "extra"
     description: "URL note"
+    xml_attr: true
   }];
 }
 
@@ -993,25 +1197,34 @@ enum UrlAccess {
 
 // Holding - Holdings/copy information.
 message Holding {
+  option (hub.v1.message) = {
+    xml_name: "holdingSimple"
+  };
+
   // Copy information
   repeated CopyInformation copy_information = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Copy information"
+    xml_name: "copyInformation"
   }];
 }
 
 // CopyInformation - Copy information.
 message CopyInformation {
+  option (hub.v1.message) = {
+    xml_name: "copyInformation"
+  };
+
   // Sublocation
   string sublocation = 1 [(hub.v1.field) = {target: "extra" description: "Sublocation"}];
   // Shelf locator
-  string shelf_locator = 2 [(hub.v1.field) = {target: "extra" description: "Shelf locator"}];
+  string shelf_locator = 2 [(hub.v1.field) = {target: "extra" description: "Shelf locator" xml_name: "shelfLocator"}];
   // Electronic locator
-  string electronic_locator = 3 [(hub.v1.field) = {target: "extra" description: "Electronic locator"}];
+  string electronic_locator = 3 [(hub.v1.field) = {target: "extra" description: "Electronic locator" xml_name: "electronicLocator"}];
   // Note
   repeated Note note = 4 [(hub.v1.field) = {target: "extra" description: "Copy notes"}];
   // Enumeration and chronology
-  string enumeration_and_chronology = 5 [(hub.v1.field) = {target: "extra" description: "Enumeration and chronology"}];
+  string enumeration_and_chronology = 5 [(hub.v1.field) = {target: "extra" description: "Enumeration and chronology" xml_name: "enumerationAndChronology"}];
 }
 
 // AccessCondition - Access conditions.
@@ -1019,35 +1232,46 @@ message AccessCondition {
   option (hub.v1.message) = {
     target: "Rights"
     description: "MODS AccessCondition maps to Hub Rights"
+    xml_name: "accessCondition"
   };
 
   // Value
   string value = 1 [(hub.v1.field) = {
     target: "statement"
+    xml_chardata: true
   }];
   // Type
   string type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Access condition type"
+    xml_attr: true
   }];
   // Display label
   string display_label = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Display label"
+    xml_attr: true
+    xml_name: "displayLabel"
   }];
   // xlink:href (license URL)
   string href = 4 [(hub.v1.field) = {
     target: "uri"
     validators: "url"
+    xml_attr: true
+    xml_name: "xlink:href"
   }];
 }
 
 // Part - Part information.
 message Part {
+  option (hub.v1.message) = {
+    xml_name: "part"
+  };
+
   // Type
-  string type = 1 [(hub.v1.field) = {target: "extra" description: "Part type"}];
+  string type = 1 [(hub.v1.field) = {target: "extra" description: "Part type" xml_attr: true}];
   // Order
-  int32 order = 2 [(hub.v1.field) = {target: "extra" description: "Part order"}];
+  int32 order = 2 [(hub.v1.field) = {target: "extra" description: "Part order" xml_attr: true}];
   // Detail
   repeated Detail detail = 3 [(hub.v1.field) = {target: "extra" description: "Part details"}];
   // Extent
@@ -1060,8 +1284,12 @@ message Part {
 
 // Detail - Part detail.
 message Detail {
+  option (hub.v1.message) = {
+    xml_name: "detail"
+  };
+
   // Type (volume, issue, etc.)
-  string type = 1 [(hub.v1.field) = {target: "extra" description: "Detail type"}];
+  string type = 1 [(hub.v1.field) = {target: "extra" description: "Detail type" xml_attr: true}];
   // Number
   string number = 2 [(hub.v1.field) = {target: "extra" description: "Number"}];
   // Caption
@@ -1072,8 +1300,12 @@ message Detail {
 
 // PartExtent - Part extent.
 message PartExtent {
+  option (hub.v1.message) = {
+    xml_name: "extent"
+  };
+
   // Unit
-  string unit = 1 [(hub.v1.field) = {target: "extra" description: "Unit"}];
+  string unit = 1 [(hub.v1.field) = {target: "extra" description: "Unit" xml_attr: true}];
   // Start
   string start = 2 [(hub.v1.field) = {target: "extra" description: "Start"}];
   // End
@@ -1086,49 +1318,71 @@ message PartExtent {
 
 // Extension - Extension element.
 message Extension {
+  option (hub.v1.message) = {
+    xml_name: "extension"
+  };
+
   // Display label
-  string display_label = 1 [(hub.v1.field) = {target: "extra" description: "Display label"}];
+  string display_label = 1 [(hub.v1.field) = {target: "extra" description: "Display label" xml_attr: true xml_name: "displayLabel"}];
   // Raw XML/content
   string value = 2 [(hub.v1.field) = {target: "extra" description: "Extension content"}];
 }
 
 // RecordInfo - Record metadata.
 message RecordInfo {
+  option (hub.v1.message) = {
+    xml_name: "recordInfo"
+  };
+
   // Record content source
-  repeated RecordContentSource record_content_source = 1 [(hub.v1.field) = {target: "extra" description: "Content source"}];
+  repeated RecordContentSource record_content_source = 1 [(hub.v1.field) = {target: "extra" description: "Content source" xml_name: "recordContentSource"}];
   // Record creation date
-  repeated DateElement record_creation_date = 2 [(hub.v1.field) = {target: "extra" description: "Record creation date"}];
+  repeated DateElement record_creation_date = 2 [(hub.v1.field) = {target: "extra" description: "Record creation date" xml_name: "recordCreationDate"}];
   // Record change date
-  repeated DateElement record_change_date = 3 [(hub.v1.field) = {target: "extra" description: "Record change date"}];
+  repeated DateElement record_change_date = 3 [(hub.v1.field) = {target: "extra" description: "Record change date" xml_name: "recordChangeDate"}];
   // Record identifier
-  repeated RecordIdentifier record_identifier = 4 [(hub.v1.field) = {target: "extra" description: "Record identifier"}];
+  repeated RecordIdentifier record_identifier = 4 [(hub.v1.field) = {target: "extra" description: "Record identifier" xml_name: "recordIdentifier"}];
   // Language of cataloging
-  repeated Language language_of_cataloging = 5 [(hub.v1.field) = {target: "extra" description: "Cataloging language"}];
+  repeated Language language_of_cataloging = 5 [(hub.v1.field) = {target: "extra" description: "Cataloging language" xml_name: "languageOfCataloging"}];
   // Record origin
-  repeated string record_origin = 6 [(hub.v1.field) = {target: "extra" description: "Record origin"}];
+  repeated string record_origin = 6 [(hub.v1.field) = {target: "extra" description: "Record origin" xml_name: "recordOrigin"}];
   // Description standard
-  repeated string description_standard = 7 [(hub.v1.field) = {target: "extra" description: "Description standard"}];
+  repeated string description_standard = 7 [(hub.v1.field) = {target: "extra" description: "Description standard" xml_name: "descriptionStandard"}];
   // Record info note
-  repeated Note record_info_note = 8 [(hub.v1.field) = {target: "extra" description: "Record info notes"}];
+  repeated Note record_info_note = 8 [(hub.v1.field) = {target: "extra" description: "Record info notes" xml_name: "recordInfoNote"}];
 }
 
 // RecordContentSource - Record content source.
 message RecordContentSource {
+  option (hub.v1.message) = {
+    xml_name: "recordContentSource"
+  };
+
   // Value
-  string value = 1 [(hub.v1.field) = {target: "value"}];
+  string value = 1 [(hub.v1.field) = {target: "value" xml_chardata: true}];
   // Authority
-  string authority = 2 [(hub.v1.field) = {target: "extra" description: "Authority"}];
+  string authority = 2 [(hub.v1.field) = {target: "extra" description: "Authority" xml_attr: true}];
 }
 
 // RecordIdentifier - Record identifier.
 message RecordIdentifier {
+  option (hub.v1.message) = {
+    xml_name: "recordIdentifier"
+  };
+
   // Value
-  string value = 1 [(hub.v1.field) = {target: "value"}];
+  string value = 1 [(hub.v1.field) = {target: "value" xml_chardata: true}];
   // Source
-  string source = 2 [(hub.v1.field) = {target: "extra" description: "Source"}];
+  string source = 2 [(hub.v1.field) = {target: "extra" description: "Source" xml_attr: true}];
 }
 
 // Collection - A collection of MODS records.
 message Collection {
-  repeated Record record = 1;
+  option (hub.v1.message) = {
+    xml_name: "modsCollection"
+  };
+
+  repeated Record record = 1 [(hub.v1.field) = {
+    xml_name: "mods"
+  }];
 }

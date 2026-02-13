@@ -2392,283 +2392,282 @@ var File_spoke_datacite_v4_6_datacite_proto protoreflect.FileDescriptor
 
 const file_spoke_datacite_v4_6_datacite_proto_rawDesc = "" +
 	"\n" +
-	"\"spoke/datacite/v4_6/datacite.proto\x12\x13spoke.datacite.v4_6\x1a\x14hub/v1/options.proto\"\xeb\f\n" +
+	"\"spoke/datacite/v4_6/datacite.proto\x12\x13spoke.datacite.v4_6\x1a\x14hub/v1/options.proto\"\x9d\x0f\n" +
 	"\bResource\x12Z\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\v2\x1f.spoke.datacite.v4_6.IdentifierB\x19\x8a\xb5\x18\x15\n" +
 	"\videntifiersZ\x03doi\xf8\x03\x01R\n" +
-	"identifier\x12X\n" +
-	"\bcreators\x18\x02 \x03(\v2\x1c.spoke.datacite.v4_6.CreatorB\x1e\x8a\xb5\x18\x1a\n" +
-	"\fcontributorsj\acreator\xf8\x03\x01R\bcreators\x12B\n" +
-	"\x06titles\x18\x03 \x03(\v2\x1a.spoke.datacite.v4_6.TitleB\x0e\x8a\xb5\x18\n" +
-	"\n" +
-	"\x05title\xf8\x03\x01R\x06titles\x120\n" +
+	"identifier\x12c\n" +
+	"\bcreators\x18\x02 \x03(\v2\x1c.spoke.datacite.v4_6.CreatorB)\x8a\xb5\x18%\n" +
+	"\fcontributorsj\acreator\xf8\x03\x01\xb2\x04\bcreatorsR\bcreators\x12K\n" +
+	"\x06titles\x18\x03 \x03(\v2\x1a.spoke.datacite.v4_6.TitleB\x17\x8a\xb5\x18\x13\n" +
+	"\x05title\xf8\x03\x01\xb2\x04\x06titlesR\x06titles\x120\n" +
 	"\tpublisher\x18\x04 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\tpublisher\xf8\x03\x01R\tpublisher\x12A\n" +
-	"\x10publication_year\x18\x05 \x01(\x05B\x16\x8a\xb5\x18\x12\n" +
-	"\x05datesR\x06issued\xf8\x03\x01R\x0fpublicationYear\x12^\n" +
-	"\rresource_type\x18\x06 \x01(\v2!.spoke.datacite.v4_6.ResourceTypeB\x16\x8a\xb5\x18\x12\n" +
-	"\rresource_type\xf8\x03\x01R\fresourceType\x12H\n" +
-	"\bsubjects\x18\a \x03(\v2\x1c.spoke.datacite.v4_6.SubjectB\x0e\x8a\xb5\x18\n" +
-	"\n" +
-	"\bsubjectsR\bsubjects\x12X\n" +
-	"\fcontributors\x18\b \x03(\v2 .spoke.datacite.v4_6.ContributorB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12<\n" +
-	"\x05dates\x18\t \x03(\v2\x19.spoke.datacite.v4_6.DateB\v\x8a\xb5\x18\a\n" +
-	"\x05datesR\x05dates\x12*\n" +
+	"\tpublisher\xf8\x03\x01R\tpublisher\x12S\n" +
+	"\x10publication_year\x18\x05 \x01(\x05B(\x8a\xb5\x18$\n" +
+	"\x05datesR\x06issued\xf8\x03\x01\xb2\x04\x0fpublicationYearR\x0fpublicationYear\x12m\n" +
+	"\rresource_type\x18\x06 \x01(\v2!.spoke.datacite.v4_6.ResourceTypeB%\x8a\xb5\x18!\n" +
+	"\rresource_type\xf8\x03\x01\xb2\x04\fresourceTypeR\fresourceType\x12S\n" +
+	"\bsubjects\x18\a \x03(\v2\x1c.spoke.datacite.v4_6.SubjectB\x19\x8a\xb5\x18\x15\n" +
+	"\bsubjects\xb2\x04\bsubjectsR\bsubjects\x12g\n" +
+	"\fcontributors\x18\b \x03(\v2 .spoke.datacite.v4_6.ContributorB!\x8a\xb5\x18\x1d\n" +
+	"\fcontributors\xb2\x04\fcontributorsR\fcontributors\x12D\n" +
+	"\x05dates\x18\t \x03(\v2\x19.spoke.datacite.v4_6.DateB\x13\x8a\xb5\x18\x0f\n" +
+	"\x05dates\xb2\x04\x05datesR\x05dates\x12*\n" +
 	"\blanguage\x18\n" +
 	" \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\blanguageR\blanguage\x12p\n" +
-	"\x15alternate_identifiers\x18\v \x03(\v2(.spoke.datacite.v4_6.AlternateIdentifierB\x11\x8a\xb5\x18\r\n" +
-	"\videntifiersR\x14alternateIdentifiers\x12h\n" +
-	"\x13related_identifiers\x18\f \x03(\v2&.spoke.datacite.v4_6.RelatedIdentifierB\x0f\x8a\xb5\x18\v\n" +
-	"\trelationsR\x12relatedIdentifiers\x122\n" +
+	"\blanguageR\blanguage\x12\x87\x01\n" +
+	"\x15alternate_identifiers\x18\v \x03(\v2(.spoke.datacite.v4_6.AlternateIdentifierB(\x8a\xb5\x18$\n" +
+	"\videntifiers\xb2\x04\x14alternateIdentifiersR\x14alternateIdentifiers\x12}\n" +
+	"\x13related_identifiers\x18\f \x03(\v2&.spoke.datacite.v4_6.RelatedIdentifierB$\x8a\xb5\x18 \n" +
+	"\trelations\xb2\x04\x12relatedIdentifiersR\x12relatedIdentifiers\x122\n" +
 	"\x05sizes\x18\r \x03(\tB\x1c\x8a\xb5\x18\x18\n" +
 	"\x05extra\xea\x03\x0eResource sizesR\x05sizes\x128\n" +
 	"\aformats\x18\x0e \x03(\tB\x1e\x8a\xb5\x18\x1a\n" +
 	"\x05extra\xea\x03\x10Resource formatsR\aformats\x128\n" +
 	"\aversion\x18\x0f \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Resource versionR\aversion\x12J\n" +
-	"\vrights_list\x18\x10 \x03(\v2\x1b.spoke.datacite.v4_6.RightsB\f\x8a\xb5\x18\b\n" +
-	"\x06rightsR\n" +
-	"rightsList\x12T\n" +
-	"\fdescriptions\x18\x11 \x03(\v2 .spoke.datacite.v4_6.DescriptionB\x0e\x8a\xb5\x18\n" +
+	"\x05extra\xea\x03\x10Resource versionR\aversion\x12W\n" +
+	"\vrights_list\x18\x10 \x03(\v2\x1b.spoke.datacite.v4_6.RightsB\x19\x8a\xb5\x18\x15\n" +
+	"\x06rights\xb2\x04\n" +
+	"rightsListR\n" +
+	"rightsList\x12c\n" +
+	"\fdescriptions\x18\x11 \x03(\v2 .spoke.datacite.v4_6.DescriptionB\x1d\x8a\xb5\x18\x19\n" +
+	"\babstract\xb2\x04\fdescriptionsR\fdescriptions\x12x\n" +
+	"\rgeo_locations\x18\x12 \x03(\v2 .spoke.datacite.v4_6.GeoLocationB1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x14Geographic locations\xb2\x04\fgeoLocationsR\fgeoLocations\x12w\n" +
+	"\x12funding_references\x18\x13 \x03(\v2%.spoke.datacite.v4_6.FundingReferenceB!\x8a\xb5\x18\x1d\n" +
+	"\afunders\xb2\x04\x11fundingReferencesR\x11fundingReferences\x12e\n" +
+	"\rrelated_items\x18\x14 \x03(\v2 .spoke.datacite.v4_6.RelatedItemB\x1e\x8a\xb5\x18\x1a\n" +
+	"\trelations\xb2\x04\frelatedItemsR\frelatedItems:\x93\x01\x8a\xb5\x18\x8e\x01\n" +
+	"\x06Record\x10\x01\x1a$DataCite Resource maps to Hub RecordR\bresourceZ-xsi=http://www.w3.org/2001/XMLSchema-instanceb#http://datacite.org/schema/kernel-4\"\xd1\x01\n" +
 	"\n" +
-	"\babstractR\fdescriptions\x12i\n" +
-	"\rgeo_locations\x18\x12 \x03(\v2 .spoke.datacite.v4_6.GeoLocationB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Geographic locationsR\fgeoLocations\x12c\n" +
-	"\x12funding_references\x18\x13 \x03(\v2%.spoke.datacite.v4_6.FundingReferenceB\r\x8a\xb5\x18\t\n" +
-	"\afundersR\x11fundingReferences\x12V\n" +
-	"\rrelated_items\x18\x14 \x03(\v2 .spoke.datacite.v4_6.RelatedItemB\x0f\x8a\xb5\x18\v\n" +
-	"\trelationsR\frelatedItems:4\x8a\xb5\x180\n" +
-	"\x06Record\x10\x01\x1a$DataCite Resource maps to Hub Record\"\xae\x01\n" +
+	"Identifier\x120\n" +
+	"\x05value\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05value\xa2\x01\x03doi\xf2\x01\x03doi\xc8\x04\x01R\x05value\x12G\n" +
+	"\x0fidentifier_type\x18\x02 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x04type\xb2\x04\x0eidentifierType\xc0\x04\x01R\x0eidentifierType:H\x8a\xb5\x18D\n" +
 	"\n" +
-	"Identifier\x12-\n" +
-	"\x05value\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05value\xa2\x01\x03doi\xf2\x01\x03doiR\x05value\x123\n" +
-	"\x0fidentifier_type\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x0eidentifierType:<\x8a\xb5\x188\n" +
+	"Identifier\x1a*DataCite Identifier maps to Hub IdentifierR\n" +
+	"identifier\"\xa8\x04\n" +
+	"\aCreator\x12/\n" +
+	"\x04name\x18\x01 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
+	"\x04name\xf8\x03\x01\xb2\x04\vcreatorNameR\x04name\x12>\n" +
+	"\tname_type\x18\x02 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x10contributor_type\xb2\x04\bnameTypeR\bnameType\x12B\n" +
 	"\n" +
-	"Identifier\x1a*DataCite Identifier maps to Hub Identifier\"\xce\x03\n" +
-	"\aCreator\x12!\n" +
-	"\x04name\x18\x01 \x01(\tB\r\x8a\xb5\x18\t\n" +
-	"\x04name\xf8\x03\x01R\x04name\x123\n" +
-	"\tname_type\x18\x02 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x10contributor_typeR\bnameType\x126\n" +
+	"given_name\x18\x03 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x11parsed_name.given\xb2\x04\tgivenNameR\tgivenName\x12F\n" +
+	"\vfamily_name\x18\x04 \x01(\tB%\x8a\xb5\x18!\n" +
+	"\x12parsed_name.family\xb2\x04\n" +
+	"familyNameR\n" +
+	"familyName\x12r\n" +
+	"\x10name_identifiers\x18\x05 \x03(\v2#.spoke.datacite.v4_6.NameIdentifierB\"\x8a\xb5\x18\x1e\n" +
+	"\videntifiers\xb2\x04\x0enameIdentifierR\x0fnameIdentifiers\x12f\n" +
+	"\faffiliations\x18\x06 \x03(\v2 .spoke.datacite.v4_6.AffiliationB \x8a\xb5\x18\x1c\n" +
+	"\faffiliations\xb2\x04\vaffiliationR\faffiliations:D\x8a\xb5\x18@\n" +
+	"\vContributor\x1a(DataCite Creator maps to Hub ContributorR\acreator\"\xad\x05\n" +
+	"\vContributor\x12s\n" +
+	"\x10contributor_type\x18\x01 \x01(\x0e2$.spoke.datacite.v4_6.ContributorTypeB\"\x8a\xb5\x18\x1e\n" +
+	"\x04role\xf8\x03\x01\xb2\x04\x0fcontributorType\xc0\x04\x01R\x0fcontributorType\x123\n" +
+	"\x04name\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x04name\xf8\x03\x01\xb2\x04\x0fcontributorNameR\x04name\x12>\n" +
+	"\tname_type\x18\x03 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x10contributor_type\xb2\x04\bnameTypeR\bnameType\x12B\n" +
 	"\n" +
-	"given_name\x18\x03 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x11parsed_name.givenR\tgivenName\x129\n" +
-	"\vfamily_name\x18\x04 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x12parsed_name.familyR\n" +
-	"familyName\x12a\n" +
-	"\x10name_identifiers\x18\x05 \x03(\v2#.spoke.datacite.v4_6.NameIdentifierB\x11\x8a\xb5\x18\r\n" +
-	"\videntifiersR\x0fnameIdentifiers\x12X\n" +
-	"\faffiliations\x18\x06 \x03(\v2 .spoke.datacite.v4_6.AffiliationB\x12\x8a\xb5\x18\x0e\n" +
-	"\faffiliationsR\faffiliations:;\x8a\xb5\x187\n" +
-	"\vContributor\x1a(DataCite Creator maps to Hub Contributor\"\xb6\x04\n" +
-	"\vContributor\x12^\n" +
-	"\x10contributor_type\x18\x01 \x01(\x0e2$.spoke.datacite.v4_6.ContributorTypeB\r\x8a\xb5\x18\t\n" +
-	"\x04role\xf8\x03\x01R\x0fcontributorType\x12!\n" +
-	"\x04name\x18\x02 \x01(\tB\r\x8a\xb5\x18\t\n" +
-	"\x04name\xf8\x03\x01R\x04name\x123\n" +
-	"\tname_type\x18\x03 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x10contributor_typeR\bnameType\x126\n" +
-	"\n" +
-	"given_name\x18\x04 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x11parsed_name.givenR\tgivenName\x129\n" +
-	"\vfamily_name\x18\x05 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x12parsed_name.familyR\n" +
-	"familyName\x12a\n" +
-	"\x10name_identifiers\x18\x06 \x03(\v2#.spoke.datacite.v4_6.NameIdentifierB\x11\x8a\xb5\x18\r\n" +
-	"\videntifiersR\x0fnameIdentifiers\x12X\n" +
-	"\faffiliations\x18\a \x03(\v2 .spoke.datacite.v4_6.AffiliationB\x12\x8a\xb5\x18\x0e\n" +
-	"\faffiliationsR\faffiliations:?\x8a\xb5\x18;\n" +
-	"\vContributor\x1a,DataCite Contributor maps to Hub Contributor\"\xf0\x01\n" +
-	"\x0eNameIdentifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12@\n" +
-	"\x16name_identifier_scheme\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x14nameIdentifierScheme\x127\n" +
-	"\n" +
-	"scheme_uri\x18\x03 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri:@\x8a\xb5\x18<\n" +
-	"\n" +
-	"Identifier\x1a.DataCite NameIdentifier maps to Hub Identifier\"\xcb\x02\n" +
-	"\vAffiliation\x12\x1e\n" +
-	"\x04name\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\x04name\x12G\n" +
-	"\x16affiliation_identifier\x18\x02 \x01(\tB\x10\x8a\xb5\x18\f\n" +
-	"\n" +
-	"identifierR\x15affiliationIdentifier\x12Y\n" +
-	"\x1daffiliation_identifier_scheme\x18\x03 \x01(\tB\x15\x8a\xb5\x18\x11\n" +
-	"\x0fidentifier_typeR\x1baffiliationIdentifierScheme\x127\n" +
-	"\n" +
-	"scheme_uri\x18\x04 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri:?\x8a\xb5\x18;\n" +
-	"\vAffiliation\x1a,DataCite Affiliation maps to Hub Affiliation\"\xdf\x01\n" +
-	"\x05Title\x12$\n" +
+	"given_name\x18\x04 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x11parsed_name.given\xb2\x04\tgivenNameR\tgivenName\x12F\n" +
+	"\vfamily_name\x18\x05 \x01(\tB%\x8a\xb5\x18!\n" +
+	"\x12parsed_name.family\xb2\x04\n" +
+	"familyNameR\n" +
+	"familyName\x12r\n" +
+	"\x10name_identifiers\x18\x06 \x03(\v2#.spoke.datacite.v4_6.NameIdentifierB\"\x8a\xb5\x18\x1e\n" +
+	"\videntifiers\xb2\x04\x0enameIdentifierR\x0fnameIdentifiers\x12f\n" +
+	"\faffiliations\x18\a \x03(\v2 .spoke.datacite.v4_6.AffiliationB \x8a\xb5\x18\x1c\n" +
+	"\faffiliations\xb2\x04\vaffiliationR\faffiliations:L\x8a\xb5\x18H\n" +
+	"\vContributor\x1a,DataCite Contributor maps to Hub ContributorR\vcontributor\"\xac\x02\n" +
+	"\x0eNameIdentifier\x12$\n" +
 	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\x05value\xf8\x03\x01R\x05value\x12W\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12Z\n" +
+	"\x16name_identifier_scheme\x18\x02 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x04type\xb2\x04\x14nameIdentifierScheme\xc0\x04\x01R\x14nameIdentifierScheme\x12F\n" +
 	"\n" +
-	"title_type\x18\x02 \x01(\x0e2\x1e.spoke.datacite.v4_6.TitleTypeB\x18\x8a\xb5\x18\x14\n" +
+	"scheme_uri\x18\x03 \x01(\tB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Title typeR\ttitleType\x12*\n" +
-	"\x04lang\x18\x03 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bLanguageR\x04lang:+\x8a\xb5\x18'\n" +
-	"\x06string\x1a\x1dDataCite Title extracts value\"\xe8\x01\n" +
-	"\fResourceType\x12k\n" +
-	"\x15resource_type_general\x18\x01 \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB\r\x8a\xb5\x18\t\n" +
-	"\x04type\xf8\x03\x01R\x13resourceTypeGeneral\x12'\n" +
-	"\x05value\x18\x02 \x01(\tB\x11\x8a\xb5\x18\r\n" +
-	"\vdescriptionR\x05value:B\x8a\xb5\x18>\n" +
-	"\fResourceType\x1a.DataCite ResourceType maps to Hub ResourceType\"\xcf\x02\n" +
-	"\aSubject\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x127\n" +
-	"\x0esubject_scheme\x18\x02 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"Scheme URI\xb2\x04\tschemeURI\xc0\x04\x01R\tschemeUri:P\x8a\xb5\x18L\n" +
 	"\n" +
-	"vocabularyR\rsubjectScheme\x127\n" +
+	"Identifier\x1a.DataCite NameIdentifier maps to Hub IdentifierR\x0enameIdentifier\"\xa6\x03\n" +
+	"\vAffiliation\x12!\n" +
+	"\x04name\x18\x01 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04name\xc8\x04\x01R\x04name\x12b\n" +
+	"\x16affiliation_identifier\x18\x02 \x01(\tB+\x8a\xb5\x18'\n" +
 	"\n" +
-	"scheme_uri\x18\x03 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"identifier\xb2\x04\x15affiliationIdentifier\xc0\x04\x01R\x15affiliationIdentifier\x12z\n" +
+	"\x1daffiliation_identifier_scheme\x18\x03 \x01(\tB6\x8a\xb5\x182\n" +
+	"\x0fidentifier_type\xb2\x04\x1baffiliationIdentifierScheme\xc0\x04\x01R\x1baffiliationIdentifierScheme\x12F\n" +
+	"\n" +
+	"scheme_uri\x18\x04 \x01(\tB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri\x12&\n" +
-	"\tvalue_uri\x18\x04 \x01(\tB\t\x8a\xb5\x18\x05\n" +
-	"\x03uriR\bvalueUri\x12R\n" +
-	"\x13classification_code\x18\x05 \x01(\tB!\x8a\xb5\x18\x1d\n" +
-	"\x05extra\xea\x03\x13Classification codeR\x12classificationCode:3\x8a\xb5\x18/\n" +
-	"\aSubject\x1a$DataCite Subject maps to Hub Subject\"\xfa\x01\n" +
-	"\x04Date\x12)\n" +
-	"\x05value\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\x03raw\xa2\x01\aiso8601R\x05value\x12F\n" +
-	"\tdate_type\x18\x02 \x01(\x0e2\x1d.spoke.datacite.v4_6.DateTypeB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\bdateType\x12I\n" +
-	"\x10date_information\x18\x03 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Date informationR\x0fdateInformation:4\x8a\xb5\x180\n" +
-	"\tDateValue\x1a#DataCite Date maps to Hub DateValue\"\xc7\x01\n" +
-	"\x13AlternateIdentifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12F\n" +
-	"\x19alternate_identifier_type\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x17alternateIdentifierType:E\x8a\xb5\x18A\n" +
+	"Scheme URI\xb2\x04\tschemeURI\xc0\x04\x01R\tschemeUri:L\x8a\xb5\x18H\n" +
+	"\vAffiliation\x1a,DataCite Affiliation maps to Hub AffiliationR\vaffiliation\"\x86\x02\n" +
+	"\x05Title\x12'\n" +
+	"\x05value\x18\x01 \x01(\tB\x11\x8a\xb5\x18\r\n" +
+	"\x05value\xf8\x03\x01\xc8\x04\x01R\x05value\x12f\n" +
 	"\n" +
-	"Identifier\x1a3DataCite AlternateIdentifier maps to Hub Identifier\"\xab\x05\n" +
-	"\x11RelatedIdentifier\x12-\n" +
-	"\x05value\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x11target_identifierR\x05value\x12\x81\x01\n" +
-	"\x17related_identifier_type\x18\x02 \x01(\x0e2*.spoke.datacite.v4_6.RelatedIdentifierTypeB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fIdentifier typeR\x15relatedIdentifierType\x12R\n" +
-	"\rrelation_type\x18\x03 \x01(\x0e2!.spoke.datacite.v4_6.RelationTypeB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\frelationType\x12U\n" +
-	"\x17related_metadata_scheme\x18\x04 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fMetadata schemeR\x15relatedMetadataScheme\x127\n" +
-	"\n" +
-	"scheme_uri\x18\x05 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"title_type\x18\x02 \x01(\x0e2\x1e.spoke.datacite.v4_6.TitleTypeB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri\x12:\n" +
-	"\vscheme_type\x18\x06 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vScheme typeR\n" +
-	"schemeType\x12\x81\x01\n" +
-	"\x15resource_type_general\x18\a \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB#\x8a\xb5\x18\x1f\n" +
-	"\x05extra\xea\x03\x15Related resource typeR\x13resourceTypeGeneral:?\x8a\xb5\x18;\n" +
-	"\bRelation\x1a/DataCite RelatedIdentifier maps to Hub Relation\"\xa6\x03\n" +
-	"\x06Rights\x12%\n" +
-	"\x05value\x18\x01 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\tstatementR\x05value\x12.\n" +
+	"Title type\xb2\x04\ttitleType\xc0\x04\x01R\ttitleType\x128\n" +
+	"\x04lang\x18\x03 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x05extra\xea\x03\bLanguage\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang:2\x8a\xb5\x18.\n" +
+	"\x06string\x1a\x1dDataCite Title extracts valueR\x05title\"\x93\x02\n" +
+	"\fResourceType\x12\x84\x01\n" +
+	"\x15resource_type_general\x18\x01 \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB&\x8a\xb5\x18\"\n" +
+	"\x04type\xf8\x03\x01\xb2\x04\x13resourceTypeGeneral\xc0\x04\x01R\x13resourceTypeGeneral\x12*\n" +
+	"\x05value\x18\x02 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
+	"\vdescription\xc8\x04\x01R\x05value:P\x8a\xb5\x18L\n" +
+	"\fResourceType\x1a.DataCite ResourceType maps to Hub ResourceTypeR\fresourceType\"\xa3\x03\n" +
+	"\aSubject\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"rights_uri\x18\x02 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\x03uri\xf2\x01\x03urlR\trightsUri\x12L\n" +
-	"\x11rights_identifier\x18\x03 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Rights identifierR\x10rightsIdentifier\x12`\n" +
-	"\x18rights_identifier_scheme\x18\x04 \x01(\tB&\x8a\xb5\x18\"\n" +
-	"\x05extra\xea\x03\x18Rights identifier schemeR\x16rightsIdentifierScheme\x127\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12J\n" +
+	"\x0esubject_scheme\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
 	"\n" +
-	"scheme_uri\x18\x05 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"vocabulary\xb2\x04\rsubjectScheme\xc0\x04\x01R\rsubjectScheme\x12F\n" +
+	"\n" +
+	"scheme_uri\x18\x03 \x01(\tB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri\x12*\n" +
-	"\x04lang\x18\x06 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bLanguageR\x04lang:0\x8a\xb5\x18,\n" +
-	"\x06Rights\x1a\"DataCite Rights maps to Hub Rights\"\x83\x02\n" +
-	"\vDescription\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12o\n" +
-	"\x10description_type\x18\x02 \x01(\x0e2$.spoke.datacite.v4_6.DescriptionTypeB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Description typeR\x0fdescriptionType\x12*\n" +
-	"\x04lang\x18\x03 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bLanguageR\x04lang:4\x8a\xb5\x180\n" +
-	"\x06string\x1a&DataCite Description extracts abstract\"\xab\x03\n" +
-	"\vGeoLocation\x12F\n" +
-	"\x12geo_location_place\x18\x01 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x05extra\xea\x03\n" +
-	"Place nameR\x10geoLocationPlace\x12t\n" +
-	"\x12geo_location_point\x18\x02 \x01(\v2%.spoke.datacite.v4_6.GeoLocationPointB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Point coordinatesR\x10geoLocationPoint\x12i\n" +
-	"\x10geo_location_box\x18\x03 \x01(\v2#.spoke.datacite.v4_6.GeoLocationBoxB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fBounding boxR\x0egeoLocationBox\x12s\n" +
-	"\x15geo_location_polygons\x18\x04 \x03(\v2'.spoke.datacite.v4_6.GeoLocationPolygonB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bPolygonsR\x13geoLocationPolygons\"\x93\x01\n" +
-	"\x10GeoLocationPoint\x12@\n" +
-	"\x0fpoint_longitude\x18\x01 \x01(\x01B\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tLongitudeR\x0epointLongitude\x12=\n" +
-	"\x0epoint_latitude\x18\x02 \x01(\x01B\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bLatitudeR\rpointLatitude\"\xd0\x02\n" +
-	"\x0eGeoLocationBox\x12N\n" +
-	"\x14west_bound_longitude\x18\x01 \x01(\x01B\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eWest longitudeR\x12westBoundLongitude\x12N\n" +
-	"\x14east_bound_longitude\x18\x02 \x01(\x01B\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eEast longitudeR\x12eastBoundLongitude\x12N\n" +
-	"\x14south_bound_latitude\x18\x03 \x01(\x01B\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eSouth latitudeR\x12southBoundLatitude\x12N\n" +
-	"\x14north_bound_latitude\x18\x04 \x01(\x01B\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eNorth latitudeR\x12northBoundLatitude\"\xf1\x01\n" +
-	"\x12GeoLocationPolygon\x12j\n" +
-	"\x0epolygon_points\x18\x01 \x03(\v2%.spoke.datacite.v4_6.GeoLocationPointB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0ePolygon pointsR\rpolygonPoints\x12o\n" +
-	"\x10in_polygon_point\x18\x02 \x01(\v2%.spoke.datacite.v4_6.GeoLocationPointB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Point in polygonR\x0einPolygonPoint\"\xe8\x03\n" +
-	"\x10FundingReference\x12+\n" +
-	"\vfunder_name\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\n" +
-	"funderName\x12=\n" +
-	"\x11funder_identifier\x18\x02 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"Scheme URI\xb2\x04\tschemeURI\xc0\x04\x01R\tschemeUri\x124\n" +
+	"\tvalue_uri\x18\x04 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
+	"\x03uri\xb2\x04\bvalueURI\xc0\x04\x01R\bvalueUri\x12j\n" +
+	"\x13classification_code\x18\x05 \x01(\tB9\x8a\xb5\x185\n" +
+	"\x05extra\xea\x03\x13Classification code\xb2\x04\x12classificationCode\xc0\x04\x01R\x12classificationCode:<\x8a\xb5\x188\n" +
+	"\aSubject\x1a$DataCite Subject maps to Hub SubjectR\asubject\"\xa6\x02\n" +
+	"\x04Date\x12,\n" +
+	"\x05value\x18\x01 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
+	"\x03raw\xa2\x01\aiso8601\xc8\x04\x01R\x05value\x12T\n" +
+	"\tdate_type\x18\x02 \x01(\x0e2\x1d.spoke.datacite.v4_6.DateTypeB\x18\x8a\xb5\x18\x14\n" +
+	"\x04type\xb2\x04\bdateType\xc0\x04\x01R\bdateType\x12^\n" +
+	"\x10date_information\x18\x03 \x01(\tB3\x8a\xb5\x18/\n" +
+	"\x05extra\xea\x03\x10Date information\xb2\x04\x0fdateInformation\xc0\x04\x01R\x0fdateInformation::\x8a\xb5\x186\n" +
+	"\tDateValue\x1a#DataCite Date maps to Hub DateValueR\x04date\"\xfc\x01\n" +
+	"\x13AlternateIdentifier\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"identifierR\x10funderIdentifier\x12K\n" +
-	"\x16funder_identifier_type\x18\x03 \x01(\tB\x15\x8a\xb5\x18\x11\n" +
-	"\x0fidentifier_typeR\x14funderIdentifierType\x127\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12c\n" +
+	"\x19alternate_identifier_type\x18\x02 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x04type\xb2\x04\x17alternateIdentifierType\xc0\x04\x01R\x17alternateIdentifierType:Z\x8a\xb5\x18V\n" +
 	"\n" +
-	"scheme_uri\x18\x04 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"Identifier\x1a3DataCite AlternateIdentifier maps to Hub IdentifierR\x13alternateIdentifier\"\xc1\x06\n" +
+	"\x11RelatedIdentifier\x120\n" +
+	"\x05value\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x11target_identifier\xc8\x04\x01R\x05value\x12\x9c\x01\n" +
+	"\x17related_identifier_type\x18\x02 \x01(\x0e2*.spoke.datacite.v4_6.RelatedIdentifierTypeB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x0fIdentifier type\xb2\x04\x15relatedIdentifierType\xc0\x04\x01R\x15relatedIdentifierType\x12d\n" +
+	"\rrelation_type\x18\x03 \x01(\x0e2!.spoke.datacite.v4_6.RelationTypeB\x1c\x8a\xb5\x18\x18\n" +
+	"\x04type\xb2\x04\frelationType\xc0\x04\x01R\frelationType\x12p\n" +
+	"\x17related_metadata_scheme\x18\x04 \x01(\tB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x0fMetadata scheme\xb2\x04\x15relatedMetadataScheme\xc0\x04\x01R\x15relatedMetadataScheme\x12F\n" +
+	"\n" +
+	"scheme_uri\x18\x05 \x01(\tB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Scheme URIR\tschemeUri\x126\n" +
-	"\faward_number\x18\x05 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\raward_numbersR\vawardNumber\x12:\n" +
-	"\taward_uri\x18\x06 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xf2\x01\x03url\xea\x03\tAward URIR\bawardUri\x122\n" +
-	"\vaward_title\x18\a \x01(\tB\x11\x8a\xb5\x18\r\n" +
-	"\vaward_titleR\n" +
-	"awardTitle::\x8a\xb5\x186\n" +
-	"\x06Funder\x1a,DataCite FundingReference maps to Hub Funder\"\x8e\b\n" +
-	"\vRelatedItem\x12R\n" +
-	"\rrelation_type\x18\x01 \x01(\x0e2!.spoke.datacite.v4_6.RelationTypeB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\frelationType\x12u\n" +
-	"\x11related_item_type\x18\x02 \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Related item typeR\x0frelatedItemType\x12F\n" +
-	"\x06titles\x18\x03 \x03(\v2\x1a.spoke.datacite.v4_6.TitleB\x12\x8a\xb5\x18\x0e\n" +
-	"\ftarget_titleR\x06titles\x12]\n" +
-	"\bcreators\x18\x04 \x03(\v2\x1c.spoke.datacite.v4_6.CreatorB#\x8a\xb5\x18\x1f\n" +
-	"\x05extra\xea\x03\x15Related item creatorsR\bcreators\x12I\n" +
-	"\x10publication_year\x18\x05 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Publication yearR\x0fpublicationYear\x12,\n" +
+	"Scheme URI\xb2\x04\tschemeURI\xc0\x04\x01R\tschemeUri\x12J\n" +
+	"\vscheme_type\x18\x06 \x01(\tB)\x8a\xb5\x18%\n" +
+	"\x05extra\xea\x03\vScheme type\xb2\x04\n" +
+	"schemeType\xc0\x04\x01R\n" +
+	"schemeType\x12\x9a\x01\n" +
+	"\x15resource_type_general\x18\a \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB<\x8a\xb5\x188\n" +
+	"\x05extra\xea\x03\x15Related resource type\xb2\x04\x13resourceTypeGeneral\xc0\x04\x01R\x13resourceTypeGeneral:R\x8a\xb5\x18N\n" +
+	"\bRelation\x1a/DataCite RelatedIdentifier maps to Hub RelationR\x11relatedIdentifier\"\x8f\x04\n" +
+	"\x06Rights\x12(\n" +
+	"\x05value\x18\x01 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
+	"\tstatement\xc8\x04\x01R\x05value\x12=\n" +
+	"\n" +
+	"rights_uri\x18\x02 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x03uri\xf2\x01\x03url\xb2\x04\trightsURI\xc0\x04\x01R\trightsUri\x12b\n" +
+	"\x11rights_identifier\x18\x03 \x01(\tB5\x8a\xb5\x181\n" +
+	"\x05extra\xea\x03\x11Rights identifier\xb2\x04\x10rightsIdentifier\xc0\x04\x01R\x10rightsIdentifier\x12|\n" +
+	"\x18rights_identifier_scheme\x18\x04 \x01(\tBB\x8a\xb5\x18>\n" +
+	"\x05extra\xea\x03\x18Rights identifier scheme\xb2\x04\x16rightsIdentifierScheme\xc0\x04\x01R\x16rightsIdentifierScheme\x12F\n" +
+	"\n" +
+	"scheme_uri\x18\x05 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\n" +
+	"Scheme URI\xb2\x04\tschemeURI\xc0\x04\x01R\tschemeUri\x128\n" +
+	"\x04lang\x18\x06 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x05extra\xea\x03\bLanguage\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang:8\x8a\xb5\x184\n" +
+	"\x06Rights\x1a\"DataCite Rights maps to Hub RightsR\x06rights\"\xb7\x02\n" +
+	"\vDescription\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12\x84\x01\n" +
+	"\x10description_type\x18\x02 \x01(\x0e2$.spoke.datacite.v4_6.DescriptionTypeB3\x8a\xb5\x18/\n" +
+	"\x05extra\xea\x03\x10Description type\xb2\x04\x0fdescriptionType\xc0\x04\x01R\x0fdescriptionType\x128\n" +
+	"\x04lang\x18\x03 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x05extra\xea\x03\bLanguage\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang:A\x8a\xb5\x18=\n" +
+	"\x06string\x1a&DataCite Description extracts abstractR\vdescription\"\x8c\x04\n" +
+	"\vGeoLocation\x12Y\n" +
+	"\x12geo_location_place\x18\x01 \x01(\tB+\x8a\xb5\x18'\n" +
+	"\x05extra\xea\x03\n" +
+	"Place name\xb2\x04\x10geoLocationPlaceR\x10geoLocationPlace\x12\x87\x01\n" +
+	"\x12geo_location_point\x18\x02 \x01(\v2%.spoke.datacite.v4_6.GeoLocationPointB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x11Point coordinates\xb2\x04\x10geoLocationPointR\x10geoLocationPoint\x12z\n" +
+	"\x10geo_location_box\x18\x03 \x01(\v2#.spoke.datacite.v4_6.GeoLocationBoxB+\x8a\xb5\x18'\n" +
+	"\x05extra\xea\x03\fBounding box\xb2\x04\x0egeoLocationBoxR\x0egeoLocationBox\x12\x88\x01\n" +
+	"\x15geo_location_polygons\x18\x04 \x03(\v2'.spoke.datacite.v4_6.GeoLocationPolygonB+\x8a\xb5\x18'\n" +
+	"\x05extra\xea\x03\bPolygons\xb2\x04\x12geoLocationPolygonR\x13geoLocationPolygons:\x11\x8a\xb5\x18\rR\vgeoLocation\"\xcc\x01\n" +
+	"\x10GeoLocationPoint\x12Q\n" +
+	"\x0fpoint_longitude\x18\x01 \x01(\x01B(\x8a\xb5\x18$\n" +
+	"\x05extra\xea\x03\tLongitude\xb2\x04\x0epointLongitudeR\x0epointLongitude\x12M\n" +
+	"\x0epoint_latitude\x18\x02 \x01(\x01B&\x8a\xb5\x18\"\n" +
+	"\x05extra\xea\x03\bLatitude\xb2\x04\rpointLatitudeR\rpointLatitude:\x16\x8a\xb5\x18\x12R\x10geoLocationPoint\"\xba\x03\n" +
+	"\x0eGeoLocationBox\x12c\n" +
+	"\x14west_bound_longitude\x18\x01 \x01(\x01B1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x0eWest longitude\xb2\x04\x12westBoundLongitudeR\x12westBoundLongitude\x12c\n" +
+	"\x14east_bound_longitude\x18\x02 \x01(\x01B1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x0eEast longitude\xb2\x04\x12eastBoundLongitudeR\x12eastBoundLongitude\x12c\n" +
+	"\x14south_bound_latitude\x18\x03 \x01(\x01B1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x0eSouth latitude\xb2\x04\x12southBoundLatitudeR\x12southBoundLatitude\x12c\n" +
+	"\x14north_bound_latitude\x18\x04 \x01(\x01B1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x0eNorth latitude\xb2\x04\x12northBoundLatitudeR\x12northBoundLatitude:\x14\x8a\xb5\x18\x10R\x0egeoLocationBox\"\xac\x02\n" +
+	"\x12GeoLocationPolygon\x12y\n" +
+	"\x0epolygon_points\x18\x01 \x03(\v2%.spoke.datacite.v4_6.GeoLocationPointB+\x8a\xb5\x18'\n" +
+	"\x05extra\xea\x03\x0ePolygon points\xb2\x04\fpolygonPointR\rpolygonPoints\x12\x80\x01\n" +
+	"\x10in_polygon_point\x18\x02 \x01(\v2%.spoke.datacite.v4_6.GeoLocationPointB/\x8a\xb5\x18+\n" +
+	"\x05extra\xea\x03\x10Point in polygon\xb2\x04\x0einPolygonPointR\x0einPolygonPoint:\x18\x8a\xb5\x18\x14R\x12geoLocationPolygon\"\xe3\x04\n" +
+	"\x10FundingReference\x128\n" +
+	"\vfunder_name\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
+	"\x04name\xb2\x04\n" +
+	"funderNameR\n" +
+	"funderName\x12P\n" +
+	"\x11funder_identifier\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\n" +
+	"identifier\xb2\x04\x10funderIdentifierR\x10funderIdentifier\x12b\n" +
+	"\x16funder_identifier_type\x18\x03 \x01(\tB,\x8a\xb5\x18(\n" +
+	"\x0fidentifier_type\xb2\x04\x14funderIdentifierTypeR\x14funderIdentifierType\x12C\n" +
+	"\n" +
+	"scheme_uri\x18\x04 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x05extra\xea\x03\n" +
+	"Scheme URI\xb2\x04\tschemeURIR\tschemeUri\x12D\n" +
+	"\faward_number\x18\x05 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\raward_numbers\xb2\x04\vawardNumberR\vawardNumber\x12E\n" +
+	"\taward_uri\x18\x06 \x01(\tB(\x8a\xb5\x18$\n" +
+	"\x05extra\xf2\x01\x03url\xea\x03\tAward URI\xb2\x04\bawardURIR\bawardUri\x12?\n" +
+	"\vaward_title\x18\a \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
+	"\vaward_title\xb2\x04\n" +
+	"awardTitleR\n" +
+	"awardTitle:L\x8a\xb5\x18H\n" +
+	"\x06Funder\x1a,DataCite FundingReference maps to Hub FunderR\x10fundingReference\"\xe9\b\n" +
+	"\vRelatedItem\x12d\n" +
+	"\rrelation_type\x18\x01 \x01(\x0e2!.spoke.datacite.v4_6.RelationTypeB\x1c\x8a\xb5\x18\x18\n" +
+	"\x04type\xb2\x04\frelationType\xc0\x04\x01R\frelationType\x12\x8a\x01\n" +
+	"\x11related_item_type\x18\x02 \x01(\x0e2(.spoke.datacite.v4_6.ResourceTypeGeneralB4\x8a\xb5\x180\n" +
+	"\x05extra\xea\x03\x11Related item type\xb2\x04\x0frelatedItemType\xc0\x04\x01R\x0frelatedItemType\x12O\n" +
+	"\x06titles\x18\x03 \x03(\v2\x1a.spoke.datacite.v4_6.TitleB\x1b\x8a\xb5\x18\x17\n" +
+	"\ftarget_title\xb2\x04\x06titlesR\x06titles\x12h\n" +
+	"\bcreators\x18\x04 \x03(\v2\x1c.spoke.datacite.v4_6.CreatorB.\x8a\xb5\x18*\n" +
+	"\x05extra\xea\x03\x15Related item creators\xb2\x04\bcreatorsR\bcreators\x12[\n" +
+	"\x10publication_year\x18\x05 \x01(\tB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x10Publication year\xb2\x04\x0fpublicationYearR\x0fpublicationYear\x12,\n" +
 	"\x06volume\x18\x06 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06VolumeR\x06volume\x12)\n" +
 	"\x05issue\x18\a \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
@@ -2690,8 +2689,8 @@ const file_spoke_datacite_v4_6_datacite_proto_rawDesc = "" +
 	"\aedition\x18\r \x01(\tB\x15\x8a\xb5\x18\x11\n" +
 	"\x05extra\xea\x03\aEditionR\aedition\x12m\n" +
 	"\fcontributors\x18\x0e \x03(\v2 .spoke.datacite.v4_6.ContributorB'\x8a\xb5\x18#\n" +
-	"\x05extra\xea\x03\x19Related item contributorsR\fcontributors:9\x8a\xb5\x185\n" +
-	"\bRelation\x1a)DataCite RelatedItem maps to Hub Relation*\xb4\t\n" +
+	"\x05extra\xea\x03\x19Related item contributorsR\fcontributors:F\x8a\xb5\x18B\n" +
+	"\bRelation\x1a)DataCite RelatedItem maps to Hub RelationR\vrelatedItem*\xb4\t\n" +
 	"\x0fContributorType\x12 \n" +
 	"\x1cCONTRIBUTOR_TYPE_UNSPECIFIED\x10\x00\x126\n" +
 	"\x1fCONTRIBUTOR_TYPE_CONTACT_PERSON\x10\x01\x1a\x11\x8a\xb5\x18\r\n" +

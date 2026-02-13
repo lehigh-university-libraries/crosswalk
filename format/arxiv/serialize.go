@@ -71,13 +71,18 @@ func hubToSpoke(record *hubv1.Record) (*arxivv1.Record, error) {
 
 	// Primary and cross-listed classifications from subjects
 	for _, subj := range record.Subjects {
-		if subj.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV ||
-			strings.Contains(strings.ToLower(subj.Value), ".") {
-			if arxiv.Primary == "" {
-				arxiv.Primary = subj.Value
-			} else {
-				arxiv.Cross = append(arxiv.Cross, subj.Value)
-			}
+		if subj.Vocabulary != hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV {
+			continue
+		}
+		// Prefer the original code stored in SourceId, fall back to Value
+		code := subj.SourceId
+		if code == "" {
+			code = subj.Value
+		}
+		if arxiv.Primary == "" {
+			arxiv.Primary = code
+		} else {
+			arxiv.Cross = append(arxiv.Cross, code)
 		}
 	}
 	if arxiv.Primary == "" {
@@ -355,13 +360,16 @@ type XMLRecord struct {
 	Submitter      *XMLSubmitter       `xml:"submitter,omitempty"`
 	VersionNum     int                 `xml:"version"`
 	Date           string              `xml:"date"`
+	Proxy          *XMLProxy           `xml:"proxy,omitempty"`
 	Source         *XMLSource          `xml:"source,omitempty"`
+	History        []XMLHistory        `xml:"history,omitempty"`
 	Title          string              `xml:"title"`
 	Authorship     *XMLAuthorship      `xml:"authorship"`
 	Classification []XMLClassification `xml:"classification,omitempty"`
 	Alternate      *XMLAlternate       `xml:"alternate,omitempty"`
 	Comments       []string            `xml:"comments,omitempty"`
 	Abstract       []string            `xml:"abstract,omitempty"`
+	Attic          []XMLAttic          `xml:"attic,omitempty"`
 }
 
 // XMLSubmitter represents submitter information.
@@ -410,4 +418,24 @@ type XMLAlternate struct {
 	ReportNo   []string `xml:"report-no,omitempty"`
 	JournalRef []string `xml:"journal-ref,omitempty"`
 	DOI        []string `xml:"DOI,omitempty"`
+}
+
+// XMLProxy represents proxy submitter information.
+type XMLProxy struct {
+	Identifier       string `xml:"identifier"`
+	RemoteIdentifier string `xml:"remoteIdentifier,omitempty"`
+}
+
+// XMLHistory records information about a previous version.
+type XMLHistory struct {
+	Version int        `xml:"version"`
+	Date    string     `xml:"date"`
+	Source  *XMLSource `xml:"source,omitempty"`
+}
+
+// XMLAttic stores legacy metadata from migrations.
+type XMLAttic struct {
+	Content string `xml:",chardata"`
+	Date    string `xml:"date,attr"`
+	Note    string `xml:"note,attr,omitempty"`
 }

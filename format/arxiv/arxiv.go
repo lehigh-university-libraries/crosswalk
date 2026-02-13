@@ -16,6 +16,7 @@ type Format struct{}
 // Ensure Format implements the interfaces
 var (
 	_ format.Format     = (*Format)(nil)
+	_ format.Parser     = (*Format)(nil)
 	_ format.Serializer = (*Format)(nil)
 )
 
@@ -46,12 +47,12 @@ func (f *Format) CanParse(peek []byte) bool {
 		return false
 	}
 
-	// Look for arXiv-specific patterns
+	// Look for arXiv-specific patterns across all three schema variants
 	arxivPatterns := [][]byte{
-		[]byte(`arXivRecord`),
-		[]byte(`http://arXiv.org/arXivRecord`),
-		[]byte(`<identifier>`),
-		[]byte(`<authorship>`),
+		[]byte(`arXivRecord`),                   // XSD 1.0
+		[]byte(`http://arXiv.org/arXivRecord`),  // XSD 1.0 namespace
+		[]byte(`http://arxiv.org/OAI/arXiv/`),   // OAI-PMH namespace
+		[]byte(`http://arxiv.org/schemas/atom`), // Atom API namespace
 	}
 
 	for _, pattern := range arxivPatterns {

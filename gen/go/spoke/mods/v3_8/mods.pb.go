@@ -4027,291 +4027,310 @@ var File_spoke_mods_v3_8_mods_proto protoreflect.FileDescriptor
 
 const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"\n" +
-	"\x1aspoke/mods/v3_8/mods.proto\x12\x0fspoke.mods.v3_8\x1a\x14hub/v1/options.proto\"\xf4\r\n" +
-	"\x06Record\x12I\n" +
+	"\x1aspoke/mods/v3_8/mods.proto\x12\x0fspoke.mods.v3_8\x1a\x14hub/v1/options.proto\"\xfc\x0f\n" +
+	"\x06Record\x12U\n" +
 	"\n" +
-	"title_info\x18\x01 \x03(\v2\x1a.spoke.mods.v3_8.TitleInfoB\x0e\x8a\xb5\x18\n" +
-	"\n" +
-	"\x05title\xf8\x03\x01R\ttitleInfo\x12=\n" +
+	"title_info\x18\x01 \x03(\v2\x1a.spoke.mods.v3_8.TitleInfoB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05title\xf8\x03\x01\xb2\x04\ttitleInfoR\ttitleInfo\x12=\n" +
 	"\x04name\x18\x02 \x03(\v2\x15.spoke.mods.v3_8.NameB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\x04name\x12^\n" +
-	"\x10type_of_resource\x18\x03 \x03(\v2\x1f.spoke.mods.v3_8.TypeOfResourceB\x13\x8a\xb5\x18\x0f\n" +
-	"\rresource_typeR\x0etypeOfResource\x12K\n" +
+	"\fcontributorsR\x04name\x12o\n" +
+	"\x10type_of_resource\x18\x03 \x03(\v2\x1f.spoke.mods.v3_8.TypeOfResourceB$\x8a\xb5\x18 \n" +
+	"\rresource_type\xb2\x04\x0etypeOfResourceR\x0etypeOfResource\x12K\n" +
 	"\x05genre\x18\x04 \x03(\v2\x16.spoke.mods.v3_8.GenreB\x1d\x8a\xb5\x18\x19\n" +
-	"\bsubjectsb\x05local\xea\x03\x05GenreR\x05genre\x12b\n" +
-	"\vorigin_info\x18\x05 \x03(\v2\x1b.spoke.mods.v3_8.OriginInfoB$\x8a\xb5\x18 \n" +
-	"\x04self\xea\x03\x17Publication informationR\n" +
+	"\bsubjectsb\x05local\xea\x03\x05GenreR\x05genre\x12o\n" +
+	"\vorigin_info\x18\x05 \x03(\v2\x1b.spoke.mods.v3_8.OriginInfoB1\x8a\xb5\x18-\n" +
+	"\x04self\xea\x03\x17Publication information\xb2\x04\n" +
+	"originInfoR\n" +
 	"originInfo\x12E\n" +
 	"\blanguage\x18\x06 \x03(\v2\x19.spoke.mods.v3_8.LanguageB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\blanguageR\blanguage\x12{\n" +
-	"\x14physical_description\x18\a \x03(\v2$.spoke.mods.v3_8.PhysicalDescriptionB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Physical descriptionR\x13physicalDescription\x12E\n" +
+	"\blanguageR\blanguage\x12\x91\x01\n" +
+	"\x14physical_description\x18\a \x03(\v2$.spoke.mods.v3_8.PhysicalDescriptionB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x14Physical description\xb2\x04\x13physicalDescriptionR\x13physicalDescription\x12E\n" +
 	"\babstract\x18\b \x03(\v2\x19.spoke.mods.v3_8.AbstractB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\babstractR\babstract\x12m\n" +
-	"\x11table_of_contents\x18\t \x03(\v2 .spoke.mods.v3_8.TableOfContentsB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Table of contentsR\x0ftableOfContents\x12g\n" +
+	"\babstractR\babstract\x12\x7f\n" +
+	"\x11table_of_contents\x18\t \x03(\v2 .spoke.mods.v3_8.TableOfContentsB1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x11Table of contents\xb2\x04\x0ftableOfContentsR\x0ftableOfContents\x12x\n" +
 	"\x0ftarget_audience\x18\n" +
-	" \x03(\v2\x1f.spoke.mods.v3_8.TargetAudienceB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fTarget audienceR\x0etargetAudience\x126\n" +
+	" \x03(\v2\x1f.spoke.mods.v3_8.TargetAudienceB.\x8a\xb5\x18*\n" +
+	"\x05extra\xea\x03\x0fTarget audience\xb2\x04\x0etargetAudienceR\x0etargetAudience\x126\n" +
 	"\x04note\x18\v \x03(\v2\x15.spoke.mods.v3_8.NoteB\v\x8a\xb5\x18\a\n" +
 	"\x05notesR\x04note\x12B\n" +
 	"\asubject\x18\f \x03(\v2\x18.spoke.mods.v3_8.SubjectB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\bsubjectsR\asubject\x12h\n" +
 	"\x0eclassification\x18\r \x03(\v2\x1f.spoke.mods.v3_8.ClassificationB\x1f\x8a\xb5\x18\x1b\n" +
-	"\bsubjects\xea\x03\x0eClassificationR\x0eclassification\x12P\n" +
-	"\frelated_item\x18\x0e \x03(\v2\x1c.spoke.mods.v3_8.RelatedItemB\x0f\x8a\xb5\x18\v\n" +
-	"\trelationsR\vrelatedItem\x12N\n" +
+	"\bsubjects\xea\x03\x0eClassificationR\x0eclassification\x12^\n" +
+	"\frelated_item\x18\x0e \x03(\v2\x1c.spoke.mods.v3_8.RelatedItemB\x1d\x8a\xb5\x18\x19\n" +
+	"\trelations\xb2\x04\vrelatedItemR\vrelatedItem\x12N\n" +
 	"\n" +
 	"identifier\x18\x0f \x03(\v2\x1b.spoke.mods.v3_8.IdentifierB\x11\x8a\xb5\x18\r\n" +
 	"\videntifiersR\n" +
 	"identifier\x12Y\n" +
 	"\blocation\x18\x10 \x03(\v2\x19.spoke.mods.v3_8.LocationB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Location informationR\blocation\x12Y\n" +
-	"\x10access_condition\x18\x11 \x03(\v2 .spoke.mods.v3_8.AccessConditionB\f\x8a\xb5\x18\b\n" +
-	"\x06rightsR\x0faccessCondition\x12I\n" +
+	"\x05extra\xea\x03\x14Location informationR\blocation\x12k\n" +
+	"\x10access_condition\x18\x11 \x03(\v2 .spoke.mods.v3_8.AccessConditionB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x06rights\xb2\x04\x0faccessConditionR\x0faccessCondition\x12I\n" +
 	"\x04part\x18\x12 \x03(\v2\x15.spoke.mods.v3_8.PartB\x1e\x8a\xb5\x18\x1a\n" +
 	"\x05extra\xea\x03\x10Part informationR\x04part\x12V\n" +
 	"\textension\x18\x13 \x03(\v2\x1a.spoke.mods.v3_8.ExtensionB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eExtension dataR\textension\x12[\n" +
-	"\vrecord_info\x18\x14 \x01(\v2\x1b.spoke.mods.v3_8.RecordInfoB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fRecord metadataR\n" +
-	"recordInfo:.\x8a\xb5\x18*\n" +
-	"\x06Record\x10\x01\x1a\x1eMODS Record maps to Hub Record\"\xb4\x04\n" +
-	"\tTitleInfo\x12H\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1a.spoke.mods.v3_8.TitleTypeB\x18\x8a\xb5\x18\x14\n" +
+	"\x05extra\xea\x03\x0eExtension dataR\textension\x12h\n" +
+	"\vrecord_info\x18\x14 \x01(\v2\x1b.spoke.mods.v3_8.RecordInfoB*\x8a\xb5\x18&\n" +
+	"\x05extra\xea\x03\x0fRecord metadata\xb2\x04\n" +
+	"recordInfoR\n" +
+	"recordInfo:\xa4\x01\x8a\xb5\x18\x9f\x01\n" +
+	"\x06Record\x10\x01\x1a\x1eMODS Record maps to Hub RecordR\x04modsZ-xsi=http://www.w3.org/2001/XMLSchema-instanceZ\"xlink=http://www.w3.org/1999/xlinkb\x1ahttp://www.loc.gov/mods/v3\"\x92\x05\n" +
+	"\tTitleInfo\x12K\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1a.spoke.mods.v3_8.TitleTypeB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\n" +
-	"Title typeR\x04type\x12$\n" +
+	"Title type\xc0\x04\x01R\x04type\x12$\n" +
 	"\x05title\x18\x02 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\x05value\xf8\x03\x01R\x05title\x123\n" +
-	"\tsub_title\x18\x03 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bSubtitleR\bsubTitle\x12:\n" +
-	"\vpart_number\x18\x04 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vPart numberR\n" +
-	"partNumber\x124\n" +
-	"\tpart_name\x18\x05 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tPart nameR\bpartName\x128\n" +
-	"\bnon_sort\x18\x06 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fNon-sort prefixR\anonSort\x12@\n" +
-	"\rdisplay_label\x18\a \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x120\n" +
-	"\x04lang\x18\b \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eTitle languageR\x04lang\x125\n" +
-	"\tauthority\x18\t \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tAuthorityR\tauthority:+\x8a\xb5\x18'\n" +
-	"\x06string\x1a\x1dMODS TitleInfo extracts title\"\xc4\x05\n" +
-	"\x04Name\x12E\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x19.spoke.mods.v3_8.NameTypeB\x16\x8a\xb5\x18\x12\n" +
-	"\x10contributor_typeR\x04type\x12V\n" +
-	"\tname_part\x18\x02 \x03(\v2\x19.spoke.mods.v3_8.NamePartB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05value\xf8\x03\x01R\x05title\x12>\n" +
+	"\tsub_title\x18\x03 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x05extra\xea\x03\bSubtitle\xb2\x04\bsubTitleR\bsubTitle\x12G\n" +
+	"\vpart_number\x18\x04 \x01(\tB&\x8a\xb5\x18\"\n" +
+	"\x05extra\xea\x03\vPart number\xb2\x04\n" +
+	"partNumberR\n" +
+	"partNumber\x12?\n" +
+	"\tpart_name\x18\x05 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
+	"\x05extra\xea\x03\tPart name\xb2\x04\bpartNameR\bpartName\x12B\n" +
+	"\bnon_sort\x18\x06 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\x0fNon-sort prefix\xb2\x04\anonSortR\anonSort\x12R\n" +
+	"\rdisplay_label\x18\a \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x12>\n" +
+	"\x04lang\x18\b \x01(\tB*\x8a\xb5\x18&\n" +
+	"\x05extra\xea\x03\x0eTitle language\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang\x128\n" +
+	"\tauthority\x18\t \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\tAuthority\xc0\x04\x01R\tauthority:6\x8a\xb5\x182\n" +
+	"\x06string\x1a\x1dMODS TitleInfo extracts titleR\ttitleInfo\"\x9a\x06\n" +
+	"\x04Name\x12H\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x19.spoke.mods.v3_8.NameTypeB\x19\x8a\xb5\x18\x15\n" +
+	"\x10contributor_type\xc0\x04\x01R\x04type\x12a\n" +
+	"\tname_part\x18\x02 \x03(\v2\x19.spoke.mods.v3_8.NamePartB)\x8a\xb5\x18%\n" +
 	"\vparsed_name\xea\x03\n" +
-	"Name partsR\bnamePart\x12-\n" +
-	"\fdisplay_form\x18\x03 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\vdisplayForm\x124\n" +
+	"Name parts\xb2\x04\bnamePartR\bnamePart\x12;\n" +
+	"\fdisplay_form\x18\x03 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"\x04name\xb2\x04\vdisplayFormR\vdisplayForm\x124\n" +
 	"\vaffiliation\x18\x04 \x03(\tB\x12\x8a\xb5\x18\x0e\n" +
 	"\faffiliationsR\vaffiliation\x125\n" +
 	"\x04role\x18\x05 \x03(\v2\x15.spoke.mods.v3_8.RoleB\n" +
 	"\x8a\xb5\x18\x06\n" +
 	"\x04roleR\x04role\x12;\n" +
 	"\vdescription\x18\x06 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vDescriptionR\vdescription\x12[\n" +
-	"\x0fname_identifier\x18\a \x03(\v2\x1f.spoke.mods.v3_8.NameIdentifierB\x11\x8a\xb5\x18\r\n" +
-	"\videntifiersR\x0enameIdentifier\x12:\n" +
-	"\tauthority\x18\b \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eName authorityR\tauthority\x12@\n" +
-	"\rauthority_uri\x18\t \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rAuthority URIR\fauthorityUri\x123\n" +
+	"\x05extra\xea\x03\vDescriptionR\vdescription\x12l\n" +
+	"\x0fname_identifier\x18\a \x03(\v2\x1f.spoke.mods.v3_8.NameIdentifierB\"\x8a\xb5\x18\x1e\n" +
+	"\videntifiers\xb2\x04\x0enameIdentifierR\x0enameIdentifier\x12=\n" +
+	"\tauthority\x18\b \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eName authority\xc0\x04\x01R\tauthority\x12R\n" +
+	"\rauthority_uri\x18\t \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rAuthority URI\xb2\x04\fauthorityURI\xc0\x04\x01R\fauthorityUri\x12A\n" +
 	"\tvalue_uri\x18\n" +
-	" \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03uriR\bvalueUri:4\x8a\xb5\x180\n" +
-	"\vContributor\x1a!MODS Name maps to Hub Contributor\"~\n" +
-	"\bNamePart\x12O\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1d.spoke.mods.v3_8.NamePartTypeB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eName part typeR\x04type\x12!\n" +
-	"\x05value\x18\x02 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\"\x91\x01\n" +
-	"\x0eNameIdentifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12\x1e\n" +
-	"\x04type\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x04type:<\x8a\xb5\x188\n" +
+	" \x01(\tB$\x8a\xb5\x18 \n" +
+	"\videntifiersZ\x03uri\xb2\x04\bvalueURI\xc0\x04\x01R\bvalueUri::\x8a\xb5\x186\n" +
+	"\vContributor\x1a!MODS Name maps to Hub ContributorR\x04name\"\x94\x01\n" +
+	"\bNamePart\x12R\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1d.spoke.mods.v3_8.NamePartTypeB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eName part type\xc0\x04\x01R\x04type\x12$\n" +
+	"\x05value\x18\x02 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"Identifier\x1a*MODS NameIdentifier maps to Hub Identifier\"b\n" +
-	"\x04Role\x12Z\n" +
-	"\trole_term\x18\x01 \x03(\v2\x19.spoke.mods.v3_8.RoleTermB\"\x8a\xb5\x18\x1e\n" +
+	"\x05value\xc8\x04\x01R\x05value:\x0e\x8a\xb5\x18\n" +
+	"R\bnamePart\"\xa7\x01\n" +
+	"\x0eNameIdentifier\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12!\n" +
+	"\x04type\x18\x02 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04type\xc0\x04\x01R\x04type:L\x8a\xb5\x18H\n" +
+	"\n" +
+	"Identifier\x1a*MODS NameIdentifier maps to Hub IdentifierR\x0enameIdentifier\"y\n" +
+	"\x04Role\x12e\n" +
+	"\trole_term\x18\x01 \x03(\v2\x19.spoke.mods.v3_8.RoleTermB-\x8a\xb5\x18)\n" +
 	"\x05value\xa2\x01\arelator\xea\x03\n" +
-	"Role termsR\broleTerm\"\xba\x01\n" +
-	"\bRoleTerm\x12O\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1d.spoke.mods.v3_8.RoleTermTypeB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eRole term typeR\x04type\x12:\n" +
-	"\tauthority\x18\x02 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eRole authorityR\tauthority\x12!\n" +
-	"\x05value\x18\x03 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\"\xf5\x01\n" +
-	"\x0eTypeOfResource\x12'\n" +
-	"\x05value\x18\x01 \x01(\tB\x11\x8a\xb5\x18\r\n" +
-	"\vdescriptionR\x05value\x12;\n" +
+	"Role terms\xb2\x04\broleTermR\broleTerm:\n" +
+	"\x8a\xb5\x18\x06R\x04role\"\xd3\x01\n" +
+	"\bRoleTerm\x12R\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1d.spoke.mods.v3_8.RoleTermTypeB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eRole term type\xc0\x04\x01R\x04type\x12=\n" +
+	"\tauthority\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eRole authority\xc0\x04\x01R\tauthority\x12$\n" +
+	"\x05value\x18\x03 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"collection\x18\x02 \x01(\bB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rIs collectionR\n" +
-	"collection\x12;\n" +
+	"\x05value\xc8\x04\x01R\x05value:\x0e\x8a\xb5\x18\n" +
+	"R\broleTerm\"\x8e\x02\n" +
+	"\x0eTypeOfResource\x12*\n" +
+	"\x05value\x18\x01 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
+	"\vdescription\xc8\x04\x01R\x05value\x12>\n" +
 	"\n" +
-	"manuscript\x18\x03 \x01(\bB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rIs manuscriptR\n" +
-	"manuscript:@\x8a\xb5\x18<\n" +
-	"\fResourceType\x1a,MODS TypeOfResource maps to Hub ResourceType\"\xb7\x01\n" +
-	"\x05Genre\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12.\n" +
-	"\tauthority\x18\x02 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"collection\x18\x02 \x01(\bB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05extra\xea\x03\rIs collection\xc0\x04\x01R\n" +
+	"collection\x12>\n" +
 	"\n" +
-	"vocabularyR\tauthority\x12,\n" +
-	"\x04type\x18\x03 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"manuscript\x18\x03 \x01(\bB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05extra\xea\x03\rIs manuscript\xc0\x04\x01R\n" +
+	"manuscript:P\x8a\xb5\x18L\n" +
+	"\fResourceType\x1a,MODS TypeOfResource maps to Hub ResourceTypeR\x0etypeOfResource\"\xc7\x01\n" +
+	"\x05Genre\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x121\n" +
+	"\tauthority\x18\x02 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
+	"\n" +
+	"vocabulary\xc0\x04\x01R\tauthority\x12/\n" +
+	"\x04type\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\n" +
-	"Genre typeR\x04type:-\x8a\xb5\x18)\n" +
-	"\aSubject\x1a\x1eMODS Genre maps to Hub Subject\"\x8e\b\n" +
+	"Genre type\xc0\x04\x01R\x04type:4\x8a\xb5\x180\n" +
+	"\aSubject\x1a\x1eMODS Genre maps to Hub SubjectR\x05genre\"\x90\t\n" +
 	"\n" +
-	"OriginInfo\x12Y\n" +
+	"OriginInfo\x12h\n" +
 	"\n" +
-	"event_type\x18\x01 \x01(\x0e2 .spoke.mods.v3_8.OriginEventTypeB\x18\x8a\xb5\x18\x14\n" +
+	"event_type\x18\x01 \x01(\x0e2 .spoke.mods.v3_8.OriginEventTypeB'\x8a\xb5\x18#\n" +
 	"\x05extra\xea\x03\n" +
-	"Event typeR\teventType\x12C\n" +
+	"Event type\xb2\x04\teventType\xc0\x04\x01R\teventType\x12C\n" +
 	"\x05place\x18\x02 \x03(\v2\x16.spoke.mods.v3_8.PlaceB\x15\x8a\xb5\x18\x11\n" +
 	"\x0fplace_publishedR\x05place\x12-\n" +
 	"\tpublisher\x18\x03 \x03(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\tpublisherR\tpublisher\x12R\n" +
-	"\vdate_issued\x18\x04 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\n" +
-	"dateIssued\x12U\n" +
-	"\fdate_created\x18\x05 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x14\x8a\xb5\x18\x10\n" +
-	"\x05datesR\acreatedR\vdateCreated\x12e\n" +
-	"\rdate_captured\x18\x06 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\"\x8a\xb5\x18\x1e\n" +
-	"\x05datesR\x05other\xea\x03\rDate capturedR\fdateCaptured\x12\\\n" +
+	"\tpublisherR\tpublisher\x12_\n" +
+	"\vdate_issued\x18\x04 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB \x8a\xb5\x18\x1c\n" +
+	"\x05datesR\x06issued\xb2\x04\n" +
+	"dateIssuedR\n" +
+	"dateIssued\x12c\n" +
+	"\fdate_created\x18\x05 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\"\x8a\xb5\x18\x1e\n" +
+	"\x05datesR\acreated\xb2\x04\vdateCreatedR\vdateCreated\x12t\n" +
+	"\rdate_captured\x18\x06 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB1\x8a\xb5\x18-\n" +
+	"\x05datesR\x05other\xea\x03\rDate captured\xb2\x04\fdateCapturedR\fdateCaptured\x12h\n" +
 	"\n" +
-	"date_valid\x18\a \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x1f\x8a\xb5\x18\x1b\n" +
+	"date_valid\x18\a \x03(\v2\x1c.spoke.mods.v3_8.DateElementB+\x8a\xb5\x18'\n" +
 	"\x05datesR\x05other\xea\x03\n" +
-	"Date validR\tdateValid\x12W\n" +
-	"\rdate_modified\x18\b \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x14\x8a\xb5\x18\x10\n" +
-	"\x05datesR\aupdatedR\fdateModified\x12[\n" +
-	"\x0ecopyright_date\x18\t \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x16\x8a\xb5\x18\x12\n" +
-	"\x05datesR\tcopyrightR\rcopyrightDate\x12O\n" +
+	"Date valid\xb2\x04\tdateValidR\tdateValid\x12f\n" +
+	"\rdate_modified\x18\b \x03(\v2\x1c.spoke.mods.v3_8.DateElementB#\x8a\xb5\x18\x1f\n" +
+	"\x05datesR\aupdated\xb2\x04\fdateModifiedR\fdateModified\x12k\n" +
+	"\x0ecopyright_date\x18\t \x03(\v2\x1c.spoke.mods.v3_8.DateElementB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\tcopyright\xb2\x04\rcopyrightDateR\rcopyrightDate\x12[\n" +
 	"\n" +
 	"date_other\x18\n" +
-	" \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05datesR\x05otherR\tdateOther\x12/\n" +
+	" \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05datesR\x05other\xb2\x04\tdateOtherR\tdateOther\x12/\n" +
 	"\aedition\x18\v \x01(\tB\x15\x8a\xb5\x18\x11\n" +
 	"\x05extra\xea\x03\aEditionR\aedition\x12R\n" +
 	"\bissuance\x18\f \x01(\x0e2\x19.spoke.mods.v3_8.IssuanceB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\rIssuance typeR\bissuance\x125\n" +
 	"\tfrequency\x18\r \x03(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tFrequencyR\tfrequency\"]\n" +
-	"\x05Place\x12T\n" +
+	"\x05extra\xea\x03\tFrequencyR\tfrequency:\x10\x8a\xb5\x18\fR\n" +
+	"originInfo\"v\n" +
+	"\x05Place\x12`\n" +
 	"\n" +
-	"place_term\x18\x01 \x03(\v2\x1a.spoke.mods.v3_8.PlaceTermB\x19\x8a\xb5\x18\x15\n" +
-	"\x05value\xea\x03\vPlace termsR\tplaceTerm\"\xbe\x01\n" +
-	"\tPlaceTerm\x12Q\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1e.spoke.mods.v3_8.PlaceTermTypeB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fPlace term typeR\x04type\x12;\n" +
-	"\tauthority\x18\x02 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fPlace authorityR\tauthority\x12!\n" +
-	"\x05value\x18\x03 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\"\x85\x03\n" +
-	"\vDateElement\x12&\n" +
-	"\x05value\x18\x01 \x01(\tB\x10\x8a\xb5\x18\f\n" +
-	"\x03raw\xa2\x01\x04edtfR\x05value\x127\n" +
-	"\bencoding\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDate encodingR\bencoding\x12J\n" +
-	"\x05point\x18\x03 \x01(\x0e2\x1a.spoke.mods.v3_8.DatePointB\x18\x8a\xb5\x18\x14\n" +
-	"\x05extra\xea\x03\n" +
-	"Date pointR\x05point\x124\n" +
-	"\bkey_date\x18\x04 \x01(\bB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vIs key dateR\akeyDate\x12Z\n" +
-	"\tqualifier\x18\x05 \x01(\x0e2\x1e.spoke.mods.v3_8.DateQualifierB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eDate qualifierR\tqualifier:7\x8a\xb5\x183\n" +
-	"\tDateValue\x1a&MODS DateElement maps to Hub DateValue\"\xc6\x01\n" +
-	"\bLanguage\x12`\n" +
-	"\rlanguage_term\x18\x01 \x03(\v2\x1d.spoke.mods.v3_8.LanguageTermB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05value\xea\x03\x0eLanguage termsR\flanguageTerm\x12X\n" +
-	"\vscript_term\x18\x02 \x03(\v2\x1b.spoke.mods.v3_8.ScriptTermB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fScript termsR\n" +
-	"scriptTerm\"\xca\x01\n" +
-	"\fLanguageTerm\x12W\n" +
-	"\x04type\x18\x01 \x01(\x0e2!.spoke.mods.v3_8.LanguageTermTypeB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Language term typeR\x04type\x12>\n" +
+	"place_term\x18\x01 \x03(\v2\x1a.spoke.mods.v3_8.PlaceTermB%\x8a\xb5\x18!\n" +
+	"\x05value\xea\x03\vPlace terms\xb2\x04\tplaceTermR\tplaceTerm:\v\x8a\xb5\x18\aR\x05place\"\xd8\x01\n" +
+	"\tPlaceTerm\x12T\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1e.spoke.mods.v3_8.PlaceTermTypeB \x8a\xb5\x18\x1c\n" +
+	"\x05extra\xea\x03\x0fPlace term type\xc0\x04\x01R\x04type\x12>\n" +
 	"\tauthority\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Language authorityR\tauthority\x12!\n" +
-	"\x05value\x18\x03 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\"\xa1\x01\n" +
+	"\x05extra\xea\x03\x0fPlace authority\xc0\x04\x01R\tauthority\x12$\n" +
+	"\x05value\x18\x03 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"ScriptTerm\x122\n" +
-	"\x04type\x18\x01 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Script term typeR\x04type\x12<\n" +
-	"\tauthority\x18\x02 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Script authorityR\tauthority\x12!\n" +
-	"\x05value\x18\x03 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\"\xbc\x03\n" +
+	"\x05value\xc8\x04\x01R\x05value:\x0f\x8a\xb5\x18\vR\tplaceTerm\"\x9e\x03\n" +
+	"\vDateElement\x12)\n" +
+	"\x05value\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
+	"\x03raw\xa2\x01\x04edtf\xc8\x04\x01R\x05value\x12:\n" +
+	"\bencoding\x18\x02 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05extra\xea\x03\rDate encoding\xc0\x04\x01R\bencoding\x12M\n" +
+	"\x05point\x18\x03 \x01(\x0e2\x1a.spoke.mods.v3_8.DatePointB\x1b\x8a\xb5\x18\x17\n" +
+	"\x05extra\xea\x03\n" +
+	"Date point\xc0\x04\x01R\x05point\x12A\n" +
+	"\bkey_date\x18\x04 \x01(\bB&\x8a\xb5\x18\"\n" +
+	"\x05extra\xea\x03\vIs key date\xb2\x04\akeyDate\xc0\x04\x01R\akeyDate\x12]\n" +
+	"\tqualifier\x18\x05 \x01(\x0e2\x1e.spoke.mods.v3_8.DateQualifierB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eDate qualifier\xc0\x04\x01R\tqualifier:7\x8a\xb5\x183\n" +
+	"\tDateValue\x1a&MODS DateElement maps to Hub DateValue\"\xf2\x01\n" +
+	"\bLanguage\x12o\n" +
+	"\rlanguage_term\x18\x01 \x03(\v2\x1d.spoke.mods.v3_8.LanguageTermB+\x8a\xb5\x18'\n" +
+	"\x05value\xea\x03\x0eLanguage terms\xb2\x04\flanguageTermR\flanguageTerm\x12e\n" +
+	"\vscript_term\x18\x02 \x03(\v2\x1b.spoke.mods.v3_8.ScriptTermB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\fScript terms\xb2\x04\n" +
+	"scriptTermR\n" +
+	"scriptTerm:\x0e\x8a\xb5\x18\n" +
+	"R\blanguage\"\xe7\x01\n" +
+	"\fLanguageTerm\x12Z\n" +
+	"\x04type\x18\x01 \x01(\x0e2!.spoke.mods.v3_8.LanguageTermTypeB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\x12Language term type\xc0\x04\x01R\x04type\x12A\n" +
+	"\tauthority\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\x12Language authority\xc0\x04\x01R\tauthority\x12$\n" +
+	"\x05value\x18\x03 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value:\x12\x8a\xb5\x18\x0eR\flanguageTerm\"\xbc\x01\n" +
+	"\n" +
+	"ScriptTerm\x125\n" +
+	"\x04type\x18\x01 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x05extra\xea\x03\x10Script term type\xc0\x04\x01R\x04type\x12?\n" +
+	"\tauthority\x18\x02 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x05extra\xea\x03\x10Script authority\xc0\x04\x01R\tauthority\x12$\n" +
+	"\x05value\x18\x03 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value:\x10\x8a\xb5\x18\fR\n" +
+	"scriptTerm\"\x91\x04\n" +
 	"\x13PhysicalDescription\x12=\n" +
 	"\x04form\x18\x01 \x03(\v2\x15.spoke.mods.v3_8.FormB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04FormR\x04form\x12U\n" +
-	"\x14reformatting_quality\x18\x02 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Reformatting qualityR\x13reformattingQuality\x12G\n" +
-	"\x13internet_media_type\x18\x03 \x03(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tMIME typeR\x11internetMediaType\x12,\n" +
+	"\x05extra\xea\x03\x04FormR\x04form\x12k\n" +
+	"\x14reformatting_quality\x18\x02 \x01(\tB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x14Reformatting quality\xb2\x04\x13reformattingQualityR\x13reformattingQuality\x12[\n" +
+	"\x13internet_media_type\x18\x03 \x03(\tB+\x8a\xb5\x18'\n" +
+	"\x05extra\xea\x03\tMIME type\xb2\x04\x11internetMediaTypeR\x11internetMediaType\x12,\n" +
 	"\x06extent\x18\x04 \x03(\tB\x14\x8a\xb5\x18\x10\n" +
-	"\x05extra\xea\x03\x06ExtentR\x06extent\x12C\n" +
-	"\x0edigital_origin\x18\x05 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eDigital originR\rdigitalOrigin\x12S\n" +
+	"\x05extra\xea\x03\x06ExtentR\x06extent\x12S\n" +
+	"\x0edigital_origin\x18\x05 \x01(\tB,\x8a\xb5\x18(\n" +
+	"\x05extra\xea\x03\x0eDigital origin\xb2\x04\rdigitalOriginR\rdigitalOrigin\x12S\n" +
 	"\x04note\x18\x06 \x03(\v2\x15.spoke.mods.v3_8.NoteB(\x8a\xb5\x18$\n" +
-	"\x05notes\xea\x03\x1aPhysical description notesR\x04note\"\x92\x01\n" +
-	"\x04Form\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12+\n" +
-	"\x04type\x18\x02 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tForm typeR\x04type\x12:\n" +
-	"\tauthority\x18\x03 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eForm authorityR\tauthority\"\x81\x02\n" +
-	"\bAbstract\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12@\n" +
-	"\rdisplay_label\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x12/\n" +
-	"\x04type\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rAbstract typeR\x04type\x123\n" +
-	"\x04lang\x18\x04 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Abstract languageR\x04lang:*\x8a\xb5\x18&\n" +
-	"\x06string\x1a\x1cMODS Abstract extracts value\"v\n" +
-	"\x0fTableOfContents\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12@\n" +
-	"\rdisplay_label\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\"s\n" +
-	"\x0eTargetAudience\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12>\n" +
-	"\tauthority\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Audience authorityR\tauthority\"\xb5\x01\n" +
-	"\x04Note\x12#\n" +
-	"\x05value\x18\x01 \x01(\tB\r\x8a\xb5\x18\t\n" +
-	"\acontentR\x05value\x12\x1e\n" +
-	"\x04type\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x04type\x12@\n" +
-	"\rdisplay_label\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel:&\x8a\xb5\x18\"\n" +
-	"\x04Note\x1a\x1aMODS Note maps to Hub Note\"\xad\a\n" +
-	"\aSubject\x12.\n" +
-	"\tauthority\x18\x01 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"\x05notes\xea\x03\x1aPhysical description notesR\x04note:\x19\x8a\xb5\x18\x15R\x13physicalDescription\"\xa7\x01\n" +
+	"\x04Form\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"vocabularyR\tauthority\x12@\n" +
-	"\rauthority_uri\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rAuthority URIR\fauthorityUri\x12&\n" +
-	"\tvalue_uri\x18\x03 \x01(\tB\t\x8a\xb5\x18\x05\n" +
-	"\x03uriR\bvalueUri\x122\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12.\n" +
+	"\x04type\x18\x02 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\tForm type\xc0\x04\x01R\x04type\x12=\n" +
+	"\tauthority\x18\x03 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eForm authority\xc0\x04\x01R\tauthority:\n" +
+	"\x8a\xb5\x18\x06R\x04form\"\xb1\x02\n" +
+	"\bAbstract\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12R\n" +
+	"\rdisplay_label\x18\x02 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x122\n" +
+	"\x04type\x18\x03 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
+	"\x05extra\xea\x03\rAbstract type\xc0\x04\x01R\x04type\x12A\n" +
+	"\x04lang\x18\x04 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\x11Abstract language\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang:4\x8a\xb5\x180\n" +
+	"\x06string\x1a\x1cMODS Abstract extracts valueR\babstract\"\xa2\x01\n" +
+	"\x0fTableOfContents\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12R\n" +
+	"\rdisplay_label\x18\x02 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel:\x15\x8a\xb5\x18\x11R\x0ftableOfContents\"\x8f\x01\n" +
+	"\x0eTargetAudience\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12A\n" +
+	"\tauthority\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\x12Audience authority\xc0\x04\x01R\tauthority:\x14\x8a\xb5\x18\x10R\x0etargetAudience\"\xd3\x01\n" +
+	"\x04Note\x12&\n" +
+	"\x05value\x18\x01 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"\acontent\xc8\x04\x01R\x05value\x12!\n" +
+	"\x04type\x18\x02 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04type\xc0\x04\x01R\x04type\x12R\n" +
+	"\rdisplay_label\x18\x03 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel:,\x8a\xb5\x18(\n" +
+	"\x04Note\x1a\x1aMODS Note maps to Hub NoteR\x04note\"\xfe\a\n" +
+	"\aSubject\x121\n" +
+	"\tauthority\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
+	"\n" +
+	"vocabulary\xc0\x04\x01R\tauthority\x12R\n" +
+	"\rauthority_uri\x18\x02 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rAuthority URI\xb2\x04\fauthorityURI\xc0\x04\x01R\fauthorityUri\x124\n" +
+	"\tvalue_uri\x18\x03 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
+	"\x03uri\xb2\x04\bvalueURI\xc0\x04\x01R\bvalueUri\x122\n" +
 	"\x05topic\x18\x04 \x03(\tB\x1c\x8a\xb5\x18\x18\n" +
 	"\x05value\xea\x03\x0eTopic subjectsR\x05topic\x12A\n" +
 	"\n" +
@@ -4319,24 +4338,24 @@ const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"\x05extra\xea\x03\x13Geographic subjectsR\n" +
 	"geographic\x12;\n" +
 	"\btemporal\x18\x06 \x03(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Temporal subjectsR\btemporal\x12[\n" +
+	"\x05extra\xea\x03\x11Temporal subjectsR\btemporal\x12g\n" +
 	"\n" +
-	"title_info\x18\a \x03(\v2\x1a.spoke.mods.v3_8.TitleInfoB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Subject title infoR\ttitleInfo\x12F\n" +
+	"title_info\x18\a \x03(\v2\x1a.spoke.mods.v3_8.TitleInfoB,\x8a\xb5\x18(\n" +
+	"\x05extra\xea\x03\x12Subject title info\xb2\x04\ttitleInfoR\ttitleInfo\x12F\n" +
 	"\x04name\x18\b \x03(\v2\x15.spoke.mods.v3_8.NameB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\rSubject namesR\x04name\x12J\n" +
 	"\x05genre\x18\t \x03(\v2\x16.spoke.mods.v3_8.GenreB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eSubject genresR\x05genre\x12\x87\x01\n" +
+	"\x05extra\xea\x03\x0eSubject genresR\x05genre\x12\xa0\x01\n" +
 	"\x17hierarchical_geographic\x18\n" +
-	" \x01(\v2'.spoke.mods.v3_8.HierarchicalGeographicB%\x8a\xb5\x18!\n" +
-	"\x05extra\xea\x03\x17Hierarchical geographicR\x16hierarchicalGeographic\x12e\n" +
+	" \x01(\v2'.spoke.mods.v3_8.HierarchicalGeographicB>\x8a\xb5\x18:\n" +
+	"\x05extra\xea\x03\x17Hierarchical geographic\xb2\x04\x16hierarchicalGeographicR\x16hierarchicalGeographic\x12e\n" +
 	"\rcartographics\x18\v \x01(\v2\x1e.spoke.mods.v3_8.CartographicsB\x1f\x8a\xb5\x18\x1b\n" +
 	"\x05extra\xea\x03\x11Cartographic infoR\rcartographics\x12A\n" +
 	"\n" +
 	"occupation\x18\f \x03(\tB!\x8a\xb5\x18\x1d\n" +
 	"\x05extra\xea\x03\x13Occupation subjectsR\n" +
-	"occupation:/\x8a\xb5\x18+\n" +
-	"\aSubject\x1a MODS Subject maps to Hub Subject\"\x89\x05\n" +
+	"occupation:8\x8a\xb5\x184\n" +
+	"\aSubject\x1a MODS Subject maps to Hub SubjectR\asubject\"\xcc\x05\n" +
 	"\x16HierarchicalGeographic\x125\n" +
 	"\tcontinent\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
 	"\x05extra\xea\x03\tContinentR\tcontinent\x12/\n" +
@@ -4353,16 +4372,16 @@ const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"\x06county\x18\a \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06CountyR\x06county\x12&\n" +
 	"\x04city\x18\b \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04CityR\x04city\x12=\n" +
-	"\fcity_section\x18\t \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fCity sectionR\vcitySection\x12,\n" +
+	"\x05extra\xea\x03\x04CityR\x04city\x12K\n" +
+	"\fcity_section\x18\t \x01(\tB(\x8a\xb5\x18$\n" +
+	"\x05extra\xea\x03\fCity section\xb2\x04\vcitySectionR\vcitySection\x12,\n" +
 	"\x06island\x18\n" +
 	" \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06IslandR\x06island\x12&\n" +
 	"\x04area\x18\v \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04AreaR\x04area\x12X\n" +
-	"\x15extraterrestrial_area\x18\f \x01(\tB#\x8a\xb5\x18\x1f\n" +
-	"\x05extra\xea\x03\x15Extraterrestrial areaR\x14extraterrestrialArea\"\xb1\x01\n" +
+	"\x05extra\xea\x03\x04AreaR\x04area\x12o\n" +
+	"\x15extraterrestrial_area\x18\f \x01(\tB:\x8a\xb5\x186\n" +
+	"\x05extra\xea\x03\x15Extraterrestrial area\xb2\x04\x14extraterrestrialAreaR\x14extraterrestrialArea:\x1c\x8a\xb5\x18\x18R\x16hierarchicalGeographic\"\xb1\x01\n" +
 	"\rCartographics\x12)\n" +
 	"\x05scale\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
 	"\x05extra\xea\x03\x05ScaleR\x05scale\x128\n" +
@@ -4372,102 +4391,106 @@ const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"ProjectionR\n" +
 	"projection\x12;\n" +
 	"\vcoordinates\x18\x03 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vCoordinatesR\vcoordinates\"\x9d\x02\n" +
-	"\x0eClassification\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12.\n" +
-	"\tauthority\x18\x02 \x01(\tB\x10\x8a\xb5\x18\f\n" +
+	"\x05extra\xea\x03\vCoordinatesR\vcoordinates\"\xc8\x02\n" +
+	"\x0eClassification\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"vocabularyR\tauthority\x12>\n" +
-	"\aedition\x18\x03 \x01(\tB$\x8a\xb5\x18 \n" +
-	"\x05extra\xea\x03\x16Classification editionR\aedition\x12@\n" +
-	"\rdisplay_label\x18\x04 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel:6\x8a\xb5\x182\n" +
-	"\aSubject\x1a'MODS Classification maps to Hub Subject\"\x97\x02\n" +
-	"\vRelatedItem\x12@\n" +
-	"\x04type\x18\x01 \x01(\x0e2 .spoke.mods.v3_8.RelatedItemTypeB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x04type\x12@\n" +
-	"\rdisplay_label\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x12M\n" +
+	"\x05value\xc8\x04\x01R\x05value\x121\n" +
+	"\tauthority\x18\x02 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
+	"\n" +
+	"vocabulary\xc0\x04\x01R\tauthority\x12A\n" +
+	"\aedition\x18\x03 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\x16Classification edition\xc0\x04\x01R\aedition\x12R\n" +
+	"\rdisplay_label\x18\x04 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel:F\x8a\xb5\x18B\n" +
+	"\aSubject\x1a'MODS Classification maps to Hub SubjectR\x0eclassification\"\xb9\x02\n" +
+	"\vRelatedItem\x12C\n" +
+	"\x04type\x18\x01 \x01(\x0e2 .spoke.mods.v3_8.RelatedItemTypeB\r\x8a\xb5\x18\t\n" +
+	"\x04type\xc0\x04\x01R\x04type\x12R\n" +
+	"\rdisplay_label\x18\x02 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x12M\n" +
 	"\x06record\x18\x03 \x01(\v2\x17.spoke.mods.v3_8.RecordB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eRelated recordR\x06record:5\x8a\xb5\x181\n" +
-	"\bRelation\x1a%MODS RelatedItem maps to Hub Relation\"\x81\x02\n" +
+	"\x05extra\xea\x03\x0eRelated recordR\x06record:B\x8a\xb5\x18>\n" +
+	"\bRelation\x1a%MODS RelatedItem maps to Hub RelationR\vrelatedItem\"\xa8\x02\n" +
 	"\n" +
-	"Identifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12\x1e\n" +
-	"\x04type\x18\x02 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04typeR\x04type\x124\n" +
-	"\ainvalid\x18\x03 \x01(\bB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fInvalid flagR\ainvalid\x12@\n" +
-	"\rdisplay_label\x18\x04 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel:8\x8a\xb5\x184\n" +
+	"Identifier\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"Identifier\x1a&MODS Identifier maps to Hub Identifier\"\xd6\x02\n" +
-	"\bLocation\x12o\n" +
-	"\x11physical_location\x18\x01 \x03(\v2!.spoke.mods.v3_8.PhysicalLocationB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Physical locationR\x10physicalLocation\x12@\n" +
-	"\rshelf_locator\x18\x02 \x03(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rShelf locatorR\fshelfLocator\x12>\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12!\n" +
+	"\x04type\x18\x02 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04type\xc0\x04\x01R\x04type\x127\n" +
+	"\ainvalid\x18\x03 \x01(\bB\x1d\x8a\xb5\x18\x19\n" +
+	"\x05extra\xea\x03\fInvalid flag\xc0\x04\x01R\ainvalid\x12R\n" +
+	"\rdisplay_label\x18\x04 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel:D\x8a\xb5\x18@\n" +
+	"\n" +
+	"Identifier\x1a&MODS Identifier maps to Hub IdentifierR\n" +
+	"identifier\"\x99\x03\n" +
+	"\bLocation\x12\x82\x01\n" +
+	"\x11physical_location\x18\x01 \x03(\v2!.spoke.mods.v3_8.PhysicalLocationB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x11Physical location\xb2\x04\x10physicalLocationR\x10physicalLocation\x12O\n" +
+	"\rshelf_locator\x18\x02 \x03(\tB*\x8a\xb5\x18&\n" +
+	"\x05extra\xea\x03\rShelf locator\xb2\x04\fshelfLocatorR\fshelfLocator\x12>\n" +
 	"\x03url\x18\x03 \x03(\v2\x14.spoke.mods.v3_8.UrlB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03urlR\x03url\x12W\n" +
-	"\x0eholding_simple\x18\x04 \x03(\v2\x18.spoke.mods.v3_8.HoldingB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bHoldingsR\rholdingSimple\"\xb7\x01\n" +
-	"\x10PhysicalLocation\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12>\n" +
-	"\tauthority\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Location authorityR\tauthority\x12@\n" +
-	"\rdisplay_label\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\"\xbc\x03\n" +
-	"\x03Url\x12'\n" +
-	"\x05value\x18\x01 \x01(\tB\x11\x8a\xb5\x18\r\n" +
-	"\x05value\xf2\x01\x03urlR\x05value\x12H\n" +
-	"\x05usage\x18\x02 \x01(\x0e2\x19.spoke.mods.v3_8.UrlUsageB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tURL usageR\x05usage\x12Q\n" +
-	"\x06access\x18\x03 \x01(\x0e2\x1a.spoke.mods.v3_8.UrlAccessB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fURL access typeR\x06access\x12@\n" +
-	"\rdisplay_label\x18\x04 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x12N\n" +
-	"\x12date_last_accessed\x18\x05 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Date last accessedR\x10dateLastAccessed\x12*\n" +
-	"\x04note\x18\x06 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bURL noteR\x04note:1\x8a\xb5\x18-\n" +
+	"\videntifiersZ\x03urlR\x03url\x12g\n" +
+	"\x0eholding_simple\x18\x04 \x03(\v2\x18.spoke.mods.v3_8.HoldingB&\x8a\xb5\x18\"\n" +
+	"\x05extra\xea\x03\bHoldings\xb2\x04\rholdingSimpleR\rholdingSimple:\x0e\x8a\xb5\x18\n" +
+	"R\blocation\"\xe7\x01\n" +
+	"\x10PhysicalLocation\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"Identifier\x1a\x1fMODS URL maps to Hub Identifier\"v\n" +
-	"\aHolding\x12k\n" +
-	"\x10copy_information\x18\x01 \x03(\v2 .spoke.mods.v3_8.CopyInformationB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Copy informationR\x0fcopyInformation\"\x8e\x03\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12A\n" +
+	"\tauthority\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\x12Location authority\xc0\x04\x01R\tauthority\x12R\n" +
+	"\rdisplay_label\x18\x03 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel:\x16\x8a\xb5\x18\x12R\x10physicalLocation\"\xf5\x03\n" +
+	"\x03Url\x12*\n" +
+	"\x05value\x18\x01 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
+	"\x05value\xf2\x01\x03url\xc8\x04\x01R\x05value\x12K\n" +
+	"\x05usage\x18\x02 \x01(\x0e2\x19.spoke.mods.v3_8.UrlUsageB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\tURL usage\xc0\x04\x01R\x05usage\x12T\n" +
+	"\x06access\x18\x03 \x01(\x0e2\x1a.spoke.mods.v3_8.UrlAccessB \x8a\xb5\x18\x1c\n" +
+	"\x05extra\xea\x03\x0fURL access type\xc0\x04\x01R\x06access\x12R\n" +
+	"\rdisplay_label\x18\x04 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x12d\n" +
+	"\x12date_last_accessed\x18\x05 \x01(\tB6\x8a\xb5\x182\n" +
+	"\x05extra\xea\x03\x12Date last accessed\xb2\x04\x10dateLastAccessed\xc0\x04\x01R\x10dateLastAccessed\x12-\n" +
+	"\x04note\x18\x06 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
+	"\x05extra\xea\x03\bURL note\xc0\x04\x01R\x04note:6\x8a\xb5\x182\n" +
+	"\n" +
+	"Identifier\x1a\x1fMODS URL maps to Hub IdentifierR\x03url\"\x9d\x01\n" +
+	"\aHolding\x12}\n" +
+	"\x10copy_information\x18\x01 \x03(\v2 .spoke.mods.v3_8.CopyInformationB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x10Copy information\xb2\x04\x0fcopyInformationR\x0fcopyInformation:\x13\x8a\xb5\x18\x0fR\rholdingSimple\"\xe4\x03\n" +
 	"\x0fCopyInformation\x12;\n" +
 	"\vsublocation\x18\x01 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vSublocationR\vsublocation\x12@\n" +
-	"\rshelf_locator\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rShelf locatorR\fshelfLocator\x12O\n" +
-	"\x12electronic_locator\x18\x03 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Electronic locatorR\x11electronicLocator\x12C\n" +
+	"\x05extra\xea\x03\vSublocationR\vsublocation\x12O\n" +
+	"\rshelf_locator\x18\x02 \x01(\tB*\x8a\xb5\x18&\n" +
+	"\x05extra\xea\x03\rShelf locator\xb2\x04\fshelfLocatorR\fshelfLocator\x12c\n" +
+	"\x12electronic_locator\x18\x03 \x01(\tB4\x8a\xb5\x180\n" +
+	"\x05extra\xea\x03\x12Electronic locator\xb2\x04\x11electronicLocatorR\x11electronicLocator\x12C\n" +
 	"\x04note\x18\x04 \x03(\v2\x15.spoke.mods.v3_8.NoteB\x18\x8a\xb5\x18\x14\n" +
 	"\x05extra\xea\x03\n" +
-	"Copy notesR\x04note\x12f\n" +
-	"\x1aenumeration_and_chronology\x18\x05 \x01(\tB(\x8a\xb5\x18$\n" +
-	"\x05extra\xea\x03\x1aEnumeration and chronologyR\x18enumerationAndChronology\"\x8f\x02\n" +
-	"\x0fAccessCondition\x12%\n" +
-	"\x05value\x18\x01 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\tstatementR\x05value\x127\n" +
-	"\x04type\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
-	"\x05extra\xea\x03\x15Access condition typeR\x04type\x12@\n" +
-	"\rdisplay_label\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x12#\n" +
-	"\x04href\x18\x04 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\x03uri\xf2\x01\x03urlR\x04href:5\x8a\xb5\x181\n" +
-	"\x06Rights\x1a'MODS AccessCondition maps to Hub Rights\"\xda\x02\n" +
-	"\x04Part\x12+\n" +
-	"\x04type\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tPart typeR\x04type\x12.\n" +
-	"\x05order\x18\x02 \x01(\x05B\x18\x8a\xb5\x18\x14\n" +
+	"Copy notesR\x04note\x12\x81\x01\n" +
+	"\x1aenumeration_and_chronology\x18\x05 \x01(\tBC\x8a\xb5\x18?\n" +
+	"\x05extra\xea\x03\x1aEnumeration and chronology\xb2\x04\x18enumerationAndChronologyR\x18enumerationAndChronology:\x15\x8a\xb5\x18\x11R\x0fcopyInformation\"\xc8\x02\n" +
+	"\x0fAccessCondition\x12(\n" +
+	"\x05value\x18\x01 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
+	"\tstatement\xc8\x04\x01R\x05value\x12:\n" +
+	"\x04type\x18\x02 \x01(\tB&\x8a\xb5\x18\"\n" +
+	"\x05extra\xea\x03\x15Access condition type\xc0\x04\x01R\x04type\x12R\n" +
+	"\rdisplay_label\x18\x03 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x123\n" +
+	"\x04href\x18\x04 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x03uri\xf2\x01\x03url\xb2\x04\n" +
+	"xlink:href\xc0\x04\x01R\x04href:F\x8a\xb5\x18B\n" +
+	"\x06Rights\x1a'MODS AccessCondition maps to Hub RightsR\x0faccessCondition\"\xec\x02\n" +
+	"\x04Part\x12.\n" +
+	"\x04type\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\tPart type\xc0\x04\x01R\x04type\x121\n" +
+	"\x05order\x18\x02 \x01(\x05B\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\n" +
-	"Part orderR\x05order\x12K\n" +
+	"Part order\xc0\x04\x01R\x05order\x12K\n" +
 	"\x06detail\x18\x03 \x03(\v2\x17.spoke.mods.v3_8.DetailB\x1a\x8a\xb5\x18\x16\n" +
 	"\x05extra\xea\x03\fPart detailsR\x06detail\x12N\n" +
 	"\x06extent\x18\x04 \x03(\v2\x1b.spoke.mods.v3_8.PartExtentB\x19\x8a\xb5\x18\x15\n" +
@@ -4475,20 +4498,21 @@ const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"\x04date\x18\x05 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
 	"\x05extra\xea\x03\tPart dateR\x04date\x12+\n" +
 	"\x04text\x18\x06 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tPart textR\x04text\"\xc1\x01\n" +
-	"\x06Detail\x12-\n" +
-	"\x04type\x18\x01 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vDetail typeR\x04type\x12,\n" +
+	"\x05extra\xea\x03\tPart textR\x04text:\n" +
+	"\x8a\xb5\x18\x06R\x04part\"\xd2\x01\n" +
+	"\x06Detail\x120\n" +
+	"\x04type\x18\x01 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
+	"\x05extra\xea\x03\vDetail type\xc0\x04\x01R\x04type\x12,\n" +
 	"\x06number\x18\x02 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06NumberR\x06number\x12/\n" +
 	"\acaption\x18\x03 \x01(\tB\x15\x8a\xb5\x18\x11\n" +
 	"\x05extra\xea\x03\aCaptionR\acaption\x12)\n" +
 	"\x05title\x18\x04 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05extra\xea\x03\x05TitleR\x05title\"\xd7\x01\n" +
+	"\x05extra\xea\x03\x05TitleR\x05title:\f\x8a\xb5\x18\bR\x06detail\"\xe8\x01\n" +
 	"\n" +
-	"PartExtent\x12&\n" +
-	"\x04unit\x18\x01 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04UnitR\x04unit\x12)\n" +
+	"PartExtent\x12)\n" +
+	"\x04unit\x18\x01 \x01(\tB\x15\x8a\xb5\x18\x11\n" +
+	"\x05extra\xea\x03\x04Unit\xc0\x04\x01R\x04unit\x12)\n" +
 	"\x05start\x18\x02 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
 	"\x05extra\xea\x03\x05StartR\x05start\x12#\n" +
 	"\x03end\x18\x03 \x01(\tB\x11\x8a\xb5\x18\r\n" +
@@ -4496,43 +4520,46 @@ const file_spoke_mods_v3_8_mods_proto_rawDesc = "" +
 	"\x05total\x18\x04 \x01(\x05B\x13\x8a\xb5\x18\x0f\n" +
 	"\x05extra\xea\x03\x05TotalR\x05total\x12&\n" +
 	"\x04list\x18\x05 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04ListR\x04list\"\x84\x01\n" +
-	"\tExtension\x12@\n" +
-	"\rdisplay_label\x18\x01 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rDisplay labelR\fdisplayLabel\x125\n" +
+	"\x05extra\xea\x03\x04ListR\x04list:\f\x8a\xb5\x18\bR\x06extent\"\xa7\x01\n" +
+	"\tExtension\x12R\n" +
+	"\rdisplay_label\x18\x01 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\rDisplay label\xb2\x04\fdisplayLabel\xc0\x04\x01R\fdisplayLabel\x125\n" +
 	"\x05value\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Extension contentR\x05value\"\xc6\x06\n" +
+	"\x05extra\xea\x03\x11Extension contentR\x05value:\x0f\x8a\xb5\x18\vR\textension\"\xfa\a\n" +
 	"\n" +
-	"RecordInfo\x12v\n" +
-	"\x15record_content_source\x18\x01 \x03(\v2$.spoke.mods.v3_8.RecordContentSourceB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eContent sourceR\x13recordContentSource\x12r\n" +
-	"\x14record_creation_date\x18\x02 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Record creation dateR\x12recordCreationDate\x12l\n" +
-	"\x12record_change_date\x18\x03 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Record change dateR\x10recordChangeDate\x12o\n" +
-	"\x11record_identifier\x18\x04 \x03(\v2!.spoke.mods.v3_8.RecordIdentifierB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Record identifierR\x10recordIdentifier\x12r\n" +
-	"\x16language_of_cataloging\x18\x05 \x03(\v2\x19.spoke.mods.v3_8.LanguageB!\x8a\xb5\x18\x1d\n" +
-	"\x05extra\xea\x03\x13Cataloging languageR\x14languageOfCataloging\x12@\n" +
-	"\rrecord_origin\x18\x06 \x03(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rRecord originR\frecordOrigin\x12U\n" +
-	"\x14description_standard\x18\a \x03(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Description standardR\x13descriptionStandard\x12`\n" +
-	"\x10record_info_note\x18\b \x03(\v2\x15.spoke.mods.v3_8.NoteB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Record info notesR\x0erecordInfoNote\"o\n" +
-	"\x13RecordContentSource\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x125\n" +
-	"\tauthority\x18\x02 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tAuthorityR\tauthority\"c\n" +
-	"\x10RecordIdentifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12,\n" +
-	"\x06source\x18\x02 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
-	"\x05extra\xea\x03\x06SourceR\x06source\"=\n" +
+	"RecordInfo\x12\x8c\x01\n" +
+	"\x15record_content_source\x18\x01 \x03(\v2$.spoke.mods.v3_8.RecordContentSourceB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x0eContent source\xb2\x04\x13recordContentSourceR\x13recordContentSource\x12\x87\x01\n" +
+	"\x14record_creation_date\x18\x02 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB7\x8a\xb5\x183\n" +
+	"\x05extra\xea\x03\x14Record creation date\xb2\x04\x12recordCreationDateR\x12recordCreationDate\x12\x7f\n" +
+	"\x12record_change_date\x18\x03 \x03(\v2\x1c.spoke.mods.v3_8.DateElementB3\x8a\xb5\x18/\n" +
+	"\x05extra\xea\x03\x12Record change date\xb2\x04\x10recordChangeDateR\x10recordChangeDate\x12\x82\x01\n" +
+	"\x11record_identifier\x18\x04 \x03(\v2!.spoke.mods.v3_8.RecordIdentifierB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x11Record identifier\xb2\x04\x10recordIdentifierR\x10recordIdentifier\x12\x89\x01\n" +
+	"\x16language_of_cataloging\x18\x05 \x03(\v2\x19.spoke.mods.v3_8.LanguageB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x13Cataloging language\xb2\x04\x14languageOfCatalogingR\x14languageOfCataloging\x12O\n" +
+	"\rrecord_origin\x18\x06 \x03(\tB*\x8a\xb5\x18&\n" +
+	"\x05extra\xea\x03\rRecord origin\xb2\x04\frecordOriginR\frecordOrigin\x12k\n" +
+	"\x14description_standard\x18\a \x03(\tB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x14Description standard\xb2\x04\x13descriptionStandardR\x13descriptionStandard\x12q\n" +
+	"\x10record_info_note\x18\b \x03(\v2\x15.spoke.mods.v3_8.NoteB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x11Record info notes\xb2\x04\x0erecordInfoNoteR\x0erecordInfoNote:\x10\x8a\xb5\x18\fR\n" +
+	"recordInfo\"\x90\x01\n" +
+	"\x13RecordContentSource\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"Collection\x12/\n" +
-	"\x06record\x18\x01 \x03(\v2\x17.spoke.mods.v3_8.RecordR\x06record*\x92\x01\n" +
+	"\x05value\xc8\x04\x01R\x05value\x128\n" +
+	"\tauthority\x18\x02 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\tAuthority\xc0\x04\x01R\tauthority:\x19\x8a\xb5\x18\x15R\x13recordContentSource\"\x81\x01\n" +
+	"\x10RecordIdentifier\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12/\n" +
+	"\x06source\x18\x02 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
+	"\x05extra\xea\x03\x06Source\xc0\x04\x01R\x06source:\x16\x8a\xb5\x18\x12R\x10recordIdentifier\"`\n" +
+	"\n" +
+	"Collection\x12<\n" +
+	"\x06record\x18\x01 \x03(\v2\x17.spoke.mods.v3_8.RecordB\v\x8a\xb5\x18\a\xb2\x04\x04modsR\x06record:\x14\x8a\xb5\x18\x10R\x0emodsCollection*\x92\x01\n" +
 	"\tTitleType\x12\x1a\n" +
 	"\x16TITLE_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16TITLE_TYPE_ABBREVIATED\x10\x01\x12\x19\n" +

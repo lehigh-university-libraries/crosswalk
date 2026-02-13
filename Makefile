@@ -24,6 +24,8 @@ generate: ## Generate Go code and JSON Schema from .proto files
 	buf generate
 	@echo "Generating JSON Schema for Hub..."
 	buf generate --path hub/v1 --template buf.gen.jsonschema.yaml
+	@echo "Generating arXiv category labels..."
+	go generate ./format/arxiv/...
 	@echo "Done"
 
 install-tools: ## Install required development tools

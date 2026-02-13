@@ -19,6 +19,8 @@ message Record {
     target: "Record"
     preserve_unmapped: true
     description: "Dublin Core record maps to Hub Record"
+    xml_name: "metadata"
+    xml_namespaces: ["dc=http://purl.org/dc/elements/1.1/", "dcterms=http://purl.org/dc/terms/"]
   };
 
   // ===== Core 15 Dublin Core Elements =====
@@ -27,6 +29,7 @@ message Record {
   repeated LocalizedString title = 1 [(hub.v1.field) = {
     target: "title"
     required: true
+    xml_ns: "dc"
     description: "Primary title of the resource"
   }];
 
@@ -34,24 +37,28 @@ message Record {
   repeated Agent creator = 2 [(hub.v1.field) = {
     target: "contributors"
     role: "creator"
+    xml_ns: "dc"
     description: "Primary creator/author"
   }];
 
   // Subject - The topic of the resource.
   repeated Subject subject = 3 [(hub.v1.field) = {
     target: "subjects"
+    xml_ns: "dc"
     description: "Subject/topic of the resource"
   }];
 
   // Description - An account of the resource.
   repeated LocalizedString description = 4 [(hub.v1.field) = {
     target: "abstract"
+    xml_ns: "dc"
     description: "Description or abstract"
   }];
 
   // Publisher - An entity responsible for making the resource available.
   repeated Agent publisher = 5 [(hub.v1.field) = {
     target: "publisher"
+    xml_ns: "dc"
     description: "Publisher of the resource"
   }];
 
@@ -59,30 +66,35 @@ message Record {
   repeated Agent contributor = 6 [(hub.v1.field) = {
     target: "contributors"
     role: "contributor"
+    xml_ns: "dc"
     description: "Other contributors"
   }];
 
   // Date - A point or period of time associated with the resource.
   repeated Date date = 7 [(hub.v1.field) = {
     target: "dates"
+    xml_ns: "dc"
     description: "Associated dates"
   }];
 
   // Type - The nature or genre of the resource.
   repeated TypeValue type = 8 [(hub.v1.field) = {
     target: "resource_type"
+    xml_ns: "dc"
     description: "Resource type/genre"
   }];
 
   // Format - The file format, physical medium, or dimensions.
   repeated string format = 9 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dc"
     description: "File format or physical medium"
   }];
 
   // Identifier - An unambiguous reference to the resource.
   repeated Identifier identifier = 10 [(hub.v1.field) = {
     target: "identifiers"
+    xml_ns: "dc"
     description: "Resource identifiers"
   }];
 
@@ -90,30 +102,35 @@ message Record {
   repeated string source = 11 [(hub.v1.field) = {
     target: "relations"
     relation_type: "derived_from"
+    xml_ns: "dc"
     description: "Source resource"
   }];
 
   // Language - A language of the resource.
   repeated string language = 12 [(hub.v1.field) = {
     target: "language"
+    xml_ns: "dc"
     description: "Language of the resource"
   }];
 
   // Relation - A related resource.
   repeated Relation relation = 13 [(hub.v1.field) = {
     target: "relations"
+    xml_ns: "dc"
     description: "Related resources"
   }];
 
   // Coverage - Spatial or temporal topic, jurisdiction.
   repeated Coverage coverage = 14 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dc"
     description: "Spatial or temporal coverage"
   }];
 
   // Rights - Information about rights held in and over the resource.
   repeated Rights rights = 15 [(hub.v1.field) = {
     target: "rights"
+    xml_ns: "dc"
     description: "Rights information"
   }];
 
@@ -122,18 +139,22 @@ message Record {
   // Alternative title
   repeated LocalizedString alternative = 16 [(hub.v1.field) = {
     target: "alt_title"
+    xml_ns: "dcterms"
     description: "Alternative title"
   }];
 
   // Table of contents
   repeated LocalizedString table_of_contents = 17 [(hub.v1.field) = {
     target: "table_of_contents"
+    xml_ns: "dcterms"
+    xml_name: "tableOfContents"
     description: "Table of contents"
   }];
 
   // Abstract
   repeated LocalizedString abstract = 18 [(hub.v1.field) = {
     target: "abstract"
+    xml_ns: "dcterms"
     description: "Abstract of the resource"
   }];
 
@@ -142,12 +163,14 @@ message Record {
     target: "dates"
     date_type: "created"
     parser: "iso8601"
+    xml_ns: "dcterms"
   }];
 
   // Date valid
   string valid = 20 [(hub.v1.field) = {
     target: "dates"
     date_type: "other"
+    xml_ns: "dcterms"
     description: "Date valid"
   }];
 
@@ -156,6 +179,7 @@ message Record {
     target: "dates"
     date_type: "available"
     parser: "iso8601"
+    xml_ns: "dcterms"
   }];
 
   // Date issued
@@ -163,6 +187,7 @@ message Record {
     target: "dates"
     date_type: "issued"
     parser: "iso8601"
+    xml_ns: "dcterms"
   }];
 
   // Date modified
@@ -170,17 +195,20 @@ message Record {
     target: "dates"
     date_type: "updated"
     parser: "iso8601"
+    xml_ns: "dcterms"
   }];
 
   // Extent (size or duration)
   repeated string extent = 24 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Size or duration"
   }];
 
   // Medium (physical carrier)
   repeated string medium = 25 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Physical medium"
   }];
 
@@ -188,6 +216,8 @@ message Record {
   repeated string is_version_of = 26 [(hub.v1.field) = {
     target: "relations"
     relation_type: "version_of"
+    xml_ns: "dcterms"
+    xml_name: "isVersionOf"
     description: "Is version of"
   }];
 
@@ -195,6 +225,8 @@ message Record {
   repeated string has_version = 27 [(hub.v1.field) = {
     target: "relations"
     relation_type: "has_version"
+    xml_ns: "dcterms"
+    xml_name: "hasVersion"
     description: "Has version"
   }];
 
@@ -202,6 +234,8 @@ message Record {
   repeated string is_replaced_by = 28 [(hub.v1.field) = {
     target: "relations"
     relation_type: "replaced_by"
+    xml_ns: "dcterms"
+    xml_name: "isReplacedBy"
     description: "Is replaced by"
   }];
 
@@ -209,6 +243,7 @@ message Record {
   repeated string replaces = 29 [(hub.v1.field) = {
     target: "relations"
     relation_type: "replaces"
+    xml_ns: "dcterms"
     description: "Replaces"
   }];
 
@@ -216,6 +251,8 @@ message Record {
   repeated string is_required_by = 30 [(hub.v1.field) = {
     target: "relations"
     relation_type: "required_by"
+    xml_ns: "dcterms"
+    xml_name: "isRequiredBy"
     description: "Is required by"
   }];
 
@@ -223,6 +260,7 @@ message Record {
   repeated string requires = 31 [(hub.v1.field) = {
     target: "relations"
     relation_type: "requires"
+    xml_ns: "dcterms"
     description: "Requires"
   }];
 
@@ -230,6 +268,8 @@ message Record {
   repeated string is_part_of = 32 [(hub.v1.field) = {
     target: "relations"
     relation_type: "part_of"
+    xml_ns: "dcterms"
+    xml_name: "isPartOf"
     description: "Is part of"
   }];
 
@@ -237,6 +277,8 @@ message Record {
   repeated string has_part = 33 [(hub.v1.field) = {
     target: "relations"
     relation_type: "has_part"
+    xml_ns: "dcterms"
+    xml_name: "hasPart"
     description: "Has part"
   }];
 
@@ -244,6 +286,8 @@ message Record {
   repeated string is_referenced_by = 34 [(hub.v1.field) = {
     target: "relations"
     relation_type: "cited_by"
+    xml_ns: "dcterms"
+    xml_name: "isReferencedBy"
     description: "Is referenced by"
   }];
 
@@ -251,6 +295,7 @@ message Record {
   repeated string references = 35 [(hub.v1.field) = {
     target: "relations"
     relation_type: "cites"
+    xml_ns: "dcterms"
     description: "References"
   }];
 
@@ -258,6 +303,8 @@ message Record {
   repeated string is_format_of = 36 [(hub.v1.field) = {
     target: "relations"
     relation_type: "other"
+    xml_ns: "dcterms"
+    xml_name: "isFormatOf"
     description: "Is format of"
   }];
 
@@ -265,96 +312,122 @@ message Record {
   repeated string has_format = 37 [(hub.v1.field) = {
     target: "relations"
     relation_type: "other"
+    xml_ns: "dcterms"
+    xml_name: "hasFormat"
     description: "Has format"
   }];
 
   // Conforms to (standard)
   repeated string conforms_to = 38 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "conformsTo"
     description: "Conforms to standard"
   }];
 
   // Spatial coverage
   repeated SpatialCoverage spatial = 39 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Spatial coverage"
   }];
 
   // Temporal coverage
   repeated string temporal = 40 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Temporal coverage"
   }];
 
   // Audience
   repeated string audience = 41 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Intended audience"
   }];
 
   // Accrual method
   string accrual_method = 42 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "accrualMethod"
     description: "Accrual method"
   }];
 
   // Accrual periodicity
   string accrual_periodicity = 43 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "accrualPeriodicity"
     description: "Accrual periodicity"
   }];
 
   // Accrual policy
   string accrual_policy = 44 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "accrualPolicy"
     description: "Accrual policy"
   }];
 
   // Instructional method
   string instructional_method = 45 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "instructionalMethod"
     description: "Instructional method"
   }];
 
   // Provenance
   repeated LocalizedString provenance = 46 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Provenance statement"
   }];
 
   // Rights holder
   repeated Agent rights_holder = 47 [(hub.v1.field) = {
     target: "rights"
+    xml_ns: "dcterms"
+    xml_name: "rightsHolder"
     description: "Rights holder"
   }];
 
   // Mediator
   repeated Agent mediator = 48 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
     description: "Mediator"
   }];
 
   // Education level
   repeated string education_level = 49 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "educationLevel"
     description: "Education level"
   }];
 
   // Access rights
   repeated string access_rights = 50 [(hub.v1.field) = {
     target: "rights"
+    xml_ns: "dcterms"
+    xml_name: "accessRights"
     description: "Access rights"
   }];
 
   // License
   repeated string license = 51 [(hub.v1.field) = {
     target: "rights"
+    xml_ns: "dcterms"
     description: "License information"
   }];
 
   // Bibliographic citation
   string bibliographic_citation = 52 [(hub.v1.field) = {
     target: "extra"
+    xml_ns: "dcterms"
+    xml_name: "bibliographicCitation"
     description: "Bibliographic citation"
   }];
 }
@@ -369,10 +442,13 @@ message LocalizedString {
   // The value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Language tag (BCP 47)
   string lang = 2 [(hub.v1.field) = {
     target: "extra"
+    xml_attr: true
+    xml_name: "xml:lang"
     description: "Language tag"
   }];
 }
@@ -388,6 +464,7 @@ message Agent {
   string name = 1 [(hub.v1.field) = {
     target: "name"
     parser: "bibtex_name"
+    xml_chardata: true
   }];
   // URI identifying the agent
   string uri = 2 [(hub.v1.field) = {
@@ -418,6 +495,7 @@ message Subject {
   // Subject value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Subject scheme/vocabulary (e.g., LCSH, DDC)
   string scheme = 2 [(hub.v1.field) = {
@@ -446,6 +524,7 @@ message Date {
   string value = 1 [(hub.v1.field) = {
     target: "raw"
     parser: "iso8601"
+    xml_chardata: true
   }];
   // Date type
   DateType type = 2 [(hub.v1.field) = {
@@ -476,6 +555,7 @@ message TypeValue {
   // Type value
   string value = 1 [(hub.v1.field) = {
     target: "description"
+    xml_chardata: true
   }];
   // Type scheme (e.g., DCMI Type Vocabulary)
   string scheme = 2 [(hub.v1.field) = {
@@ -516,6 +596,7 @@ message Identifier {
   // Identifier value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Identifier type (e.g., DOI, URI, ISBN)
   string type = 2 [(hub.v1.field) = {
@@ -534,6 +615,7 @@ message Relation {
   // Related resource identifier or description
   string value = 1 [(hub.v1.field) = {
     target: "target_identifier"
+    xml_chardata: true
   }];
   // Relation type
   RelationType type = 2 [(hub.v1.field) = {
@@ -635,6 +717,7 @@ message Rights {
   // Rights statement
   string statement = 1 [(hub.v1.field) = {
     target: "statement"
+    xml_chardata: true
   }];
   // Rights URI (license URL)
   string uri = 2 [(hub.v1.field) = {
