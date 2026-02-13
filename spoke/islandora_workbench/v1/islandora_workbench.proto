@@ -1,0 +1,265 @@
+syntax = "proto3";
+
+package spoke.islandora_workbench.v1;
+
+option go_package = "github.com/lehigh-university-libraries/crosswalk/spoke/islandora_workbench/v1;islandora_workbenchv1";
+
+import "hub/v1/options.proto";
+
+// Generated from Drupal bundle 'islandora_object'
+
+// IslandoraObject represents a islandora_object from Drupal.
+message IslandoraObject {
+  // Drupal node ID
+  int64 nid = 1;
+
+  // Drupal UUID
+  string uuid = 2;
+
+  // Node title
+  string title = 3;
+
+  // Published status
+  string status = 4;
+
+  // Created timestamp
+  string created = 5;
+
+  // Changed timestamp
+  string changed = 6;
+
+  // Identifier [drupal:string]
+  repeated string identifier = 10 [(hub.v1.field) = {target: "identifiers"}];
+
+  // ISBN [drupal:string]
+  repeated string isbn = 11 [(hub.v1.field) = {target: "identifiers" identifier_type: "isbn"}];
+
+  // Local Identifier [drupal:string]
+  repeated string local_identifier = 12 [(hub.v1.field) = {target: "identifiers"}];
+
+  // OCLC Number [drupal:string]
+  repeated string oclc_number = 13 [(hub.v1.field) = {target: "identifiers" identifier_type: "oclc"}];
+
+  // PID [drupal:string]
+  string pid = 14 [(hub.v1.field) = {target: "identifiers" identifier_type: "pid"}];
+
+  // Alternative Title [drupal:string]
+  repeated string alt_title = 20 [(hub.v1.field) = {target: "title"}];
+
+  // Full Title [drupal:string_long]
+  string full_title = 21 [(hub.v1.field) = {target: "title"}];
+
+  // Abstract [drupal:text_long]
+  string abstract = 30 [(hub.v1.field) = {target: "abstract"}];
+
+  // Description [drupal:string_long]
+  string description = 31 [(hub.v1.field) = {target: "notes"}];
+
+  // Extent [drupal:string]
+  repeated string extent = 32 [(hub.v1.field) = {target: "notes"}];
+
+  // Note [drupal:text_long]
+  repeated string note = 33 [(hub.v1.field) = {target: "notes"}];
+
+  // Copyright Date [drupal:edtf]
+  repeated string copyright_date = 40 [(hub.v1.field) = {target: "dates" date_type: "copyright" parser: "edtf"}];
+
+  // Date Captured [drupal:edtf]
+  repeated string date_captured = 41 [(hub.v1.field) = {target: "dates" date_type: "captured" parser: "edtf"}];
+
+  // Date Modified [drupal:edtf]
+  repeated string date_modified = 42 [(hub.v1.field) = {target: "dates" date_type: "modified" parser: "edtf"}];
+
+  // Date Valid [drupal:edtf]
+  repeated string date_valid = 43 [(hub.v1.field) = {target: "dates" date_type: "valid" parser: "edtf"}];
+
+  // Date (Unspecified) [drupal:edtf]
+  repeated string edtf_date = 44 [(hub.v1.field) = {target: "dates" date_type: "other" parser: "edtf"}];
+
+  // Date Created [drupal:edtf]
+  repeated string edtf_date_created = 45 [(hub.v1.field) = {target: "dates" date_type: "created" parser: "edtf"}];
+
+  // Date Issued [drupal:edtf]
+  repeated string edtf_date_issued = 46 [(hub.v1.field) = {target: "dates" date_type: "issued" parser: "edtf"}];
+
+  // Contributors [drupal:typed_relation]
+  repeated LinkedAgent linked_agent = 50 [(hub.v1.field) = {target: "contributors"}];
+
+  // Genre [drupal:entity_reference]
+  repeated TaxonomyRef genre = 60 [(hub.v1.field) = {target: "resource_type"}];
+
+  // Subject (Geographic) [drupal:entity_reference]
+  repeated TaxonomyRef geographic_subject = 61 [(hub.v1.field) = {target: "subjects" subject_vocabulary: "geographic"}];
+
+  // Subject (Topical) [drupal:entity_reference]
+  repeated TaxonomyRef subject = 62 [(hub.v1.field) = {target: "subjects"}];
+
+  // Subject [drupal:entity_reference]
+  repeated TaxonomyRef subject_general = 63 [(hub.v1.field) = {target: "subjects"}];
+
+  // Subject (Name) [drupal:entity_reference]
+  repeated TaxonomyRef subjects_name = 64 [(hub.v1.field) = {target: "subjects"}];
+
+  // Subject (Temporal) [drupal:entity_reference]
+  repeated TaxonomyRef temporal_subject = 65 [(hub.v1.field) = {target: "subjects" subject_vocabulary: "temporal"}];
+
+  // Place Published [drupal:string]
+  repeated string place_published = 70 [(hub.v1.field) = {target: "place_published"}];
+
+  // Country of Publication [drupal:entity_reference]
+  TaxonomyRef place_published_country = 71 [(hub.v1.field) = {target: "place_published"}];
+
+  // Publisher [drupal:string]
+  repeated string publisher = 72 [(hub.v1.field) = {target: "publisher"}];
+
+  // Classification (Other) [drupal:string]
+  repeated string classification = 80 [(hub.v1.field) = {target: "subjects"}];
+
+  // Coordinates [drupal:geolocation]
+  repeated Geolocation coordinates = 81 [(hub.v1.field) = {target: "subjects" subject_vocabulary: "geographic"}];
+
+  // Coordinates (Text) [drupal:string]
+  repeated string coordinates_text = 82 [(hub.v1.field) = {target: "subjects" subject_vocabulary: "geographic"}];
+
+  // Dewey Classification [drupal:string]
+  repeated string dewey_classification = 83 [(hub.v1.field) = {target: "subjects"}];
+
+  // Edition Statement [drupal:string]
+  repeated string edition = 84 [(hub.v1.field) = {target: "extra"}];
+
+  // Frequency [drupal:entity_reference]
+  repeated TaxonomyRef frequency = 85 [(hub.v1.field) = {target: "extra"}];
+
+  // Language [drupal:entity_reference]
+  repeated TaxonomyRef language = 86 [(hub.v1.field) = {target: "language"}];
+
+  // Library of Congress Classification [drupal:string]
+  repeated string lcc_classification = 87 [(hub.v1.field) = {target: "subjects"}];
+
+  // Member of [drupal:entity_reference]
+  repeated TaxonomyRef member_of = 88 [(hub.v1.field) = {target: "relations" relation_type: "member_of"}];
+
+  // Mode of Issuance [drupal:entity_reference]
+  repeated TaxonomyRef mode_of_issuance = 89 [(hub.v1.field) = {target: "extra"}];
+
+  // Model [drupal:entity_reference]
+  TaxonomyRef model = 90 [(hub.v1.field) = {target: "extra"}];
+
+  // Form [drupal:entity_reference]
+  repeated TaxonomyRef physical_form = 91 [(hub.v1.field) = {target: "notes"}];
+
+  // Representative Image [drupal:entity_reference]
+  TaxonomyRef representative_image = 92 [(hub.v1.field) = {target: "extra"}];
+
+  // Type [drupal:entity_reference]
+  TaxonomyRef resource_type = 93 [(hub.v1.field) = {target: "resource_type"}];
+
+  // Rights [drupal:text_long]
+  repeated string rights = 94 [(hub.v1.field) = {target: "rights"}];
+
+  // Table of Contents [drupal:text_long]
+  string table_of_contents = 95 [(hub.v1.field) = {target: "notes"}];
+
+  // Viewer Override [drupal:entity_reference]
+  TaxonomyRef viewer_override = 96 [(hub.v1.field) = {target: "extra"}];
+
+  // Custom Sort Value [drupal:integer]
+  int32 weight = 97 [(hub.v1.field) = {target: "extra"}];
+}
+
+// LinkedAgent represents a typed relation to a person, family, or corporate body.
+message LinkedAgent {
+  int64 target_id = 1;
+
+  string target_uuid = 2;
+
+  // taxonomy_term
+  string target_type = 3;
+
+  // MARC relator code
+  string rel_type = 4;
+
+  // Resolved agent name
+  string name = 10;
+
+  // Resolved relation label
+  string rel_label = 11;
+}
+
+// TaxonomyRef represents a reference to a taxonomy term.
+message TaxonomyRef {
+  int64 target_id = 1;
+
+  string target_uuid = 2;
+
+  string target_type = 3;
+
+  // Resolved term name
+  string name = 10;
+
+  // Vocabulary ID
+  string vid = 11;
+
+  // External URI
+  string uri = 12;
+}
+
+// EntityRef represents a generic entity reference.
+message EntityRef {
+  int64 target_id = 1;
+
+  string target_uuid = 2;
+
+  string target_type = 3;
+
+  string title = 10;
+}
+
+// Geolocation represents geographic coordinates.
+message Geolocation {
+  double lat = 1;
+
+  double lng = 2;
+
+  string data = 3;
+}
+
+// ImageRef represents an image file reference.
+message ImageRef {
+  int64 target_id = 1;
+
+  string alt = 2;
+
+  string title = 3;
+
+  int32 width = 4;
+
+  int32 height = 5;
+
+  string uri = 10;
+
+  string url = 11;
+}
+
+// FileRef represents a file reference.
+message FileRef {
+  int64 target_id = 1;
+
+  string description = 2;
+
+  string uri = 10;
+
+  string url = 11;
+
+  string filemime = 12;
+
+  int64 filesize = 13;
+}
+
+// Link represents a URL with optional title.
+message Link {
+  string uri = 1;
+
+  string title = 2;
+}
+

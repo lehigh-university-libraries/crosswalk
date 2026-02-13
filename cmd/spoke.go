@@ -48,30 +48,31 @@ var spokeShowCmd = &cobra.Command{
 var spokeCreateCmd = &cobra.Command{
 	Use:   "create <format> <name>",
 	Short: "Create a new spoke from configuration",
-	Long: `Create a new protobuf spoke schema.
+	Long: `Create a new spoke from Drupal configuration.
 
-For Drupal:
+For Drupal (generates a .proto file):
   crosswalk spoke create drupal islandora --bundle islandora_object \
     --from-config ./config/sync
 
   This reads the Drupal configuration and generates a .proto file with
   typed fields matching the content type definition.
 
+For Islandora Workbench:
+  crosswalk spoke create islandora-workbench islandora-workbench \
+    --bundle islandora_object --from-config ./config/sync
+
+  Generates a .proto file for the Islandora Workbench CSV format. The fields
+  match Drupal field names used as Workbench column headers. Use this as a
+  starting point for sites running standard Islandora without customized field
+  configurations.
+
 Interactive Mode:
   crosswalk spoke create drupal islandora --bundle islandora_object \
     --from-config ./config/sync --interactive
 
   With --interactive (-i), you'll be prompted to map each field to Hub targets.
-  This adds hub.v1.field annotations to the proto for automatic conversion.
 
-Regenerating:
-  crosswalk spoke create drupal islandora --bundle islandora_object \
-    --from-config ./config/sync --interactive --force
-
-  With --force (-f), you can regenerate an existing spoke. If using --interactive,
-  your previous mappings will be loaded as defaults for easy updates.
-
-The generated proto is placed in spoke/<name>/v1/<name>.proto and
+The generated Drupal proto is placed in spoke/<name>/v1/<name>.proto and
 can be compiled with 'make generate'.`,
 	Args: cobra.ExactArgs(2),
 	RunE: runSpokeCreate,
@@ -175,13 +176,11 @@ func runSpokeCreate(cmd *cobra.Command, args []string) error {
 	format := args[0]
 	name := args[1]
 
-	// Determine output path
 	outputPath := spokeOutput
 	if outputPath == "" {
 		outputPath = filepath.Join("spoke", name, "v1", name+".proto")
 	}
 
-	// Check if spoke already exists
 	existingProto := ""
 	if _, err := os.Stat(outputPath); err == nil {
 		if !spokeForceReplace {
@@ -195,20 +194,21 @@ func runSpokeCreate(cmd *cobra.Command, args []string) error {
 	var err error
 
 	switch format {
-	case "drupal":
+	case "drupal", "islandora-workbench":
 		if spokeFromConfig == "" {
-			return fmt.Errorf("--from-config is required for Drupal spokes")
+			return fmt.Errorf("--from-config is required for %s spokes", format)
 		}
 		if spokeBundle == "" {
-			return fmt.Errorf("--bundle is required for Drupal spokes (e.g., --bundle islandora_object)")
+			return fmt.Errorf("--bundle is required for %s spokes (e.g., --bundle islandora_object)", format)
 		}
 		proto, err = spoke.GenerateDrupalSpoke(name, spokeBundle, spokeFromConfig)
 		if err != nil {
-			return fmt.Errorf("generating Drupal spoke: %w", err)
+			return fmt.Errorf("generating %s spoke: %w", format, err)
 		}
+		proto.FormatName = format
 
 	default:
-		return fmt.Errorf("unknown format: %s (use 'drupal')", format)
+		return fmt.Errorf("unknown format: %s (use 'drupal' or 'islandora-workbench')", format)
 	}
 
 	// Apply Hub mappings unless --no-hub is set

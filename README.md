@@ -50,21 +50,22 @@ CSV          →   column mappings → (normalized) →     field rules   →  C
 
 ## Supported Formats
 
-| Format             | Parse | Serialize |
-|--------------------|-------|-----------|
-| Drupal JSON        | ✓     | ✓         |
-| CSV                | ✓     | ✓         |
-| schema.org JSON-LD | ✓     | ✓         |
-| CrossRef XML       | ✓     | ✓         |
-| DataCite XML       | ✓     | ✓         |
-| ProQuest ETD       | ✓     | ✓         |
-| BibTeX             | ✓     | ✓         |
-| CSL-JSON           | ✓     | ✓         |
-| MODS XML           | ✓     | ✓         |
-| Dublin Core        | ✓     | ✓         |
-| arXiv              | ✓     | ✓         |
-| Web of Science     | planned | planned |
-| Scopus             | planned | planned |
+| Format              | Parse | Serialize |
+|---------------------|-------|-----------|
+| Drupal JSON         | ✓     | ✓         |
+| CSV                 | ✓     | ✓         |
+| schema.org JSON-LD  | ✓     | ✓         |
+| CrossRef XML        | ✓     | ✓         |
+| DataCite XML        | ✓     | ✓         |
+| ProQuest ETD        | ✓     | ✓         |
+| BibTeX              | ✓     | ✓         |
+| CSL-JSON            | ✓     | ✓         |
+| MODS XML            | ✓     | ✓         |
+| Dublin Core         | ✓     | ✓         |
+| arXiv               | ✓     | ✓         |
+| Islandora Workbench | ✓     | ✓         |
+| Web of Science      | planned | planned |
+| Scopus              | planned | planned |
 
 Have an idea for a new format? Issues and Pull Requests welcome!
 

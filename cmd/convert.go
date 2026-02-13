@@ -13,6 +13,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
+	spokeregistry "github.com/lehigh-university-libraries/crosswalk/spoke/registry"
 
 	// Register all format plugins
 	_ "github.com/lehigh-university-libraries/crosswalk/format/arxiv"
@@ -24,6 +25,10 @@ import (
 	_ "github.com/lehigh-university-libraries/crosswalk/format/mods"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/proquest"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/schemaorg"
+
+	// Register spoke field registries for use as default profiles
+	_ "github.com/lehigh-university-libraries/crosswalk/spoke/islandora/v1"
+	_ "github.com/lehigh-university-libraries/crosswalk/spoke/islandora_workbench/v1"
 )
 
 var (
@@ -239,15 +244,9 @@ func loadProfile(fromFormat string) (*mapping.Profile, error) {
 		}
 	}
 
-	// Use default embedded profile based on input format
-	if fromFormat == "drupal" {
-		registry, err := mapping.NewProfileRegistry()
-		if err != nil {
-			return nil, err
-		}
-		if mp, ok := registry.Get("islandora"); ok {
-			return mp, nil
-		}
+	// Use generated spoke code as default profile if available
+	if mp, ok := spokeregistry.ProfileFrom(fromFormat); ok {
+		return mp, nil
 	}
 
 	return nil, nil
