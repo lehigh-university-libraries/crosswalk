@@ -145,6 +145,7 @@ enum GroupType {
 }
 
 // Contributor represents a person or organization that contributed to a work.
+// Maps to schema.org Person or Organization with contributor-specific extensions.
 message Contributor {
   // Name is the full name as a single string (e.g., "Fries, Albert F. Jr.")
   string name = 1;
@@ -172,6 +173,34 @@ message Contributor {
 
   // Affiliations for the contributor (preferred over single affiliation field)
   repeated Affiliation affiliations = 9;
+
+  // Email address (schema.org Person.email)
+  string email = 10;
+
+  // Status or job title (e.g., "Graduate Student", "Faculty", "Professor")
+  // Maps to schema.org Person.jobTitle
+  string status = 11;
+
+  // URL for the contributor's profile or homepage (schema.org Person.url)
+  string url = 12;
+
+  // Description or bio (schema.org Person.description)
+  string description = 13;
+
+  // AdditionalName for middle names or other name parts (schema.org Person.additionalName)
+  string additional_name = 14;
+
+  // AlumniOf lists educational institutions the person attended (schema.org Person.alumniOf)
+  // Each entry is an organization name; use Affiliation for structured data with identifiers
+  repeated string alumni_of = 15;
+
+  // AuthorityURI is a canonical URI for the contributor from a name authority
+  // (e.g., LCNAF, VIAF, ULAN). In Islandora, this comes from field_authority_link.
+  // This is a convenience field; the same URI should also be in identifiers[].
+  string authority_uri = 16;
+
+  // AuthoritySource identifies the vocabulary (e.g., "lcnaf", "viaf", "ulan")
+  string authority_source = 17;
 }
 
 // ContributorType indicates whether a contributor is a person or organization.

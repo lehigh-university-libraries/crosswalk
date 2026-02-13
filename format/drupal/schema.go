@@ -216,6 +216,12 @@ func drupalTypeToSchemaType(drupalType string) schema.FieldType {
 		return schema.FieldImage
 	case "paragraph", "entity_reference_revisions":
 		return schema.FieldComposite
+	case "related_item":
+		return schema.FieldRelatedItem
+	case "part_detail":
+		return schema.FieldPartDetail
+	case "textfield_attr", "textarea_attr":
+		return schema.FieldAttr
 	default:
 		return schema.FieldText // Default to text for unknown types
 	}

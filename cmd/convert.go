@@ -13,6 +13,17 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
+
+	// Register all format plugins
+	_ "github.com/lehigh-university-libraries/crosswalk/format/arxiv"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/bibtex"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/crossref"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/csl"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/datacite"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/dublincore"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/mods"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/proquest"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/schemaorg"
 )
 
 var (

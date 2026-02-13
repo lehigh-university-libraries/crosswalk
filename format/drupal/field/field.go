@@ -28,6 +28,12 @@ type Handler interface {
 	Links(raw json.RawMessage) []value.Link
 	// FormattedText extracts formatted text with optional processed HTML.
 	FormattedText(raw json.RawMessage, useProcessed bool) string
+	// RelatedItems extracts related_item field values.
+	RelatedItems(raw json.RawMessage) []value.RelatedItem
+	// PartDetails extracts part_detail field values.
+	PartDetails(raw json.RawMessage) []value.PartDetail
+	// AttrFields extracts textfield_attr or textarea_attr field values.
+	AttrFields(raw json.RawMessage) []value.AttrField
 }
 
 // GetHandler returns a Handler for the given Drupal source type.
@@ -45,6 +51,12 @@ func GetHandler(sourceType string) Handler {
 		return &EDTFHandler{}
 	case "text", "text_long", "text_with_summary":
 		return &FormattedTextHandler{}
+	case "related_item":
+		return &RelatedItemHandler{}
+	case "part_detail":
+		return &PartDetailHandler{}
+	case "textfield_attr", "textarea_attr":
+		return &AttrFieldHandler{}
 	default:
 		return &GenericHandler{}
 	}
@@ -87,6 +99,18 @@ func (h *GenericHandler) Links(raw json.RawMessage) []value.Link {
 
 func (h *GenericHandler) FormattedText(raw json.RawMessage, useProcessed bool) string {
 	return value.FormattedText(raw, useProcessed)
+}
+
+func (h *GenericHandler) RelatedItems(raw json.RawMessage) []value.RelatedItem {
+	return value.FromArrayRelatedItems(raw)
+}
+
+func (h *GenericHandler) PartDetails(raw json.RawMessage) []value.PartDetail {
+	return value.FromArrayPartDetails(raw)
+}
+
+func (h *GenericHandler) AttrFields(raw json.RawMessage) []value.AttrField {
+	return value.FromArrayAttrFields(raw)
 }
 
 // FormattedTextHandler handles text, text_long, text_with_summary fields.
@@ -158,6 +182,48 @@ func (h *EDTFHandler) Dates(raw json.RawMessage) []value.Date {
 	for _, s := range texts {
 		if d, err := value.ParseEDTF(s); err == nil && !d.IsZero() {
 			result = append(result, d)
+		}
+	}
+	return result
+}
+
+// RelatedItemHandler handles related_item fields.
+// These have identifier, identifier_type, number, and title keys.
+type RelatedItemHandler struct {
+	GenericHandler
+}
+
+// PartDetailHandler handles part_detail fields.
+// These have type, caption, number, and title keys.
+type PartDetailHandler struct {
+	GenericHandler
+}
+
+// AttrFieldHandler handles textfield_attr and textarea_attr fields.
+// These have attr0, attr1, value, and optionally format keys.
+type AttrFieldHandler struct {
+	GenericHandler
+}
+
+// Text extracts the value from the first attr field item.
+func (h *AttrFieldHandler) Text(raw json.RawMessage) string {
+	fields := value.FromArrayAttrFields(raw)
+	if len(fields) == 0 {
+		return ""
+	}
+	return fields[0].Value
+}
+
+// Texts extracts all values from attr field items.
+func (h *AttrFieldHandler) Texts(raw json.RawMessage) []string {
+	fields := value.FromArrayAttrFields(raw)
+	if len(fields) == 0 {
+		return nil
+	}
+	result := make([]string, 0, len(fields))
+	for _, f := range fields {
+		if f.Value != "" {
+			result = append(result, f.Value)
 		}
 	}
 	return result

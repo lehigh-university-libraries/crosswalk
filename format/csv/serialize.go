@@ -2,6 +2,7 @@ package csv
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"io"
 	"strings"
 
@@ -67,24 +68,11 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		return strings.Join(record.AltTitle, sep)
 
 	case "contributors":
-		names := make([]string, 0, len(record.Contributors))
+		contribs := make([]string, 0, len(record.Contributors))
 		for _, c := range record.Contributors {
-			names = append(names, hub.DisplayName(c))
+			contribs = append(contribs, serializeContributor(c))
 		}
-		return strings.Join(names, sep)
-
-	case "contributor_roles":
-		roles := make([]string, 0, len(record.Contributors))
-		for _, c := range record.Contributors {
-			if c.Role != "" {
-				roles = append(roles, c.Role)
-			} else if c.RoleCode != "" {
-				roles = append(roles, c.RoleCode)
-			} else {
-				roles = append(roles, "")
-			}
-		}
-		return strings.Join(roles, sep)
+		return strings.Join(contribs, " ; ")
 
 	case "date_issued":
 		if d := hub.GetDateIssued(record); d != nil {
@@ -279,4 +267,94 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 // DefaultColumns returns the standard column set for CSV output.
 func DefaultColumns() []string {
 	return mapping.DefaultCSVColumns()
+}
+
+// serializeContributor converts a Contributor to JSON format.
+// Format: {"name":"relators:cre:person:Name","institution":"...","orcid":"...","email":"...","status":"..."}
+// The name field embeds role and type as a prefix: "role_code:type:Name"
+func serializeContributor(c *hubv1.Contributor) string {
+	// Build the prefixed name: "relators:cre:person:Name"
+	var nameParts []string
+
+	// Add role code if present
+	if c.RoleCode != "" {
+		nameParts = append(nameParts, c.RoleCode)
+	}
+
+	// Add type
+	switch c.Type {
+	case hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON:
+		nameParts = append(nameParts, "person")
+	case hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION:
+		nameParts = append(nameParts, "organization")
+	default:
+		nameParts = append(nameParts, "person") // default to person
+	}
+
+	// Add the actual name
+	nameParts = append(nameParts, c.Name)
+
+	prefixedName := strings.Join(nameParts, ":")
+
+	// Build the JSON object
+	obj := map[string]any{
+		"name": prefixedName,
+	}
+
+	// Add institution from affiliations
+	if len(c.Affiliations) > 0 {
+		obj["institution"] = c.Affiliations[0].Name
+	} else if c.Affiliation != "" {
+		obj["institution"] = c.Affiliation
+	}
+
+	// Add ORCID from identifiers
+	for _, id := range c.Identifiers {
+		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID {
+			obj["orcid"] = id.Value
+			break
+		}
+	}
+
+	// Add authority URI if present
+	if c.AuthorityUri != "" {
+		obj["authority_uri"] = c.AuthorityUri
+		if c.AuthoritySource != "" {
+			obj["authority_source"] = c.AuthoritySource
+		}
+	}
+
+	// Add email if present
+	if c.Email != "" {
+		obj["email"] = c.Email
+	}
+
+	// Add status if present
+	if c.Status != "" {
+		obj["status"] = c.Status
+	}
+
+	// Add additional name if present
+	if c.AdditionalName != "" {
+		obj["additional_name"] = c.AdditionalName
+	}
+
+	// Add alumni_of if present
+	if len(c.AlumniOf) > 0 {
+		obj["alumni_of"] = c.AlumniOf
+	}
+
+	// Add URL if present
+	if c.Url != "" {
+		obj["url"] = c.Url
+	}
+
+	// Serialize to JSON
+	data, err := json.Marshal(obj)
+	if err != nil {
+		// Fallback to simple name format
+		return prefixedName
+	}
+
+	return string(data)
 }

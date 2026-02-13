@@ -233,6 +233,34 @@ type Link struct {
 	Options map[string]any
 }
 
+// RelatedItem represents a Drupal related_item field value.
+// Used for describing related bibliographic items (e.g., journal this article is part of).
+type RelatedItem struct {
+	Identifier     string // Identifier value (e.g., ISSN)
+	IdentifierType string // Type of identifier: 'l-issn', 'audio-file', 'transcription-file', 'uri'
+	Number         string // Number value (e.g., volume number)
+	Title          string // Title of the related item
+}
+
+// PartDetail represents a Drupal part_detail field value.
+// Used for describing parts/sections of a work (volume, issue, pages, etc.).
+type PartDetail struct {
+	Type    string // Type of part: 'article', 'heading', 'illustration', 'page', 'issue', 'section', 'volume'
+	Caption string // Caption/label for the part
+	Number  string // Number value
+	Title   string // Title of the part
+}
+
+// AttrField represents a Drupal textfield_attr or textarea_attr field value.
+// These are text fields with configurable attribute metadata (attr0, attr1).
+// Common use: identifiers where attr0 indicates type (doi, issn, local, etc.)
+type AttrField struct {
+	Value  string // The actual text value
+	Attr0  string // First attribute (e.g., identifier type: "doi", "issn", "local")
+	Attr1  string // Second attribute (optional)
+	Format string // Text format (only for textarea_attr)
+}
+
 // FromArrayLinks extracts link field values.
 func FromArrayLinks(raw json.RawMessage) []Link {
 	maps := FromArrayMaps(raw)
@@ -256,6 +284,108 @@ func FromArrayLinks(raw json.RawMessage) []Link {
 		}
 		if link.URI != "" {
 			result = append(result, link)
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+// FromArrayAttrFields extracts textfield_attr or textarea_attr field values.
+func FromArrayAttrFields(raw json.RawMessage) []AttrField {
+	maps := FromArrayMaps(raw)
+	if len(maps) == 0 {
+		return nil
+	}
+
+	result := make([]AttrField, 0, len(maps))
+	for _, m := range maps {
+		item := AttrField{}
+		if v, ok := m["value"]; ok {
+			item.Value = Text(v)
+		}
+		if v, ok := m["attr0"]; ok {
+			item.Attr0 = Text(v)
+		}
+		if v, ok := m["attr1"]; ok {
+			item.Attr1 = Text(v)
+		}
+		if v, ok := m["format"]; ok {
+			item.Format = Text(v)
+		}
+		// Only add if value is present
+		if item.Value != "" {
+			result = append(result, item)
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+// FromArrayRelatedItems extracts related_item field values.
+func FromArrayRelatedItems(raw json.RawMessage) []RelatedItem {
+	maps := FromArrayMaps(raw)
+	if len(maps) == 0 {
+		return nil
+	}
+
+	result := make([]RelatedItem, 0, len(maps))
+	for _, m := range maps {
+		item := RelatedItem{}
+		if v, ok := m["identifier"]; ok {
+			item.Identifier = Text(v)
+		}
+		if v, ok := m["identifier_type"]; ok {
+			item.IdentifierType = Text(v)
+		}
+		if v, ok := m["number"]; ok {
+			item.Number = Text(v)
+		}
+		if v, ok := m["title"]; ok {
+			item.Title = Text(v)
+		}
+		// Only add if at least one field is present
+		if item.Identifier != "" || item.Number != "" || item.Title != "" {
+			result = append(result, item)
+		}
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+// FromArrayPartDetails extracts part_detail field values.
+func FromArrayPartDetails(raw json.RawMessage) []PartDetail {
+	maps := FromArrayMaps(raw)
+	if len(maps) == 0 {
+		return nil
+	}
+
+	result := make([]PartDetail, 0, len(maps))
+	for _, m := range maps {
+		item := PartDetail{}
+		if v, ok := m["type"]; ok {
+			item.Type = Text(v)
+		}
+		if v, ok := m["caption"]; ok {
+			item.Caption = Text(v)
+		}
+		if v, ok := m["number"]; ok {
+			item.Number = Text(v)
+		}
+		if v, ok := m["title"]; ok {
+			item.Title = Text(v)
+		}
+		// Only add if at least one field is present
+		if item.Type != "" || item.Number != "" || item.Title != "" {
+			result = append(result, item)
 		}
 	}
 

@@ -157,6 +157,12 @@ func (e *Enricher) enrichReference(ref map[string]any, depth int) (map[string]an
 		return ref, nil
 	}
 
+	// Skip user entities - they typically contain sensitive data and are not needed for metadata
+	if targetType == "user" {
+		slog.Debug("skipping user entity", "targetID", int64(targetID))
+		return ref, nil
+	}
+
 	// Build the entity URL
 	entityURL := e.buildEntityURL(targetType, int64(targetID))
 	if entityURL == "" {
@@ -206,10 +212,9 @@ func (e *Enricher) buildEntityURL(targetType string, targetID int64) string {
 		return fmt.Sprintf("%s/node/%d?_format=json", e.BaseURL, targetID)
 	case "media":
 		return fmt.Sprintf("%s/media/%d?_format=json", e.BaseURL, targetID)
-	case "user":
-		return fmt.Sprintf("%s/user/%d?_format=json", e.BaseURL, targetID)
 	case "file":
 		return fmt.Sprintf("%s/entity/file/%d?_format=json", e.BaseURL, targetID)
+	// Note: user entities are skipped in enrichReference before reaching here
 	default:
 		// Unknown entity type
 		return ""
