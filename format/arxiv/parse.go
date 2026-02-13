@@ -134,10 +134,7 @@ func atomEntryToHub(entry *XMLAtomEntry) (*hubv1.Record, error) {
 	// Categories as subjects; first is primary
 	for _, cat := range entry.Categories {
 		if cat.Term != "" {
-			record.Subjects = append(record.Subjects, &hubv1.Subject{
-				Value:      cat.Term,
-				Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV,
-			})
+			record.Subjects = append(record.Subjects, enrichSubject(cat.Term))
 		}
 	}
 
@@ -341,10 +338,7 @@ func oaiToHub(oai *XMLOAIArXiv) (*hubv1.Record, error) {
 	// Categories (space-separated, first is primary)
 	if oai.Categories != "" {
 		for _, cat := range strings.Fields(oai.Categories) {
-			record.Subjects = append(record.Subjects, &hubv1.Subject{
-				Value:      cat,
-				Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV,
-			})
+			record.Subjects = append(record.Subjects, enrichSubject(cat))
 		}
 	}
 
@@ -550,18 +544,12 @@ func xmlToHub(xmlRec *XMLRecord) (*hubv1.Record, error) {
 
 	// Primary classification
 	if xmlRec.Primary != "" {
-		record.Subjects = append(record.Subjects, &hubv1.Subject{
-			Value:      xmlRec.Primary,
-			Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV,
-		})
+		record.Subjects = append(record.Subjects, enrichSubject(xmlRec.Primary))
 	}
 
 	// Cross-listed classifications
 	for _, cross := range xmlRec.Cross {
-		record.Subjects = append(record.Subjects, &hubv1.Subject{
-			Value:      cross,
-			Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV,
-		})
+		record.Subjects = append(record.Subjects, enrichSubject(cross))
 	}
 
 	// Submission date
@@ -781,6 +769,20 @@ func buildDisplayName(pn *hubv1.ParsedName) string {
 		parts = append(parts, pn.Suffix)
 	}
 	return strings.Join(parts, " ")
+}
+
+// enrichSubject builds a Subject for an arXiv category code, enriching it with
+// a human-readable label when available. The code is preserved in SourceId.
+func enrichSubject(code string) *hubv1.Subject {
+	s := &hubv1.Subject{
+		Value:      code,
+		SourceId:   code,
+		Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV,
+	}
+	if label := CategoryLabel(code); label != "" {
+		s.Value = label
+	}
+	return s
 }
 
 // classSchemeToVocab maps a classification scheme string to a hub vocabulary.

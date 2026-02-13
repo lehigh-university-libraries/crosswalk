@@ -94,17 +94,23 @@ func TestParseBareRecord(t *testing.T) {
 		t.Error("arXiv identifier 2511.11447 not found")
 	}
 
-	// Subjects: primary + cross
-	wantSubjects := map[string]bool{"cs.CL": false, "cs.AI": false}
+	// Subjects: primary + cross (SourceId holds the code, Value holds the label)
+	wantSubjects := map[string]string{
+		"cs.CL": "Computation and Language",
+		"cs.AI": "Artificial Intelligence",
+	}
 	for _, s := range r.Subjects {
 		if s.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV {
-			wantSubjects[s.Value] = true
+			if wantLabel, ok := wantSubjects[s.SourceId]; ok {
+				if s.Value != wantLabel {
+					t.Errorf("Subject %q label: got %q, want %q", s.SourceId, s.Value, wantLabel)
+				}
+				delete(wantSubjects, s.SourceId)
+			}
 		}
 	}
-	for val, found := range wantSubjects {
-		if !found {
-			t.Errorf("arXiv subject %q not found", val)
-		}
+	for code := range wantSubjects {
+		t.Errorf("arXiv subject %q not found", code)
 	}
 
 	// MSC classification
@@ -406,17 +412,23 @@ func TestParseOAIFormat(t *testing.T) {
 		t.Error("arXiv identifier not found")
 	}
 
-	// Categories as subjects
-	wantCats := map[string]bool{"cs.DL": false, "cs.IR": false}
+	// Categories as subjects (SourceId holds code, Value holds label)
+	wantCats := map[string]string{
+		"cs.DL": "Digital Libraries",
+		"cs.IR": "Information Retrieval",
+	}
 	for _, s := range r.Subjects {
 		if s.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV {
-			wantCats[s.Value] = true
+			if wantLabel, ok := wantCats[s.SourceId]; ok {
+				if s.Value != wantLabel {
+					t.Errorf("Subject %q label: got %q, want %q", s.SourceId, s.Value, wantLabel)
+				}
+				delete(wantCats, s.SourceId)
+			}
 		}
 	}
-	for cat, found := range wantCats {
-		if !found {
-			t.Errorf("Category %q not found", cat)
-		}
+	for cat := range wantCats {
+		t.Errorf("Category %q not found", cat)
 	}
 
 	// Authors with parsed names
@@ -609,17 +621,23 @@ func TestParseAtomAPI(t *testing.T) {
 		t.Errorf("Abstract: got %q", r.Abstract)
 	}
 
-	// Categories
-	wantCats := map[string]bool{"cs.DL": false, "cs.IR": false}
+	// Categories (SourceId holds code, Value holds label)
+	wantCats := map[string]string{
+		"cs.DL": "Digital Libraries",
+		"cs.IR": "Information Retrieval",
+	}
 	for _, s := range r.Subjects {
 		if s.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_ARXIV {
-			wantCats[s.Value] = true
+			if wantLabel, ok := wantCats[s.SourceId]; ok {
+				if s.Value != wantLabel {
+					t.Errorf("Subject %q label: got %q, want %q", s.SourceId, s.Value, wantLabel)
+				}
+				delete(wantCats, s.SourceId)
+			}
 		}
 	}
-	for cat, found := range wantCats {
-		if !found {
-			t.Errorf("Category %q not found", cat)
-		}
+	for cat := range wantCats {
+		t.Errorf("Category %q not found", cat)
 	}
 
 	// Published date
