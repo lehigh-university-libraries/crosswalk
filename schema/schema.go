@@ -11,16 +11,19 @@ import (
 type FieldType string
 
 const (
-	FieldText      FieldType = "text"
-	FieldInt       FieldType = "int"
-	FieldBool      FieldType = "bool"
-	FieldDate      FieldType = "date"
-	FieldRef       FieldType = "reference"
-	FieldTypedRef  FieldType = "typed_reference"
-	FieldLink      FieldType = "link"
-	FieldComposite FieldType = "composite"
-	FieldFile      FieldType = "file"
-	FieldImage     FieldType = "image"
+	FieldText        FieldType = "text"
+	FieldInt         FieldType = "int"
+	FieldBool        FieldType = "bool"
+	FieldDate        FieldType = "date"
+	FieldRef         FieldType = "reference"
+	FieldTypedRef    FieldType = "typed_reference"
+	FieldLink        FieldType = "link"
+	FieldComposite   FieldType = "composite"
+	FieldFile        FieldType = "file"
+	FieldImage       FieldType = "image"
+	FieldRelatedItem FieldType = "related_item"
+	FieldPartDetail  FieldType = "part_detail"
+	FieldAttr        FieldType = "attr" // textfield_attr, textarea_attr
 )
 
 // Cardinality defines how many values a field can have.

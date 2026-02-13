@@ -157,6 +157,9 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 	case "Relations":
 		return processRelations(record, rawValue, fieldMapping, opts)
 
+	case "Publication":
+		return processPublication(record, rawValue, fieldMapping, opts)
+
 	case "Identifiers":
 		return processIdentifiers(record, rawValue, fieldMapping, opts)
 
@@ -564,7 +567,99 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 	return nil
 }
 
+func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+	if record.Publication == nil {
+		record.Publication = &hubv1.PublicationDetails{}
+	}
+
+	// Handle related_item field type
+	if fieldMapping.Type == "related_item" {
+		items, _ := ExtractRelatedItems(rawValue)
+		for _, item := range items {
+			switch item.IdentifierType {
+			case "l-issn":
+				// Linking ISSN for journals
+				if item.Identifier != "" {
+					record.Publication.LIssn = item.Identifier
+				}
+				if item.Title != "" && record.Publication.Title == "" {
+					record.Publication.Title = item.Title
+				}
+			case "uri":
+				// URI-based related item - could be a relation
+				// For now, store title if available
+				if item.Title != "" && record.Publication.Title == "" {
+					record.Publication.Title = item.Title
+				}
+			default:
+				// Handle other identifier types
+				if item.Title != "" && record.Publication.Title == "" {
+					record.Publication.Title = item.Title
+				}
+			}
+		}
+		return nil
+	}
+
+	// Handle part_detail field type
+	if fieldMapping.Type == "part_detail" {
+		parts, _ := ExtractPartDetails(rawValue)
+		for _, part := range parts {
+			switch part.Type {
+			case "volume":
+				if part.Number != "" {
+					record.Publication.Volume = part.Number
+				} else if part.Caption != "" {
+					record.Publication.Volume = part.Caption
+				}
+			case "issue":
+				if part.Number != "" {
+					record.Publication.Issue = part.Number
+				} else if part.Caption != "" {
+					record.Publication.Issue = part.Caption
+				}
+			case "page":
+				if part.Number != "" {
+					if record.Publication.Pages != "" {
+						record.Publication.Pages += "-" + part.Number
+					} else {
+						record.Publication.Pages = part.Number
+					}
+				}
+			case "article":
+				// Article number, could be stored in pages or a separate field
+				if part.Number != "" && record.Publication.Pages == "" {
+					record.Publication.Pages = part.Number
+				}
+			case "section":
+				// Section info - could be stored in title or extra
+				if part.Title != "" && record.Publication.Title == "" {
+					record.Publication.Title = part.Title
+				}
+			}
+		}
+		return nil
+	}
+
+	return nil
+}
+
 func processIdentifiers(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+	// Handle textfield_attr and textarea_attr field types
+	if fieldMapping.Type == "textfield_attr" || fieldMapping.Type == "textarea_attr" {
+		attrFields, _ := ExtractAttrFields(rawValue)
+		for _, field := range attrFields {
+			idType := hub.DetectIdentifierType(field.Value)
+			// Use attr0 to determine identifier type if present
+			if field.Attr0 != "" {
+				idType = identifierTypeFromString(field.Attr0)
+			}
+			record.Identifiers = append(record.Identifiers, hub.NewIdentifier(field.Value, idType))
+		}
+		return nil
+	}
+
+	// Default: extract as plain strings
 	vals, _ := ExtractStrings(rawValue)
 	for _, val := range vals {
 		idType := hub.DetectIdentifierType(val)
@@ -580,13 +675,13 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 	switch strings.ToLower(s) {
 	case "doi":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_DOI
-	case "url":
+	case "url", "uri":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_URL
 	case "handle":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_HANDLE
 	case "isbn":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN
-	case "issn":
+	case "issn", "l-issn":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN
 	case "orcid":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID
@@ -596,7 +691,7 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_PMCID
 	case "arxiv":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV
-	case "local":
+	case "local", "islandora", "item-number", "file-name", "barcode":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL
 	case "pid":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_PID
@@ -606,6 +701,12 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_UUID
 	case "isni":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ISNI
+	case "report-number":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_REPORT_NUMBER
+	case "call-number":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_CALL_NUMBER
+	case "oclc", "reference":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL
 	default:
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_UNSPECIFIED
 	}
@@ -740,7 +841,9 @@ func defaultProfile() *mapping.Profile {
 			"field_publisher":         {IR: "Publisher"},
 			"field_place_published":   {IR: "PlacePublished"},
 			"field_member_of":         {IR: "Relations", RelationType: "member_of", Resolve: "node"},
-			"field_identifier":        {IR: "Identifiers"},
+			"field_related_item":      {IR: "Publication", Type: "related_item"},
+			"field_part_detail":       {IR: "Publication", Type: "part_detail"},
+			"field_identifier":        {IR: "Identifiers", Type: "textfield_attr"},
 			"field_note":              {IR: "Notes"},
 			"field_degree_name":       {IR: "DegreeInfo.DegreeName"},
 			"field_degree_level":      {IR: "DegreeInfo.DegreeLevel"},

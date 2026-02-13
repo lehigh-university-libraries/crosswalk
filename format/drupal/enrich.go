@@ -157,6 +157,12 @@ func (e *Enricher) enrichReference(ref map[string]any, depth int) (map[string]an
 		return ref, nil
 	}
 
+	// Skip user entities - they typically contain sensitive data and are not needed for metadata
+	if targetType == "user" {
+		slog.Debug("skipping user entity", "targetID", int64(targetID))
+		return ref, nil
+	}
+
 	// Build the entity URL
 	entityURL := e.buildEntityURL(targetType, int64(targetID))
 	if entityURL == "" {

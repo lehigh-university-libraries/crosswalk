@@ -332,3 +332,33 @@ func AsLinks(raw json.RawMessage) []value.Link {
 func AsDates(raw json.RawMessage) []value.Date {
 	return value.FromArrayDates(raw)
 }
+
+// ExtractRelatedItems extracts related_item field values.
+func ExtractRelatedItems(raw json.RawMessage) ([]value.RelatedItem, error) {
+	return value.FromArrayRelatedItems(raw), nil
+}
+
+// ExtractPartDetails extracts part_detail field values.
+func ExtractPartDetails(raw json.RawMessage) ([]value.PartDetail, error) {
+	return value.FromArrayPartDetails(raw), nil
+}
+
+// AsRelatedItems extracts related_item values using the value package.
+func AsRelatedItems(raw json.RawMessage) []value.RelatedItem {
+	return value.FromArrayRelatedItems(raw)
+}
+
+// AsPartDetails extracts part_detail values using the value package.
+func AsPartDetails(raw json.RawMessage) []value.PartDetail {
+	return value.FromArrayPartDetails(raw)
+}
+
+// ExtractAttrFields extracts textfield_attr or textarea_attr field values.
+func ExtractAttrFields(raw json.RawMessage) ([]value.AttrField, error) {
+	return value.FromArrayAttrFields(raw), nil
+}
+
+// AsAttrFields extracts attr field values using the value package.
+func AsAttrFields(raw json.RawMessage) []value.AttrField {
+	return value.FromArrayAttrFields(raw)
+}
