@@ -212,10 +212,9 @@ func (e *Enricher) buildEntityURL(targetType string, targetID int64) string {
 		return fmt.Sprintf("%s/node/%d?_format=json", e.BaseURL, targetID)
 	case "media":
 		return fmt.Sprintf("%s/media/%d?_format=json", e.BaseURL, targetID)
-	case "user":
-		return fmt.Sprintf("%s/user/%d?_format=json", e.BaseURL, targetID)
 	case "file":
 		return fmt.Sprintf("%s/entity/file/%d?_format=json", e.BaseURL, targetID)
+	// Note: user entities are skipped in enrichReference before reaching here
 	default:
 		// Unknown entity type
 		return ""

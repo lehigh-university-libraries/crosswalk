@@ -85,27 +85,32 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			continue
 		}
 
-		// Check priority
-		base, subfield := mapping.IRFieldName(fieldMapping.IR)
-		currentPriority := priorities[base]
-		if priorities[base] != 0 && fieldMapping.Priority <= currentPriority {
+		// Check priority - only skip if a value was actually set at that priority
+		// Use full IR path for priority tracking (e.g., "Extra.nid" not just "Extra")
+		priorityKey := fieldMapping.IR
+		currentPriority, hasPriority := priorities[priorityKey]
+		if hasPriority && fieldMapping.Priority <= currentPriority {
 			continue
 		}
 
 		// Process field based on its type and target
-		if err := processField(record, fieldName, rawValue, fieldMapping, opts); err != nil {
+		// processField returns true if a value was actually set
+		valueSet, err := processField(record, fieldName, rawValue, fieldMapping, opts)
+		if err != nil {
 			// Log error but continue processing
 			continue
 		}
 
-		priorities[base] = fieldMapping.Priority
-		_ = subfield // used in processField
+		// Only update priority if a value was actually set
+		if valueSet {
+			priorities[priorityKey] = fieldMapping.Priority
+		}
 	}
 
 	return record, nil
 }
 
-func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	base, subfield := mapping.IRFieldName(fieldMapping.IR)
 
 	switch base {
@@ -113,25 +118,33 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.Title = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "AltTitle":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.AltTitle = append(record.AltTitle, cleanText(val, opts))
+			return true, nil
 		}
+		return false, nil
 
 	case "Abstract":
 		val, _ := ExtractFormattedText(rawValue, true)
 		if val != "" {
 			record.Abstract = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "Description":
 		val, _ := ExtractFormattedText(rawValue, true)
 		if val != "" {
 			record.Description = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "Contributors":
 		return processContributors(record, rawValue, fieldMapping, opts)
@@ -167,43 +180,59 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.Publisher = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "PlacePublished":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.PlacePublished = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "PhysicalDesc":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.PhysicalDesc = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "Notes":
 		vals, _ := ExtractStrings(rawValue)
-		for _, v := range vals {
-			record.Notes = append(record.Notes, cleanText(v, opts))
+		if len(vals) > 0 {
+			for _, v := range vals {
+				record.Notes = append(record.Notes, cleanText(v, opts))
+			}
+			return true, nil
 		}
+		return false, nil
 
 	case "TableOfContents":
 		val, _ := ExtractFormattedText(rawValue, true)
 		if val != "" {
 			record.TableOfContents = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "Source":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
 			record.Source = cleanText(val, opts)
+			return true, nil
 		}
+		return false, nil
 
 	case "DigitalOrigin":
 		val := resolveEntityRef(rawValue, fieldMapping, opts)
 		if val != "" {
 			record.DigitalOrigin = val
+			return true, nil
 		}
+		return false, nil
 
 	case "DegreeInfo":
 		return processDegreeInfo(record, subfield, rawValue, fieldMapping, opts)
@@ -212,13 +241,17 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		return processExtra(record, subfield, rawValue, fieldMapping, opts)
 	}
 
-	return nil
+	return false, nil
 }
 
-func processContributors(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processContributors(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	refs, err := ExtractTypedRelations(rawValue)
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	if len(refs) == 0 {
+		return false, nil
 	}
 
 	for _, ref := range refs {
@@ -252,13 +285,18 @@ func processContributors(record *hubv1.Record, rawValue json.RawMessage, fieldMa
 		record.Contributors = append(record.Contributors, contrib)
 	}
 
-	return nil
+	return true, nil
 }
 
-func processDates(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processDates(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	vals, _ := ExtractStrings(rawValue)
 
+	if len(vals) == 0 {
+		return false, nil
+	}
+
 	dateType := dateTypeFromString(fieldMapping.DateType)
+	added := false
 
 	for _, val := range vals {
 		dateVal, err := helpers.ParseEDTF(val, dateType)
@@ -266,9 +304,10 @@ func processDates(record *hubv1.Record, rawValue json.RawMessage, fieldMapping m
 			continue
 		}
 		record.Dates = append(record.Dates, dateVal)
+		added = true
 	}
 
-	return nil
+	return added, nil
 }
 
 func dateTypeFromString(s string) hubv1.DateType {
@@ -296,18 +335,23 @@ func dateTypeFromString(s string) hubv1.DateType {
 	}
 }
 
-func processResourceType(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processResourceType(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	val := resolveEntityRef(rawValue, fieldMapping, opts)
 	if val != "" {
 		record.ResourceType = hub.NewResourceType(val, "")
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
-func processGenre(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processGenre(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	refs, err := ExtractEntityRefs(rawValue)
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	if len(refs) == 0 {
+		return false, nil
 	}
 
 	for _, ref := range refs {
@@ -338,7 +382,7 @@ func processGenre(record *hubv1.Record, rawValue json.RawMessage, fieldMapping m
 		record.Genres = append(record.Genres, genre)
 	}
 
-	return nil
+	return true, nil
 }
 
 // authoritySourceToVocabulary maps Islandora authority link source values to SubjectVocabulary.
@@ -388,30 +432,34 @@ func islandoraModelToResourceType(model string) hubv1.ResourceTypeValue {
 	}
 }
 
-func processLanguage(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processLanguage(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	val := resolveEntityRef(rawValue, fieldMapping, opts)
 	if val != "" {
 		record.Language = val
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
 
-func processRights(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processRights(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
+	added := false
 	if fieldMapping.Type == "uri" {
 		// Rights as URI string
 		vals, _ := ExtractStrings(rawValue)
 		for _, val := range vals {
 			record.Rights = append(record.Rights, hub.NewRightsFromURI(val))
+			added = true
 		}
 	} else {
 		// Rights as entity reference
 		refs, err := ExtractEntityRefs(rawValue)
 		if err != nil {
-			return err
+			return false, err
 		}
 		for _, ref := range refs {
 			if ref.URI != "" {
 				record.Rights = append(record.Rights, hub.NewRightsFromURI(ref.URI))
+				added = true
 			} else {
 				val := ref.GetTargetID()
 				// Try enriched data first
@@ -423,20 +471,22 @@ func processRights(record *hubv1.Record, rawValue json.RawMessage, fieldMapping 
 					}
 				}
 				record.Rights = append(record.Rights, &hubv1.Rights{Statement: val})
+				added = true
 			}
 		}
 	}
-	return nil
+	return added, nil
 }
 
-func processSubjects(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processSubjects(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	vocab := subjectVocabularyFromString(fieldMapping.Vocabulary)
+	added := false
 
 	if fieldMapping.Resolve != "" {
 		// Entity references
 		refs, err := ExtractEntityRefs(rawValue)
 		if err != nil {
-			return err
+			return false, err
 		}
 		for _, ref := range refs {
 			subject := &hubv1.Subject{
@@ -464,6 +514,7 @@ func processSubjects(record *hubv1.Record, rawValue json.RawMessage, fieldMappin
 			}
 
 			record.Subjects = append(record.Subjects, subject)
+			added = true
 		}
 	} else {
 		// Plain text values
@@ -473,10 +524,11 @@ func processSubjects(record *hubv1.Record, rawValue json.RawMessage, fieldMappin
 				Value:      cleanText(val, opts),
 				Vocabulary: vocab,
 			})
+			added = true
 		}
 	}
 
-	return nil
+	return added, nil
 }
 
 func subjectVocabularyFromString(s string) hubv1.SubjectVocabulary {
@@ -504,12 +556,16 @@ func subjectVocabularyFromString(s string) hubv1.SubjectVocabulary {
 	}
 }
 
-func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	relType := hub.NormalizeRelationType(fieldMapping.RelationType)
 
 	refs, err := ExtractEntityRefs(rawValue)
 	if err != nil {
-		return err
+		return false, err
+	}
+
+	if len(refs) == 0 {
+		return false, nil
 	}
 
 	for _, ref := range refs {
@@ -564,13 +620,15 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 		record.Relations = append(record.Relations, rel)
 	}
 
-	return nil
+	return true, nil
 }
 
-func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	if record.Publication == nil {
 		record.Publication = &hubv1.PublicationDetails{}
 	}
+
+	added := false
 
 	// Handle related_item field type
 	if fieldMapping.Type == "related_item" {
@@ -581,24 +639,28 @@ func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 				// Linking ISSN for journals
 				if item.Identifier != "" {
 					record.Publication.LIssn = item.Identifier
+					added = true
 				}
 				if item.Title != "" && record.Publication.Title == "" {
 					record.Publication.Title = item.Title
+					added = true
 				}
 			case "uri":
 				// URI-based related item - could be a relation
 				// For now, store title if available
 				if item.Title != "" && record.Publication.Title == "" {
 					record.Publication.Title = item.Title
+					added = true
 				}
 			default:
 				// Handle other identifier types
 				if item.Title != "" && record.Publication.Title == "" {
 					record.Publication.Title = item.Title
+					added = true
 				}
 			}
 		}
-		return nil
+		return added, nil
 	}
 
 	// Handle part_detail field type
@@ -609,14 +671,18 @@ func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 			case "volume":
 				if part.Number != "" {
 					record.Publication.Volume = part.Number
+					added = true
 				} else if part.Caption != "" {
 					record.Publication.Volume = part.Caption
+					added = true
 				}
 			case "issue":
 				if part.Number != "" {
 					record.Publication.Issue = part.Number
+					added = true
 				} else if part.Caption != "" {
 					record.Publication.Issue = part.Caption
+					added = true
 				}
 			case "page":
 				if part.Number != "" {
@@ -625,29 +691,35 @@ func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 					} else {
 						record.Publication.Pages = part.Number
 					}
+					added = true
 				}
 			case "article":
 				// Article number, could be stored in pages or a separate field
 				if part.Number != "" && record.Publication.Pages == "" {
 					record.Publication.Pages = part.Number
+					added = true
 				}
 			case "section":
 				// Section info - could be stored in title or extra
 				if part.Title != "" && record.Publication.Title == "" {
 					record.Publication.Title = part.Title
+					added = true
 				}
 			}
 		}
-		return nil
+		return added, nil
 	}
 
-	return nil
+	return false, nil
 }
 
-func processIdentifiers(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processIdentifiers(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	// Handle textfield_attr and textarea_attr field types
 	if fieldMapping.Type == "textfield_attr" || fieldMapping.Type == "textarea_attr" {
 		attrFields, _ := ExtractAttrFields(rawValue)
+		if len(attrFields) == 0 {
+			return false, nil
+		}
 		for _, field := range attrFields {
 			idType := hub.DetectIdentifierType(field.Value)
 			// Use attr0 to determine identifier type if present
@@ -656,11 +728,14 @@ func processIdentifiers(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 			}
 			record.Identifiers = append(record.Identifiers, hub.NewIdentifier(field.Value, idType))
 		}
-		return nil
+		return true, nil
 	}
 
 	// Default: extract as plain strings
 	vals, _ := ExtractStrings(rawValue)
+	if len(vals) == 0 {
+		return false, nil
+	}
 	for _, val := range vals {
 		idType := hub.DetectIdentifierType(val)
 		if fieldMapping.Type != "" {
@@ -668,7 +743,7 @@ func processIdentifiers(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 		}
 		record.Identifiers = append(record.Identifiers, hub.NewIdentifier(val, idType))
 	}
-	return nil
+	return true, nil
 }
 
 func identifierTypeFromString(s string) hubv1.IdentifierType {
@@ -712,16 +787,20 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 	}
 }
 
-func processDegreeInfo(record *hubv1.Record, subfield string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
-	if record.DegreeInfo == nil {
-		record.DegreeInfo = &hubv1.DegreeInfo{}
-	}
-
+func processDegreeInfo(record *hubv1.Record, subfield string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	var val string
 	if fieldMapping.Resolve != "" {
 		val = resolveEntityRef(rawValue, fieldMapping, opts)
 	} else {
 		val, _ = ExtractString(rawValue)
+	}
+
+	if val == "" {
+		return false, nil
+	}
+
+	if record.DegreeInfo == nil {
+		record.DegreeInfo = &hubv1.DegreeInfo{}
 	}
 
 	switch subfield {
@@ -735,33 +814,34 @@ func processDegreeInfo(record *hubv1.Record, subfield string, rawValue json.RawM
 		record.DegreeInfo.Institution = val
 	}
 
-	return nil
+	return true, nil
 }
 
-func processExtra(record *hubv1.Record, subfield string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) error {
+func processExtra(record *hubv1.Record, subfield string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
 	// Try to extract as various types
 	if val, err := ExtractString(rawValue); err == nil && val != "" {
 		hub.SetExtra(record, subfield, val)
-		return nil
+		return true, nil
 	}
 
 	if val, err := ExtractInt(rawValue); err == nil && val != 0 {
 		hub.SetExtra(record, subfield, val)
-		return nil
+		return true, nil
 	}
 
 	if val, err := ExtractBool(rawValue); err == nil {
 		hub.SetExtra(record, subfield, val)
-		return nil
+		return true, nil
 	}
 
 	// Store raw value
 	var generic any
 	if err := json.Unmarshal(rawValue, &generic); err == nil {
 		hub.SetExtra(record, subfield, generic)
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 // Helper functions
