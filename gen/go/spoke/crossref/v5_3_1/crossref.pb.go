@@ -2688,21 +2688,22 @@ var File_spoke_crossref_v5_3_1_crossref_proto protoreflect.FileDescriptor
 
 const file_spoke_crossref_v5_3_1_crossref_proto_rawDesc = "" +
 	"\n" +
-	"$spoke/crossref/v5_3_1/crossref.proto\x12\x15spoke.crossref.v5_3_1\x1a\x14hub/v1/options.proto\"k\n" +
+	"$spoke/crossref/v5_3_1/crossref.proto\x12\x15spoke.crossref.v5_3_1\x1a\x14hub/v1/options.proto\"\xd1\x01\n" +
 	"\aDeposit\x12/\n" +
 	"\x04head\x18\x01 \x01(\v2\x1b.spoke.crossref.v5_3_1.HeadR\x04head\x12/\n" +
-	"\x04body\x18\x02 \x01(\v2\x1b.spoke.crossref.v5_3_1.BodyR\x04body\"\xa6\x01\n" +
-	"\x04Head\x12 \n" +
-	"\fdoi_batch_id\x18\x01 \x01(\tR\n" +
+	"\x04body\x18\x02 \x01(\v2\x1b.spoke.crossref.v5_3_1.BodyR\x04body:d\x8a\xb5\x18`R\tdoi_batchZ-xsi=http://www.w3.org/2001/XMLSchema-instanceb$http://www.crossref.org/schema/5.3.1\"\xc7\x01\n" +
+	"\x04Head\x125\n" +
+	"\fdoi_batch_id\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\xb2\x04\fdoi_batch_idR\n" +
 	"doiBatchId\x12\x1c\n" +
 	"\ttimestamp\x18\x02 \x01(\tR\ttimestamp\x12>\n" +
 	"\tdepositor\x18\x03 \x01(\v2 .spoke.crossref.v5_3_1.DepositorR\tdepositor\x12\x1e\n" +
 	"\n" +
 	"registrant\x18\x04 \x01(\tR\n" +
-	"registrant\"e\n" +
-	"\tDepositor\x12%\n" +
-	"\x0edepositor_name\x18\x01 \x01(\tR\rdepositorName\x121\n" +
-	"\remail_address\x18\x02 \x01(\tB\f\x8a\xb5\x18\b\xf2\x01\x05emailR\femailAddress\"\xc8\x03\n" +
+	"registrant:\n" +
+	"\x8a\xb5\x18\x06R\x04head\"\x9d\x01\n" +
+	"\tDepositor\x12<\n" +
+	"\x0edepositor_name\x18\x01 \x01(\tB\x15\x8a\xb5\x18\x11\xb2\x04\x0edepositor_nameR\rdepositorName\x12A\n" +
+	"\remail_address\x18\x02 \x01(\tB\x1c\x8a\xb5\x18\x18\xf2\x01\x05email\xb2\x04\remail_addressR\femailAddress:\x0f\x8a\xb5\x18\vR\tdepositor\"\xff\x03\n" +
 	"\x04Body\x128\n" +
 	"\ajournal\x18\x01 \x03(\v2\x1e.spoke.crossref.v5_3_1.JournalR\ajournal\x12/\n" +
 	"\x04book\x18\x02 \x03(\v2\x1b.spoke.crossref.v5_3_1.BookR\x04book\x12A\n" +
@@ -2710,167 +2711,169 @@ const file_spoke_crossref_v5_3_1_crossref_proto_rawDesc = "" +
 	"conference\x18\x03 \x03(\v2!.spoke.crossref.v5_3_1.ConferenceR\n" +
 	"conference\x128\n" +
 	"\adataset\x18\x04 \x03(\v2\x1e.spoke.crossref.v5_3_1.DatasetR\adataset\x12G\n" +
-	"\fdissertation\x18\x05 \x03(\v2#.spoke.crossref.v5_3_1.DissertationR\fdissertation\x12K\n" +
-	"\x0eposted_content\x18\x06 \x03(\v2$.spoke.crossref.v5_3_1.PostedContentR\rpostedContent\x12B\n" +
-	"\vpeer_review\x18\a \x03(\v2!.spoke.crossref.v5_3_1.PeerReviewR\n" +
-	"peerReview\"\xa3\x02\n" +
-	"\aJournal\x12~\n" +
-	"\x10journal_metadata\x18\x01 \x01(\v2&.spoke.crossref.v5_3_1.JournalMetadataB+\x8a\xb5\x18'\n" +
-	"\trelationsz\apart_of\xea\x03\x10Journal metadataR\x0fjournalMetadata\x12H\n" +
-	"\rjournal_issue\x18\x02 \x03(\v2#.spoke.crossref.v5_3_1.JournalIssueR\fjournalIssue\x12N\n" +
-	"\x0fjournal_article\x18\x03 \x03(\v2%.spoke.crossref.v5_3_1.JournalArticleR\x0ejournalArticle\"\x9a\x03\n" +
-	"\x0fJournalMetadata\x12?\n" +
+	"\fdissertation\x18\x05 \x03(\v2#.spoke.crossref.v5_3_1.DissertationR\fdissertation\x12b\n" +
+	"\x0eposted_content\x18\x06 \x03(\v2$.spoke.crossref.v5_3_1.PostedContentB\x15\x8a\xb5\x18\x11\xb2\x04\x0eposted_contentR\rpostedContent\x12V\n" +
+	"\vpeer_review\x18\a \x03(\v2!.spoke.crossref.v5_3_1.PeerReviewB\x12\x8a\xb5\x18\x0e\xb2\x04\vpeer_reviewR\n" +
+	"peerReview:\n" +
+	"\x8a\xb5\x18\x06R\x04body\"\xf4\x02\n" +
+	"\aJournal\x12\x91\x01\n" +
+	"\x10journal_metadata\x18\x01 \x01(\v2&.spoke.crossref.v5_3_1.JournalMetadataB>\x8a\xb5\x18:\n" +
+	"\trelationsz\apart_of\xea\x03\x10Journal metadata\xb2\x04\x10journal_metadataR\x0fjournalMetadata\x12^\n" +
+	"\rjournal_issue\x18\x02 \x03(\v2#.spoke.crossref.v5_3_1.JournalIssueB\x14\x8a\xb5\x18\x10\xb2\x04\rjournal_issueR\fjournalIssue\x12f\n" +
+	"\x0fjournal_article\x18\x03 \x03(\v2%.spoke.crossref.v5_3_1.JournalArticleB\x16\x8a\xb5\x18\x12\xb2\x04\x0fjournal_articleR\x0ejournalArticle:\r\x8a\xb5\x18\tR\ajournal\"\xe7\x03\n" +
+	"\x0fJournalMetadata\x12L\n" +
 	"\n" +
-	"full_title\x18\x01 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05title\xea\x03\x12Journal full titleR\tfullTitle\x12B\n" +
-	"\fabbrev_title\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Abbreviated titleR\vabbrevTitle\x12J\n" +
+	"full_title\x18\x01 \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05title\xea\x03\x12Journal full title\xb2\x04\n" +
+	"full_titleR\tfullTitle\x12Q\n" +
+	"\fabbrev_title\x18\x02 \x01(\tB.\x8a\xb5\x18*\n" +
+	"\x05extra\xea\x03\x11Abbreviated title\xb2\x04\fabbrev_titleR\vabbrevTitle\x12Q\n" +
 	"\n" +
-	"issn_print\x18\x03 \x01(\tB+\x8a\xb5\x18'\n" +
+	"issn_print\x18\x03 \x01(\tB2\x8a\xb5\x18.\n" +
 	"\videntifiersZ\x04issn\xf2\x01\x04issn\xea\x03\n" +
-	"Print ISSNR\tissnPrint\x12Z\n" +
-	"\x0fissn_electronic\x18\x04 \x01(\tB1\x8a\xb5\x18-\n" +
-	"\videntifiersZ\x05eissn\xf2\x01\x04issn\xea\x03\x0fElectronic ISSNR\x0eissnElectronic\x12Z\n" +
-	"\bdoi_data\x18\x05 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x1f\x8a\xb5\x18\x1b\n" +
-	"\videntifiers\xea\x03\vJournal DOIR\adoiData\"\xab\x02\n" +
-	"\fJournalIssue\x12f\n" +
-	"\x10publication_date\x18\x01 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x123\n" +
+	"Print ISSN\xb2\x04\x04issnR\tissnPrint\x12a\n" +
+	"\x0fissn_electronic\x18\x04 \x01(\tB8\x8a\xb5\x184\n" +
+	"\videntifiersZ\x05eissn\xf2\x01\x04issn\xea\x03\x0fElectronic ISSN\xb2\x04\x04issnR\x0eissnElectronic\x12e\n" +
+	"\bdoi_data\x18\x05 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB*\x8a\xb5\x18&\n" +
+	"\videntifiers\xea\x03\vJournal DOI\xb2\x04\bdoi_dataR\adoiData:\x16\x8a\xb5\x18\x12R\x10journal_metadata\"\xde\x02\n" +
+	"\fJournalIssue\x12y\n" +
+	"\x10publication_date\x18\x01 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x123\n" +
 	"\x06volume\x18\x02 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\rVolume numberR\x06volume\x120\n" +
 	"\x05issue\x18\x03 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fIssue numberR\x05issue\x12L\n" +
-	"\bdoi_data\x18\x04 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x11\x8a\xb5\x18\r\n" +
-	"\videntifiersR\adoiData\"\xbb\x06\n" +
+	"\x05extra\xea\x03\fIssue numberR\x05issue\x12W\n" +
+	"\bdoi_data\x18\x04 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x1c\x8a\xb5\x18\x18\n" +
+	"\videntifiers\xb2\x04\bdoi_dataR\adoiData:\x13\x8a\xb5\x18\x0fR\rjournal_issue\"\x9d\a\n" +
 	"\x0eJournalArticle\x12E\n" +
 	"\x06titles\x18\x01 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
 	"\fcontributors\x18\x02 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12f\n" +
-	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x12L\n" +
+	"\fcontributorsR\fcontributors\x12y\n" +
+	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x12L\n" +
 	"\x05pages\x18\x04 \x01(\v2\x1c.spoke.crossref.v5_3_1.PagesB\x18\x8a\xb5\x18\x14\n" +
 	"\x05extra\xea\x03\n" +
-	"Page rangeR\x05pages\x12*\n" +
-	"\babstract\x18\x05 \x01(\tB\x0e\x8a\xb5\x18\n" +
-	"\n" +
-	"\babstractR\babstract\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData\x12m\n" +
-	"\rcitation_list\x18\a \x01(\v2#.spoke.crossref.v5_3_1.CitationListB#\x8a\xb5\x18\x1f\n" +
+	"Page rangeR\x05pages\x125\n" +
+	"\babstract\x18\x05 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
+	"\babstract\xb2\x04\babstractR\babstract\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData\x12}\n" +
+	"\rcitation_list\x18\a \x01(\v2#.spoke.crossref.v5_3_1.CitationListB3\x8a\xb5\x18/\n" +
 	"\trelationsz\x05cites\xea\x03\n" +
-	"ReferencesR\fcitationList\x12K\n" +
-	"\aprogram\x18\b \x03(\v2\".spoke.crossref.v5_3_1.FundingInfoB\r\x8a\xb5\x18\t\n" +
-	"\afundersR\aprogram\x12F\n" +
-	"\alicense\x18\t \x03(\v2\x1e.spoke.crossref.v5_3_1.LicenseB\f\x8a\xb5\x18\b\n" +
-	"\x06rightsR\alicense:L\x8a\xb5\x18H\n" +
-	"\x06Record\x10\x01\x1a<CrossRef JournalArticle maps to Hub Record with ARTICLE type\"\xec\x03\n" +
-	"\x04Book\x12<\n" +
-	"\tbook_type\x18\x01 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\rresource_type\xea\x03\tBook typeR\bbookType\x12d\n" +
-	"\rbook_metadata\x18\x02 \x01(\v2#.spoke.crossref.v5_3_1.BookMetadataB\x1a\x8a\xb5\x18\x16\n" +
-	"\x04self\xea\x03\rBook metadataR\fbookMetadata\x12\x8c\x01\n" +
-	"\x14book_series_metadata\x18\x03 \x01(\v2).spoke.crossref.v5_3_1.BookSeriesMetadataB/\x8a\xb5\x18+\n" +
-	"\trelationsz\tin_series\xea\x03\x12Series informationR\x12bookSeriesMetadata\x12p\n" +
-	"\fcontent_item\x18\x04 \x03(\v2\".spoke.crossref.v5_3_1.ContentItemB)\x8a\xb5\x18%\n" +
-	"\trelationsz\bhas_part\xea\x03\rBook chaptersR\vcontentItem:?\x8a\xb5\x18;\n" +
-	"\x06Record\x10\x01\x1a/CrossRef Book maps to Hub Record with BOOK type\"\xe4\x05\n" +
+	"References\xb2\x04\rcitation_listR\fcitationList\x12U\n" +
+	"\aprogram\x18\b \x03(\v2\".spoke.crossref.v5_3_1.FundingInfoB\x17\x8a\xb5\x18\x13\n" +
+	"\afunders\xb2\x04\aprogramR\aprogram\x12T\n" +
+	"\alicense\x18\t \x03(\v2\x1e.spoke.crossref.v5_3_1.LicenseB\x1a\x8a\xb5\x18\x16\n" +
+	"\x06rights\xb2\x04\vlicense_refR\alicense:]\x8a\xb5\x18Y\n" +
+	"\x06Record\x10\x01\x1a<CrossRef JournalArticle maps to Hub Record with ARTICLE typeR\x0fjournal_article\"\xb7\x04\n" +
+	"\x04Book\x12K\n" +
+	"\tbook_type\x18\x01 \x01(\tB.\x8a\xb5\x18*\n" +
+	"\rresource_type\xea\x03\tBook type\xb2\x04\tbook_type\xc0\x04\x01R\bbookType\x12t\n" +
+	"\rbook_metadata\x18\x02 \x01(\v2#.spoke.crossref.v5_3_1.BookMetadataB*\x8a\xb5\x18&\n" +
+	"\x04self\xea\x03\rBook metadata\xb2\x04\rbook_metadataR\fbookMetadata\x12\xa3\x01\n" +
+	"\x14book_series_metadata\x18\x03 \x01(\v2).spoke.crossref.v5_3_1.BookSeriesMetadataBF\x8a\xb5\x18B\n" +
+	"\trelationsz\tin_series\xea\x03\x12Series information\xb2\x04\x14book_series_metadataR\x12bookSeriesMetadata\x12\x7f\n" +
+	"\fcontent_item\x18\x04 \x03(\v2\".spoke.crossref.v5_3_1.ContentItemB8\x8a\xb5\x184\n" +
+	"\trelationsz\bhas_part\xea\x03\rBook chapters\xb2\x04\fcontent_itemR\vcontentItem:E\x8a\xb5\x18A\n" +
+	"\x06Record\x10\x01\x1a/CrossRef Book maps to Hub Record with BOOK typeR\x04book\"\xb2\x06\n" +
 	"\fBookMetadata\x12E\n" +
 	"\x06titles\x18\x01 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
 	"\fcontributors\x18\x02 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12f\n" +
-	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x12J\n" +
+	"\fcontributorsR\fcontributors\x12y\n" +
+	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x12Q\n" +
 	"\n" +
-	"isbn_print\x18\x04 \x01(\tB+\x8a\xb5\x18'\n" +
+	"isbn_print\x18\x04 \x01(\tB2\x8a\xb5\x18.\n" +
 	"\videntifiersZ\x04isbn\xf2\x01\x04isbn\xea\x03\n" +
-	"Print ISBNR\tisbnPrint\x12Y\n" +
-	"\x0fisbn_electronic\x18\x05 \x01(\tB0\x8a\xb5\x18,\n" +
-	"\videntifiersZ\x04isbn\xf2\x01\x04isbn\xea\x03\x0fElectronic ISBNR\x0eisbnElectronic\x12O\n" +
+	"Print ISBN\xb2\x04\x04isbnR\tisbnPrint\x12b\n" +
+	"\x0fisbn_electronic\x18\x05 \x01(\tB9\x8a\xb5\x185\n" +
+	"\videntifiersZ\x04isbn\xf2\x01\x04isbn\xea\x03\x0fElectronic ISBN\xb2\x04\x06noisbnR\x0eisbnElectronic\x12O\n" +
 	"\tpublisher\x18\x06 \x01(\v2 .spoke.crossref.v5_3_1.PublisherB\x0f\x8a\xb5\x18\v\n" +
-	"\tpublisherR\tpublisher\x12Q\n" +
-	"\bdoi_data\x18\a \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData\x12C\n" +
-	"\x0eedition_number\x18\b \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eEdition numberR\reditionNumber:8\x8a\xb5\x184\n" +
-	"\x06Record\x10\x01\x1a(CrossRef BookMetadata maps to Hub Record\"\xbc\x01\n" +
-	"\x12BookSeriesMetadata\x12=\n" +
-	"\fseries_title\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05title\xea\x03\fSeries titleR\vseriesTitle\x122\n" +
+	"\tpublisherR\tpublisher\x12\\\n" +
+	"\bdoi_data\x18\a \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData\x12T\n" +
+	"\x0eedition_number\x18\b \x01(\tB-\x8a\xb5\x18)\n" +
+	"\x05extra\xea\x03\x0eEdition number\xb2\x04\x0eedition_numberR\reditionNumber:G\x8a\xb5\x18C\n" +
+	"\x06Record\x10\x01\x1a(CrossRef BookMetadata maps to Hub RecordR\rbook_metadata\"\xe7\x01\n" +
+	"\x12BookSeriesMetadata\x12L\n" +
+	"\fseries_title\x18\x01 \x01(\tB)\x8a\xb5\x18%\n" +
+	"\x05title\xea\x03\fSeries title\xb2\x04\fseries_titleR\vseriesTitle\x122\n" +
 	"\x04issn\x18\x02 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
 	"\videntifiersZ\x04issn\xf2\x01\x04issnR\x04issn\x123\n" +
 	"\x06volume\x18\x03 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x05extra\xea\x03\rVolume numberR\x06volume\"\xd7\x04\n" +
-	"\vContentItem\x12K\n" +
-	"\x0ecomponent_type\x18\x01 \x01(\tB$\x8a\xb5\x18 \n" +
-	"\rresource_type\xea\x03\x0eComponent typeR\rcomponentType\x12E\n" +
+	"\x05extra\xea\x03\rVolume numberR\x06volume:\x1a\x8a\xb5\x18\x16R\x14book_series_metadata\"\x97\x05\n" +
+	"\vContentItem\x12_\n" +
+	"\x0ecomponent_type\x18\x01 \x01(\tB8\x8a\xb5\x184\n" +
+	"\rresource_type\xea\x03\x0eComponent type\xb2\x04\x0ecomponent_type\xc0\x04\x01R\rcomponentType\x12E\n" +
 	"\x06titles\x18\x02 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
 	"\fcontributors\x18\x03 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12f\n" +
-	"\x10publication_date\x18\x04 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x12L\n" +
+	"\fcontributorsR\fcontributors\x12y\n" +
+	"\x10publication_date\x18\x04 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x12L\n" +
 	"\x05pages\x18\x05 \x01(\v2\x1c.spoke.crossref.v5_3_1.PagesB\x18\x8a\xb5\x18\x14\n" +
 	"\x05extra\xea\x03\n" +
-	"Page rangeR\x05pages\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData:N\x8a\xb5\x18J\n" +
-	"\x06Record\x10\x01\x1a>CrossRef ContentItem maps to Hub Record with BOOK_CHAPTER type\"\xe3\x03\n" +
+	"Page rangeR\x05pages\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData:\\\x8a\xb5\x18X\n" +
+	"\x06Record\x10\x01\x1a>CrossRef ContentItem maps to Hub Record with BOOK_CHAPTER typeR\fcontent_item\"\xab\x04\n" +
 	"\n" +
-	"Conference\x12w\n" +
-	"\x0eevent_metadata\x18\x01 \x01(\v2$.spoke.crossref.v5_3_1.EventMetadataB*\x8a\xb5\x18&\n" +
-	"\x05extra\xea\x03\x1cConference event informationR\reventMetadata\x12\x80\x01\n" +
-	"\x14proceedings_metadata\x18\x02 \x01(\v2*.spoke.crossref.v5_3_1.ProceedingsMetadataB!\x8a\xb5\x18\x1d\n" +
-	"\x04self\xea\x03\x14Proceedings metadataR\x13proceedingsMetadata\x12\x80\x01\n" +
-	"\x10conference_paper\x18\x03 \x03(\v2&.spoke.crossref.v5_3_1.ConferencePaperB-\x8a\xb5\x18)\n" +
-	"\trelationsz\bhas_part\xea\x03\x11Conference papersR\x0fconferencePaper:V\x8a\xb5\x18R\n" +
-	"\x06Record\x10\x01\x1aFCrossRef Conference maps to Hub Record with CONFERENCE_PROCEEDING type\"\x99\x03\n" +
-	"\rEventMetadata\x12F\n" +
-	"\x0fconference_name\x18\x01 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fConference nameR\x0econferenceName\x12O\n" +
-	"\x12conference_acronym\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Conference acronymR\x11conferenceAcronym\x12L\n" +
-	"\x11conference_number\x18\x03 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Conference numberR\x10conferenceNumber\x12M\n" +
-	"\x0fconference_date\x18\x04 \x01(\tB$\x8a\xb5\x18 \n" +
-	"\x05datesR\x05other\xea\x03\x0fConference dateR\x0econferenceDate\x12R\n" +
-	"\x13conference_location\x18\x05 \x01(\tB!\x8a\xb5\x18\x1d\n" +
-	"\x05extra\xea\x03\x13Conference locationR\x12conferenceLocation\"\xa3\x03\n" +
-	"\x13ProceedingsMetadata\x12L\n" +
-	"\x11proceedings_title\x18\x01 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05title\xea\x03\x11Proceedings titleR\x10proceedingsTitle\x12O\n" +
+	"Conference\x12\x88\x01\n" +
+	"\x0eevent_metadata\x18\x01 \x01(\v2$.spoke.crossref.v5_3_1.EventMetadataB;\x8a\xb5\x187\n" +
+	"\x05extra\xea\x03\x1cConference event information\xb2\x04\x0eevent_metadataR\reventMetadata\x12\x97\x01\n" +
+	"\x14proceedings_metadata\x18\x02 \x01(\v2*.spoke.crossref.v5_3_1.ProceedingsMetadataB8\x8a\xb5\x184\n" +
+	"\x04self\xea\x03\x14Proceedings metadata\xb2\x04\x14proceedings_metadataR\x13proceedingsMetadata\x12\x93\x01\n" +
+	"\x10conference_paper\x18\x03 \x03(\v2&.spoke.crossref.v5_3_1.ConferencePaperB@\x8a\xb5\x18<\n" +
+	"\trelationsz\bhas_part\xea\x03\x11Conference papers\xb2\x04\x10conference_paperR\x0fconferencePaper:b\x8a\xb5\x18^\n" +
+	"\x06Record\x10\x01\x1aFCrossRef Conference maps to Hub Record with CONFERENCE_PROCEEDING typeR\n" +
+	"conference\"\x92\x04\n" +
+	"\rEventMetadata\x12X\n" +
+	"\x0fconference_name\x18\x01 \x01(\tB/\x8a\xb5\x18+\n" +
+	"\x05extra\xea\x03\x0fConference name\xb2\x04\x0fconference_nameR\x0econferenceName\x12d\n" +
+	"\x12conference_acronym\x18\x02 \x01(\tB5\x8a\xb5\x181\n" +
+	"\x05extra\xea\x03\x12Conference acronym\xb2\x04\x12conference_acronymR\x11conferenceAcronym\x12`\n" +
+	"\x11conference_number\x18\x03 \x01(\tB3\x8a\xb5\x18/\n" +
+	"\x05extra\xea\x03\x11Conference number\xb2\x04\x11conference_numberR\x10conferenceNumber\x12_\n" +
+	"\x0fconference_date\x18\x04 \x01(\tB6\x8a\xb5\x182\n" +
+	"\x05datesR\x05other\xea\x03\x0fConference date\xb2\x04\x0fconference_dateR\x0econferenceDate\x12h\n" +
+	"\x13conference_location\x18\x05 \x01(\tB7\x8a\xb5\x183\n" +
+	"\x05extra\xea\x03\x13Conference location\xb2\x04\x13conference_locationR\x12conferenceLocation:\x14\x8a\xb5\x18\x10R\x0eevent_metadata\"\xf1\x03\n" +
+	"\x13ProceedingsMetadata\x12`\n" +
+	"\x11proceedings_title\x18\x01 \x01(\tB3\x8a\xb5\x18/\n" +
+	"\x05title\xea\x03\x11Proceedings title\xb2\x04\x11proceedings_titleR\x10proceedingsTitle\x12O\n" +
 	"\tpublisher\x18\x02 \x01(\v2 .spoke.crossref.v5_3_1.PublisherB\x0f\x8a\xb5\x18\v\n" +
-	"\tpublisherR\tpublisher\x12f\n" +
-	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x122\n" +
+	"\tpublisherR\tpublisher\x12y\n" +
+	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x122\n" +
 	"\x04isbn\x18\x04 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\videntifiersZ\x04isbn\xf2\x01\x04isbnR\x04isbn\x12Q\n" +
-	"\bdoi_data\x18\x05 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData\"\xc2\x04\n" +
+	"\videntifiersZ\x04isbn\xf2\x01\x04isbnR\x04isbn\x12\\\n" +
+	"\bdoi_data\x18\x05 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData:\x1a\x8a\xb5\x18\x16R\x14proceedings_metadata\"\xf2\x04\n" +
 	"\x0fConferencePaper\x12E\n" +
 	"\x06titles\x18\x01 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
 	"\fcontributors\x18\x02 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12f\n" +
-	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x12L\n" +
+	"\fcontributorsR\fcontributors\x12y\n" +
+	"\x10publication_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x12L\n" +
 	"\x05pages\x18\x04 \x01(\v2\x1c.spoke.crossref.v5_3_1.PagesB\x18\x8a\xb5\x18\x14\n" +
 	"\x05extra\xea\x03\n" +
 	"Page rangeR\x05pages\x12*\n" +
 	"\babstract\x18\x05 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\babstractR\babstract\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData:V\x8a\xb5\x18R\n" +
-	"\x06Record\x10\x01\x1aFCrossRef ConferencePaper maps to Hub Record with CONFERENCE_PAPER type\"\xdc\x04\n" +
-	"\aDataset\x12E\n" +
-	"\fdataset_type\x18\x01 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\rresource_type\xea\x03\fDataset typeR\vdatasetType\x12E\n" +
+	"\babstractR\babstract\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData:h\x8a\xb5\x18d\n" +
+	"\x06Record\x10\x01\x1aFCrossRef ConferencePaper maps to Hub Record with CONFERENCE_PAPER typeR\x10conference_paper\"\x95\x05\n" +
+	"\aDataset\x12W\n" +
+	"\fdataset_type\x18\x01 \x01(\tB4\x8a\xb5\x180\n" +
+	"\rresource_type\xea\x03\fDataset type\xb2\x04\fdataset_type\xc0\x04\x01R\vdatasetType\x12E\n" +
 	"\x06titles\x18\x02 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
@@ -2878,155 +2881,154 @@ const file_spoke_crossref_v5_3_1_crossref_proto_rawDesc = "" +
 	"\fcontributorsR\fcontributors\x120\n" +
 	"\vdescription\x18\x04 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\babstractR\vdescription\x12f\n" +
-	"\x10publication_date\x18\x05 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\x0fpublicationDate\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData\x122\n" +
+	"\babstractR\vdescription\x12y\n" +
+	"\x10publication_date\x18\x05 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB&\x8a\xb5\x18\"\n" +
+	"\x05datesR\x06issued\xb2\x04\x10publication_dateR\x0fpublicationDate\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData\x122\n" +
 	"\x06format\x18\a \x03(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fFile formatsR\x06format:E\x8a\xb5\x18A\n" +
-	"\x06Record\x10\x01\x1a5CrossRef Dataset maps to Hub Record with DATASET type\"\x95\x05\n" +
+	"\x05extra\xea\x03\fFile formatsR\x06format:N\x8a\xb5\x18J\n" +
+	"\x06Record\x10\x01\x1a5CrossRef Dataset maps to Hub Record with DATASET typeR\adataset\"\xcd\x05\n" +
 	"\fDissertation\x12E\n" +
 	"\x06titles\x18\x01 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\x05title\xf8\x03\x01R\x06titles\x12^\n" +
-	"\vperson_name\x18\x02 \x01(\v2!.spoke.crossref.v5_3_1.PersonNameB\x1a\x8a\xb5\x18\x16\n" +
-	"\fcontributorsj\x06authorR\n" +
-	"personName\x12r\n" +
-	"\rapproval_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB%\x8a\xb5\x18!\n" +
-	"\x05datesR\baccepted\xea\x03\rApproval dateR\fapprovalDate\x12c\n" +
+	"\x05title\xf8\x03\x01R\x06titles\x12l\n" +
+	"\vperson_name\x18\x02 \x01(\v2!.spoke.crossref.v5_3_1.PersonNameB(\x8a\xb5\x18$\n" +
+	"\fcontributorsj\x06author\xb2\x04\vperson_nameR\n" +
+	"personName\x12\x82\x01\n" +
+	"\rapproval_date\x18\x03 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB5\x8a\xb5\x181\n" +
+	"\x05datesR\baccepted\xea\x03\rApproval date\xb2\x04\rapproval_dateR\fapprovalDate\x12c\n" +
 	"\vinstitution\x18\x04 \x01(\v2\".spoke.crossref.v5_3_1.InstitutionB\x1d\x8a\xb5\x18\x19\n" +
 	"\x17degree_info.institutionR\vinstitution\x125\n" +
 	"\x06degree\x18\x05 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
 	"\x17degree_info.degree_nameR\x06degree\x12*\n" +
 	"\babstract\x18\x06 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\babstractR\babstract\x12Q\n" +
-	"\bdoi_data\x18\a \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData:O\x8a\xb5\x18K\n" +
-	"\x06Record\x10\x01\x1a?CrossRef Dissertation maps to Hub Record with DISSERTATION type\"\xf9\x01\n" +
-	"\vInstitution\x12H\n" +
-	"\x10institution_name\x18\x01 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x04name\xea\x03\x10Institution nameR\x0finstitutionName\x12O\n" +
-	"\x16institution_department\x18\x02 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"\babstractR\babstract\x12\\\n" +
+	"\bdoi_data\x18\a \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData:]\x8a\xb5\x18Y\n" +
+	"\x06Record\x10\x01\x1a?CrossRef Dissertation maps to Hub Record with DISSERTATION typeR\fdissertation\"\xcc\x02\n" +
+	"\vInstitution\x12[\n" +
+	"\x10institution_name\x18\x01 \x01(\tB0\x8a\xb5\x18,\n" +
+	"\x04name\xea\x03\x10Institution name\xb2\x04\x10institution_nameR\x0finstitutionName\x12h\n" +
+	"\x16institution_department\x18\x02 \x01(\tB1\x8a\xb5\x18-\n" +
 	"\x05extra\xea\x03\n" +
-	"DepartmentR\x15institutionDepartment\x12O\n" +
-	"\x11institution_place\x18\x03 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Institution locationR\x10institutionPlace\"\xf2\x04\n" +
-	"\rPostedContent\x12=\n" +
-	"\x04type\x18\x01 \x01(\tB)\x8a\xb5\x18%\n" +
-	"\rresource_type\xea\x03\x13Posted content typeR\x04type\x12E\n" +
+	"Department\xb2\x04\x16institution_departmentR\x15institutionDepartment\x12c\n" +
+	"\x11institution_place\x18\x03 \x01(\tB6\x8a\xb5\x182\n" +
+	"\x05extra\xea\x03\x14Institution location\xb2\x04\x11institution_placeR\x10institutionPlace:\x11\x8a\xb5\x18\rR\vinstitution\"\xac\x05\n" +
+	"\rPostedContent\x12@\n" +
+	"\x04type\x18\x01 \x01(\tB,\x8a\xb5\x18(\n" +
+	"\rresource_type\xea\x03\x13Posted content type\xc0\x04\x01R\x04type\x12E\n" +
 	"\x06titles\x18\x02 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05title\xf8\x03\x01R\x06titles\x12[\n" +
 	"\fcontributors\x18\x03 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x12\x8a\xb5\x18\x0e\n" +
-	"\fcontributorsR\fcontributors\x12j\n" +
-	"\vposted_date\x18\x04 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB!\x8a\xb5\x18\x1d\n" +
-	"\x05datesR\x06issued\xea\x03\vPosted dateR\n" +
+	"\fcontributorsR\fcontributors\x12x\n" +
+	"\vposted_date\x18\x04 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB/\x8a\xb5\x18+\n" +
+	"\x05datesR\x06issued\xea\x03\vPosted date\xb2\x04\vposted_dateR\n" +
 	"postedDate\x12*\n" +
 	"\babstract\x18\x05 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
-	"\babstractR\babstract\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData\x12E\n" +
-	"\vgroup_title\x18\a \x01(\tB$\x8a\xb5\x18 \n" +
-	"\bsubjectsb\x05local\xea\x03\fSubject areaR\n" +
-	"groupTitle:L\x8a\xb5\x18H\n" +
-	"\x06Record\x10\x01\x1a<CrossRef PostedContent maps to Hub Record with PREPRINT type\"\x9f\x04\n" +
+	"\babstractR\babstract\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData\x12S\n" +
+	"\vgroup_title\x18\a \x01(\tB2\x8a\xb5\x18.\n" +
+	"\bsubjectsb\x05local\xea\x03\fSubject area\xb2\x04\vgroup_titleR\n" +
+	"groupTitle:\\\x8a\xb5\x18X\n" +
+	"\x06Record\x10\x01\x1a<CrossRef PostedContent maps to Hub Record with PREPRINT typeR\x0eposted_content\"\xcb\x04\n" +
 	"\n" +
-	"PeerReview\x125\n" +
-	"\x04type\x18\x01 \x01(\tB!\x8a\xb5\x18\x1d\n" +
-	"\rresource_type\xea\x03\vReview typeR\x04type\x120\n" +
-	"\x05stage\x18\x02 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fReview stageR\x05stage\x12B\n" +
+	"PeerReview\x128\n" +
+	"\x04type\x18\x01 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\rresource_type\xea\x03\vReview type\xc0\x04\x01R\x04type\x123\n" +
+	"\x05stage\x18\x02 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
+	"\x05extra\xea\x03\fReview stage\xc0\x04\x01R\x05stage\x12B\n" +
 	"\x06titles\x18\x03 \x01(\v2\x1d.spoke.crossref.v5_3_1.TitlesB\v\x8a\xb5\x18\a\n" +
 	"\x05titleR\x06titles\x12e\n" +
 	"\fcontributors\x18\x04 \x01(\v2#.spoke.crossref.v5_3_1.ContributorsB\x1c\x8a\xb5\x18\x18\n" +
-	"\fcontributorsj\breviewerR\fcontributors\x12\\\n" +
-	"\vreview_date\x18\x05 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05datesR\x06issuedR\n" +
-	"reviewDate\x12Q\n" +
-	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB\x16\x8a\xb5\x18\x12\n" +
-	"\videntifiersZ\x03doiR\adoiData:L\x8a\xb5\x18H\n" +
-	"\x06Record\x10\x01\x1a<CrossRef PeerReview maps to Hub Record with PEER_REVIEW type\"\xf4\x01\n" +
+	"\fcontributorsj\breviewerR\fcontributors\x12j\n" +
+	"\vreview_date\x18\x05 \x01(\v2&.spoke.crossref.v5_3_1.PublicationDateB!\x8a\xb5\x18\x1d\n" +
+	"\x05datesR\x06issued\xb2\x04\vreview_dateR\n" +
+	"reviewDate\x12\\\n" +
+	"\bdoi_data\x18\x06 \x01(\v2\x1e.spoke.crossref.v5_3_1.DoiDataB!\x8a\xb5\x18\x1d\n" +
+	"\videntifiersZ\x03doi\xb2\x04\bdoi_dataR\adoiData:Y\x8a\xb5\x18U\n" +
+	"\x06Record\x10\x01\x1a<CrossRef PeerReview maps to Hub Record with PEER_REVIEW typeR\vpeer_review\"\x96\x02\n" +
 	"\x06Titles\x12$\n" +
 	"\x05title\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
 	"\n" +
 	"\x05value\xf8\x03\x01R\x05title\x122\n" +
 	"\bsubtitle\x18\x02 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bSubtitleR\bsubtitle\x12]\n" +
-	"\x17original_language_title\x18\x03 \x01(\tB%\x8a\xb5\x18!\n" +
-	"\x05extra\xea\x03\x17Original language titleR\x15originalLanguageTitle:1\x8a\xb5\x18-\n" +
-	"\x06string\x1a#CrossRef Titles extracts main title\"\x89\x02\n" +
-	"\fContributors\x12^\n" +
-	"\vperson_name\x18\x01 \x03(\v2!.spoke.crossref.v5_3_1.PersonNameB\x1a\x8a\xb5\x18\x16\n" +
-	"\fcontributorsr\x06personR\n" +
+	"\x05extra\xea\x03\bSubtitleR\bsubtitle\x12w\n" +
+	"\x17original_language_title\x18\x03 \x01(\tB?\x8a\xb5\x18;\n" +
+	"\x05extra\xea\x03\x17Original language title\xb2\x04\x17original_language_titleR\x15originalLanguageTitle:9\x8a\xb5\x185\n" +
+	"\x06string\x1a#CrossRef Titles extracts main titleR\x06titles\"\xa5\x02\n" +
+	"\fContributors\x12l\n" +
+	"\vperson_name\x18\x01 \x03(\v2!.spoke.crossref.v5_3_1.PersonNameB(\x8a\xb5\x18$\n" +
+	"\fcontributorsr\x06person\xb2\x04\vperson_nameR\n" +
 	"personName\x12i\n" +
 	"\forganization\x18\x02 \x03(\v2#.spoke.crossref.v5_3_1.OrganizationB \x8a\xb5\x18\x1c\n" +
-	"\fcontributorsr\forganizationR\forganization:.\x8a\xb5\x18*\n" +
-	"\fContributors\x1a\x1aCrossRef Contributors list\"\xfb\x03\n" +
+	"\fcontributorsr\forganizationR\forganization:<\x8a\xb5\x188\n" +
+	"\fContributors\x1a\x1aCrossRef Contributors listR\fcontributors\"\xb6\x04\n" +
 	"\n" +
-	"PersonName\x125\n" +
-	"\x10contributor_role\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04roleR\x0fcontributorRole\x12>\n" +
-	"\bsequence\x18\x02 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Contributor sequenceR\bsequence\x126\n" +
+	"PersonName\x12K\n" +
+	"\x10contributor_role\x18\x01 \x01(\tB \x8a\xb5\x18\x1c\n" +
+	"\x04role\xb2\x04\x10contributor_role\xc0\x04\x01R\x0fcontributorRole\x12A\n" +
+	"\bsequence\x18\x02 \x01(\tB%\x8a\xb5\x18!\n" +
+	"\x05extra\xea\x03\x14Contributor sequence\xc0\x04\x01R\bsequence\x12C\n" +
 	"\n" +
-	"given_name\x18\x03 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x11parsed_name.givenR\tgivenName\x122\n" +
+	"given_name\x18\x03 \x01(\tB$\x8a\xb5\x18 \n" +
+	"\x11parsed_name.given\xb2\x04\n" +
+	"given_nameR\tgivenName\x122\n" +
 	"\asurname\x18\x04 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
 	"\x12parsed_name.familyR\asurname\x120\n" +
 	"\x06suffix\x18\x05 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x12parsed_name.suffixR\x06suffix\x12>\n" +
-	"\x05orcid\x18\x06 \x01(\tB(\x8a\xb5\x18$\n" +
-	"\videntifiersZ\x05orcid\xa2\x01\x05orcid\xf2\x01\x05orcidR\x05orcid\x12X\n" +
+	"\x12parsed_name.suffixR\x06suffix\x12F\n" +
+	"\x05orcid\x18\x06 \x01(\tB0\x8a\xb5\x18,\n" +
+	"\videntifiersZ\x05orcid\xa2\x01\x05orcid\xf2\x01\x05orcid\xb2\x04\x05ORCIDR\x05orcid\x12X\n" +
 	"\vaffiliation\x18\a \x03(\v2\".spoke.crossref.v5_3_1.AffiliationB\x12\x8a\xb5\x18\x0e\n" +
-	"\faffiliationsR\vaffiliation:>\x8a\xb5\x18:\n" +
-	"\vContributor\x1a+CrossRef PersonName maps to Hub Contributor\"\xe7\x01\n" +
-	"\fOrganization\x125\n" +
-	"\x10contributor_role\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04roleR\x0fcontributorRole\x12>\n" +
-	"\bsequence\x18\x02 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Contributor sequenceR\bsequence\x12\x1e\n" +
-	"\x04name\x18\x03 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\x04name:@\x8a\xb5\x18<\n" +
-	"\vContributor\x1a-CrossRef Organization maps to Hub Contributor\"n\n" +
-	"\vAffiliation\x12\x1e\n" +
-	"\x04name\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\x04name:?\x8a\xb5\x18;\n" +
-	"\vAffiliation\x1a,CrossRef Affiliation maps to Hub Affiliation\"\x9a\x01\n" +
-	"\tPublisher\x12B\n" +
-	"\x0epublisher_name\x18\x01 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
-	"\x04name\xea\x03\x0ePublisher nameR\rpublisherName\x12I\n" +
-	"\x0fpublisher_place\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Publisher locationR\x0epublisherPlace\"\xeb\x01\n" +
-	"\x0fPublicationDate\x127\n" +
+	"\faffiliationsR\vaffiliation:K\x8a\xb5\x18G\n" +
+	"\vContributor\x1a+CrossRef PersonName maps to Hub ContributorR\vperson_name\"\x91\x02\n" +
+	"\fOrganization\x12K\n" +
+	"\x10contributor_role\x18\x01 \x01(\tB \x8a\xb5\x18\x1c\n" +
+	"\x04role\xb2\x04\x10contributor_role\xc0\x04\x01R\x0fcontributorRole\x12A\n" +
+	"\bsequence\x18\x02 \x01(\tB%\x8a\xb5\x18!\n" +
+	"\x05extra\xea\x03\x14Contributor sequence\xc0\x04\x01R\bsequence\x12!\n" +
+	"\x04name\x18\x03 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04name\xc8\x04\x01R\x04name:N\x8a\xb5\x18J\n" +
+	"\vContributor\x1a-CrossRef Organization maps to Hub ContributorR\forganization\"~\n" +
+	"\vAffiliation\x12!\n" +
+	"\x04name\x18\x01 \x01(\tB\r\x8a\xb5\x18\t\n" +
+	"\x04name\xc8\x04\x01R\x04name:L\x8a\xb5\x18H\n" +
+	"\vAffiliation\x1a,CrossRef Affiliation maps to Hub AffiliationR\vaffiliation\"\xce\x01\n" +
+	"\tPublisher\x12S\n" +
+	"\x0epublisher_name\x18\x01 \x01(\tB,\x8a\xb5\x18(\n" +
+	"\x04name\xea\x03\x0ePublisher name\xb2\x04\x0epublisher_nameR\rpublisherName\x12[\n" +
+	"\x0fpublisher_place\x18\x02 \x01(\tB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x12Publisher location\xb2\x04\x0fpublisher_placeR\x0epublisherPlace:\x0f\x8a\xb5\x18\vR\tpublisher\"\x8d\x02\n" +
+	"\x0fPublicationDate\x12G\n" +
 	"\n" +
-	"media_type\x18\x01 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"media_type\x18\x01 \x01(\tB(\x8a\xb5\x18$\n" +
 	"\x05extra\xea\x03\n" +
-	"Media typeR\tmediaType\x12\x1e\n" +
+	"Media type\xb2\x04\n" +
+	"media_type\xc0\x04\x01R\tmediaType\x12\x1e\n" +
 	"\x04year\x18\x02 \x01(\x05B\n" +
 	"\x8a\xb5\x18\x06\n" +
 	"\x04yearR\x04year\x12!\n" +
 	"\x05month\x18\x03 \x01(\x05B\v\x8a\xb5\x18\a\n" +
 	"\x05monthR\x05month\x12\x1b\n" +
 	"\x03day\x18\x04 \x01(\x05B\t\x8a\xb5\x18\x05\n" +
-	"\x03dayR\x03day:?\x8a\xb5\x18;\n" +
-	"\tDateValue\x1a.CrossRef PublicationDate maps to Hub DateValue\"\xb2\x01\n" +
-	"\x05Pages\x127\n" +
+	"\x03dayR\x03day:Q\x8a\xb5\x18M\n" +
+	"\tDateValue\x1a.CrossRef PublicationDate maps to Hub DateValueR\x10publication_date\"\xe6\x01\n" +
+	"\x05Pages\x12D\n" +
 	"\n" +
-	"first_page\x18\x01 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"first_page\x18\x01 \x01(\tB%\x8a\xb5\x18!\n" +
 	"\x05extra\xea\x03\n" +
-	"First pageR\tfirstPage\x124\n" +
-	"\tlast_page\x18\x02 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tLast pageR\blastPage\x12:\n" +
-	"\vother_pages\x18\x03 \x01(\tB\x19\x8a\xb5\x18\x15\n" +
-	"\x05extra\xea\x03\vOther pagesR\n" +
-	"otherPages\"\x92\x02\n" +
+	"First page\xb2\x04\n" +
+	"first_pageR\tfirstPage\x12@\n" +
+	"\tlast_page\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\tLast page\xb2\x04\tlast_pageR\blastPage\x12H\n" +
+	"\vother_pages\x18\x03 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\vOther pages\xb2\x04\vother_pagesR\n" +
+	"otherPages:\v\x8a\xb5\x18\aR\x05pages\"\x9c\x02\n" +
 	"\aDoiData\x12)\n" +
 	"\x03doi\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
 	"\x05value\xa2\x01\x03doi\xf2\x01\x03doiR\x03doi\x12<\n" +
@@ -3035,65 +3037,68 @@ const file_spoke_crossref_v5_3_1_crossref_proto_rawDesc = "" +
 	"\n" +
 	"collection\x18\x03 \x03(\v2\x1b.spoke.crossref.v5_3_1.ItemB&\x8a\xb5\x18\"\n" +
 	"\x05extra\xea\x03\x18Multiple resolution URLsR\n" +
-	"collection:9\x8a\xb5\x185\n" +
+	"collection:C\x8a\xb5\x18?\n" +
 	"\n" +
-	"Identifier\x1a'CrossRef DoiData maps to Hub Identifier\"\xa5\x01\n" +
+	"Identifier\x1a'CrossRef DoiData maps to Hub IdentifierR\bdoi_data\"\xbd\x01\n" +
 	"\x04Item\x12<\n" +
 	"\bresource\x18\x01 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xf2\x01\x03url\xea\x03\fResource URLR\bresource\x124\n" +
-	"\tmime_type\x18\x02 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x05extra\xea\x03\tMIME typeR\bmimeType\x12)\n" +
+	"\x05extra\xf2\x01\x03url\xea\x03\fResource URLR\bresource\x12@\n" +
+	"\tmime_type\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
+	"\x05extra\xea\x03\tMIME type\xb2\x04\tmime_typeR\bmimeType\x12)\n" +
 	"\x05label\x18\x03 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05extra\xea\x03\x05LabelR\x05label\"c\n" +
+	"\x05extra\xea\x03\x05LabelR\x05label:\n" +
+	"\x8a\xb5\x18\x06R\x04item\"x\n" +
 	"\fCitationList\x12S\n" +
 	"\bcitation\x18\x01 \x03(\v2\x1f.spoke.crossref.v5_3_1.CitationB\x16\x8a\xb5\x18\x12\n" +
-	"\trelationsz\x05citesR\bcitation\"\xfb\x04\n" +
-	"\bCitation\x12,\n" +
-	"\x03key\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fCitation keyR\x03key\x125\n" +
+	"\trelationsz\x05citesR\bcitation:\x13\x8a\xb5\x18\x0fR\rcitation_list\"\xd5\x05\n" +
+	"\bCitation\x12/\n" +
+	"\x03key\x18\x01 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
+	"\x05extra\xea\x03\fCitation key\xc0\x04\x01R\x03key\x125\n" +
 	"\x03doi\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
-	"\x11target_identifier\xa2\x01\x03doi\xf2\x01\x03doiR\x03doi\x12X\n" +
-	"\x15unstructured_citation\x18\x03 \x01(\tB#\x8a\xb5\x18\x1f\n" +
-	"\x05extra\xea\x03\x15Unstructured citationR\x14unstructuredCitation\x12G\n" +
-	"\rjournal_title\x18\x04 \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\ftarget_title\xea\x03\rJournal titleR\fjournalTitle\x12,\n" +
+	"\x11target_identifier\xa2\x01\x03doi\xf2\x01\x03doiR\x03doi\x12p\n" +
+	"\x15unstructured_citation\x18\x03 \x01(\tB;\x8a\xb5\x187\n" +
+	"\x05extra\xea\x03\x15Unstructured citation\xb2\x04\x15unstructured_citationR\x14unstructuredCitation\x12W\n" +
+	"\rjournal_title\x18\x04 \x01(\tB2\x8a\xb5\x18.\n" +
+	"\ftarget_title\xea\x03\rJournal title\xb2\x04\rjournal_titleR\fjournalTitle\x12,\n" +
 	"\x06author\x18\x05 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06AuthorR\x06author\x12,\n" +
 	"\x06volume\x18\x06 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
 	"\x05extra\xea\x03\x06VolumeR\x06volume\x12)\n" +
 	"\x05issue\x18\a \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\x05extra\xea\x03\x05IssueR\x05issue\x127\n" +
+	"\x05extra\xea\x03\x05IssueR\x05issue\x12D\n" +
 	"\n" +
-	"first_page\x18\b \x01(\tB\x18\x8a\xb5\x18\x14\n" +
+	"first_page\x18\b \x01(\tB%\x8a\xb5\x18!\n" +
 	"\x05extra\xea\x03\n" +
-	"First pageR\tfirstPage\x12&\n" +
-	"\x04year\x18\t \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
-	"\x05extra\xea\x03\x04YearR\x04year\x12G\n" +
+	"First page\xb2\x04\n" +
+	"first_pageR\tfirstPage\x12.\n" +
+	"\x04year\x18\t \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x05extra\xea\x03\x04Year\xb2\x04\x05cYearR\x04year\x12W\n" +
 	"\rarticle_title\x18\n" +
-	" \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\ftarget_title\xea\x03\rArticle titleR\farticleTitle:6\x8a\xb5\x182\n" +
-	"\bRelation\x1a&CrossRef Citation maps to Hub Relation\"\xe7\x01\n" +
-	"\vFundingInfo\x12\x1e\n" +
-	"\x04name\x18\x01 \x01(\tB\n" +
-	"\x8a\xb5\x18\x06\n" +
-	"\x04nameR\x04name\x12I\n" +
-	"\x11funder_identifier\x18\x02 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
+	" \x01(\tB2\x8a\xb5\x18.\n" +
+	"\ftarget_title\xea\x03\rArticle title\xb2\x04\rarticle_titleR\farticleTitle:@\x8a\xb5\x18<\n" +
+	"\bRelation\x1a&CrossRef Citation maps to Hub RelationR\bcitation\"\x9a\x02\n" +
+	"\vFundingInfo\x12%\n" +
+	"\x04name\x18\x01 \x01(\tB\x11\x8a\xb5\x18\r\n" +
+	"\x04name\xb2\x04\x04nameR\x04name\x12]\n" +
+	"\x11funder_identifier\x18\x02 \x01(\tB0\x8a\xb5\x18,\n" +
 	"\n" +
-	"identifier\xa2\x01\x03doi\xf2\x01\x03doiR\x10funderIdentifier\x126\n" +
-	"\faward_number\x18\x03 \x03(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\raward_numbersR\vawardNumber:5\x8a\xb5\x181\n" +
-	"\x06Funder\x1a'CrossRef FundingInfo maps to Hub Funder\"\xf0\x01\n" +
-	"\aLicense\x120\n" +
-	"\vlicense_ref\x18\x01 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\x03uri\xf2\x01\x03urlR\n" +
-	"licenseRef\x12?\n" +
+	"identifier\xa2\x01\x03doi\xf2\x01\x03doi\xb2\x04\x11funder_identifierR\x10funderIdentifier\x12E\n" +
+	"\faward_number\x18\x03 \x03(\tB\"\x8a\xb5\x18\x1e\n" +
+	"\raward_numbers\xb2\x04\faward_numberR\vawardNumber:>\x8a\xb5\x18:\n" +
+	"\x06Funder\x1a'CrossRef FundingInfo maps to Hub FunderR\aprogram\"\xae\x02\n" +
+	"\aLicense\x12A\n" +
+	"\vlicense_ref\x18\x01 \x01(\tB \x8a\xb5\x18\x1c\n" +
+	"\x03uri\xf2\x01\x03url\xb2\x04\vlicense_ref\xc8\x04\x01R\n" +
+	"licenseRef\x12O\n" +
 	"\n" +
-	"start_date\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12License start dateR\tstartDate\x12?\n" +
+	"start_date\x18\x02 \x01(\tB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x12License start date\xb2\x04\n" +
+	"start_date\xc0\x04\x01R\tstartDate\x12O\n" +
 	"\n" +
-	"applies_to\x18\x03 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Applies to versionR\tappliesTo:1\x8a\xb5\x18-\n" +
-	"\x06Rights\x1a#CrossRef License maps to Hub RightsB\xe7\x01\n" +
+	"applies_to\x18\x03 \x01(\tB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x12Applies to version\xb2\x04\n" +
+	"applies_to\xc0\x04\x01R\tappliesTo:>\x8a\xb5\x18:\n" +
+	"\x06Rights\x1a#CrossRef License maps to Hub RightsR\vlicense_refB\xe7\x01\n" +
 	"\x19com.spoke.crossref.v5_3_1B\rCrossrefProtoP\x01ZMgithub.com/lehigh-university-libraries/crosswalk/gen/go/spoke/crossref/v5_3_1\xa2\x02\x03SCV\xaa\x02\x13Spoke.Crossref.V531\xca\x02\x13Spoke\\Crossref\\V531\xe2\x02\x1fSpoke\\Crossref\\V531\\GPBMetadata\xea\x02\x15Spoke::Crossref::V531b\x06proto3"
 
 var (

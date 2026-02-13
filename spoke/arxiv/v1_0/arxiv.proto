@@ -18,6 +18,8 @@ message Record {
     target: "Record"
     preserve_unmapped: true
     description: "arXiv Record maps to Hub Record with PREPRINT type"
+    xml_name: "arXivRecord"
+    xml_default_ns: "http://arXiv.org/arXivRecord"
   };
 
   // Paper identifier in canonical form (e.g., hep-th/9901001, math.AG/0101001)
@@ -125,6 +127,8 @@ message Record {
 
 // Submitter represents submitter information.
 message Submitter {
+  option (hub.v1.message) = { xml_name: "submitter" };
+
   // Email address
   string email = 1 [(hub.v1.field) = {
     target: "extra"
@@ -141,6 +145,8 @@ message Submitter {
 
 // Proxy represents a proxy submitter.
 message Proxy {
+  option (hub.v1.message) = { xml_name: "proxy" };
+
   // User ID of proxy submitter
   string identifier = 1 [(hub.v1.field) = {
     target: "extra"
@@ -150,12 +156,15 @@ message Proxy {
   // Remote identifier in proxy's database
   string remote_identifier = 2 [(hub.v1.field) = {
     target: "extra"
+    xml_name: "remoteIdentifier"
     description: "Remote identifier"
   }];
 }
 
 // Source describes the source file for the submission.
 message Source {
+  option (hub.v1.message) = { xml_name: "source" };
+
   // Source type (tex, encrypted-tex, ps, pdf, html, ignore)
   SourceType type = 1 [(hub.v1.field) = {
     target: "extra"
@@ -188,6 +197,8 @@ enum SourceType {
 
 // History records information about a previous version.
 message History {
+  option (hub.v1.message) = { xml_name: "history" };
+
   // Version number
   int32 version = 1 [(hub.v1.field) = {
     target: "extra"
@@ -212,11 +223,13 @@ message Authorship {
   option (hub.v1.message) = {
     target: "self"
     description: "arXiv Authorship extracts contributors"
+    xml_name: "authorship"
   };
 
   // Affiliations indexed by affid
   repeated Affiliation affiliations = 1 [(hub.v1.field) = {
     target: "extra"
+    xml_name: "affiliation"
     description: "Indexed affiliations"
   }];
 
@@ -225,6 +238,7 @@ message Authorship {
     target: "contributors"
     role: "author"
     contributor_type: "person"
+    xml_name: "author"
   }];
 }
 
@@ -233,11 +247,13 @@ message Affiliation {
   option (hub.v1.message) = {
     target: "Affiliation"
     description: "arXiv Affiliation maps to Hub Affiliation"
+    xml_name: "affiliation"
   };
 
   // Affiliation index (referenced by authors)
   int32 affid = 1 [(hub.v1.field) = {
     target: "extra"
+    xml_attr: true
     description: "Affiliation ID"
   }];
 
@@ -259,6 +275,7 @@ message Author {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "arXiv Author maps to Hub Contributor"
+    xml_name: "author"
   };
 
   // Given name/forename (beforekey in arXiv terminology)
@@ -283,6 +300,7 @@ message Author {
   // Affiliation references (indexes into authorship.affiliations)
   string affref = 4 [(hub.v1.field) = {
     target: "extra"
+    xml_attr: true
     description: "Affiliation references"
   }];
 
@@ -298,11 +316,13 @@ message Classification {
   option (hub.v1.message) = {
     target: "Subject"
     description: "arXiv Classification maps to Hub Subject"
+    xml_name: "classification"
   };
 
   // Classification scheme (MSC1991, MSC2000, ACM1998, PACS2003)
   ClassificationScheme scheme = 1 [(hub.v1.field) = {
     target: "vocabulary"
+    xml_attr: true
     description: "Classification scheme"
   }];
 
@@ -324,10 +344,13 @@ enum ClassificationScheme {
 
 // Alternate contains alternate identifiers for the paper.
 message Alternate {
+  option (hub.v1.message) = { xml_name: "alternate" };
+
   // Report numbers
   repeated string report_no = 1 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "report"
+    xml_name: "report-no"
     description: "Report numbers"
   }];
 
@@ -335,6 +358,7 @@ message Alternate {
   repeated string journal_ref = 2 [(hub.v1.field) = {
     target: "relations"
     relation_type: "published_in"
+    xml_name: "journal-ref"
     description: "Journal references"
   }];
 
@@ -344,27 +368,33 @@ message Alternate {
     identifier_type: "doi"
     parser: "doi"
     validators: "doi"
+    xml_name: "DOI"
     description: "Digital Object Identifiers"
   }];
 }
 
 // Attic stores legacy metadata from migrations.
 message Attic {
+  option (hub.v1.message) = { xml_name: "attic" };
+
   // Original content (XML encoded)
   string content = 1 [(hub.v1.field) = {
     target: "extra"
+    xml_chardata: true
     description: "Legacy content"
   }];
 
   // Conversion date
   string date = 2 [(hub.v1.field) = {
     target: "extra"
+    xml_attr: true
     description: "Conversion date"
   }];
 
   // Conversion notes
   string note = 3 [(hub.v1.field) = {
     target: "extra"
+    xml_attr: true
     description: "Conversion notes"
   }];
 }

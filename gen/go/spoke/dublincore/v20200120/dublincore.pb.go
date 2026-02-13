@@ -1614,147 +1614,152 @@ var File_spoke_dublincore_v20200120_dublincore_proto protoreflect.FileDescriptor
 
 const file_spoke_dublincore_v20200120_dublincore_proto_rawDesc = "" +
 	"\n" +
-	"+spoke/dublincore/v20200120/dublincore.proto\x12\x1aspoke.dublincore.v20200120\x1a\x14hub/v1/options.proto\"\xdb\"\n" +
-	"\x06Record\x12q\n" +
-	"\x05title\x18\x01 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB.\x8a\xb5\x18*\n" +
-	"\x05title\xea\x03\x1dPrimary title of the resource\xf8\x03\x01R\x05title\x12q\n" +
-	"\acreator\x18\x02 \x03(\v2!.spoke.dublincore.v20200120.AgentB4\x8a\xb5\x180\n" +
-	"\fcontributorsj\acreator\xea\x03\x16Primary creator/authorR\acreator\x12m\n" +
-	"\asubject\x18\x03 \x03(\v2#.spoke.dublincore.v20200120.SubjectB.\x8a\xb5\x18*\n" +
-	"\bsubjects\xea\x03\x1dSubject/topic of the resourceR\asubject\x12w\n" +
-	"\vdescription\x18\x04 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB(\x8a\xb5\x18$\n" +
-	"\babstract\xea\x03\x17Description or abstractR\vdescription\x12l\n" +
-	"\tpublisher\x18\x05 \x03(\v2!.spoke.dublincore.v20200120.AgentB+\x8a\xb5\x18'\n" +
-	"\tpublisher\xea\x03\x19Publisher of the resourceR\tpublisher\x12y\n" +
-	"\vcontributor\x18\x06 \x03(\v2!.spoke.dublincore.v20200120.AgentB4\x8a\xb5\x180\n" +
-	"\fcontributorsj\vcontributor\xea\x03\x12Other contributorsR\vcontributor\x12T\n" +
-	"\x04date\x18\a \x03(\v2 .spoke.dublincore.v20200120.DateB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05dates\xea\x03\x10Associated datesR\x04date\x12d\n" +
-	"\x04type\x18\b \x03(\v2%.spoke.dublincore.v20200120.TypeValueB)\x8a\xb5\x18%\n" +
-	"\rresource_type\xea\x03\x13Resource type/genreR\x04type\x12D\n" +
-	"\x06format\x18\t \x03(\tB,\x8a\xb5\x18(\n" +
-	"\x05extra\xea\x03\x1eFile format or physical mediumR\x06format\x12p\n" +
+	"+spoke/dublincore/v20200120/dublincore.proto\x12\x1aspoke.dublincore.v20200120\x1a\x14hub/v1/options.proto\"\x95)\n" +
+	"\x06Record\x12v\n" +
+	"\x05title\x18\x01 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB3\x8a\xb5\x18/\n" +
+	"\x05title\xea\x03\x1dPrimary title of the resource\xf8\x03\x01\xba\x04\x02dcR\x05title\x12v\n" +
+	"\acreator\x18\x02 \x03(\v2!.spoke.dublincore.v20200120.AgentB9\x8a\xb5\x185\n" +
+	"\fcontributorsj\acreator\xea\x03\x16Primary creator/author\xba\x04\x02dcR\acreator\x12r\n" +
+	"\asubject\x18\x03 \x03(\v2#.spoke.dublincore.v20200120.SubjectB3\x8a\xb5\x18/\n" +
+	"\bsubjects\xea\x03\x1dSubject/topic of the resource\xba\x04\x02dcR\asubject\x12|\n" +
+	"\vdescription\x18\x04 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB-\x8a\xb5\x18)\n" +
+	"\babstract\xea\x03\x17Description or abstract\xba\x04\x02dcR\vdescription\x12q\n" +
+	"\tpublisher\x18\x05 \x03(\v2!.spoke.dublincore.v20200120.AgentB0\x8a\xb5\x18,\n" +
+	"\tpublisher\xea\x03\x19Publisher of the resource\xba\x04\x02dcR\tpublisher\x12~\n" +
+	"\vcontributor\x18\x06 \x03(\v2!.spoke.dublincore.v20200120.AgentB9\x8a\xb5\x185\n" +
+	"\fcontributorsj\vcontributor\xea\x03\x12Other contributors\xba\x04\x02dcR\vcontributor\x12Y\n" +
+	"\x04date\x18\a \x03(\v2 .spoke.dublincore.v20200120.DateB#\x8a\xb5\x18\x1f\n" +
+	"\x05dates\xea\x03\x10Associated dates\xba\x04\x02dcR\x04date\x12i\n" +
+	"\x04type\x18\b \x03(\v2%.spoke.dublincore.v20200120.TypeValueB.\x8a\xb5\x18*\n" +
+	"\rresource_type\xea\x03\x13Resource type/genre\xba\x04\x02dcR\x04type\x12I\n" +
+	"\x06format\x18\t \x03(\tB1\x8a\xb5\x18-\n" +
+	"\x05extra\xea\x03\x1eFile format or physical medium\xba\x04\x02dcR\x06format\x12u\n" +
 	"\n" +
 	"identifier\x18\n" +
-	" \x03(\v2&.spoke.dublincore.v20200120.IdentifierB(\x8a\xb5\x18$\n" +
-	"\videntifiers\xea\x03\x14Resource identifiersR\n" +
-	"identifier\x12G\n" +
-	"\x06source\x18\v \x03(\tB/\x8a\xb5\x18+\n" +
-	"\trelationsz\fderived_from\xea\x03\x0fSource resourceR\x06source\x12E\n" +
-	"\blanguage\x18\f \x03(\tB)\x8a\xb5\x18%\n" +
-	"\blanguage\xea\x03\x18Language of the resourceR\blanguage\x12e\n" +
-	"\brelation\x18\r \x03(\v2$.spoke.dublincore.v20200120.RelationB#\x8a\xb5\x18\x1f\n" +
-	"\trelations\xea\x03\x11Related resourcesR\brelation\x12l\n" +
-	"\bcoverage\x18\x0e \x03(\v2$.spoke.dublincore.v20200120.CoverageB*\x8a\xb5\x18&\n" +
-	"\x05extra\xea\x03\x1cSpatial or temporal coverageR\bcoverage\x12]\n" +
-	"\x06rights\x18\x0f \x03(\v2\".spoke.dublincore.v20200120.RightsB!\x8a\xb5\x18\x1d\n" +
-	"\x06rights\xea\x03\x12Rights informationR\x06rights\x12r\n" +
-	"\valternative\x18\x10 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB#\x8a\xb5\x18\x1f\n" +
-	"\talt_title\xea\x03\x11Alternative titleR\valternative\x12\x84\x01\n" +
-	"\x11table_of_contents\x18\x11 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB+\x8a\xb5\x18'\n" +
-	"\x11table_of_contents\xea\x03\x11Table of contentsR\x0ftableOfContents\x12r\n" +
-	"\babstract\x18\x12 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB)\x8a\xb5\x18%\n" +
-	"\babstract\xea\x03\x18Abstract of the resourceR\babstract\x128\n" +
-	"\acreated\x18\x13 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05datesR\acreated\xa2\x01\aiso8601R\acreated\x125\n" +
-	"\x05valid\x18\x14 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	" \x03(\v2&.spoke.dublincore.v20200120.IdentifierB-\x8a\xb5\x18)\n" +
+	"\videntifiers\xea\x03\x14Resource identifiers\xba\x04\x02dcR\n" +
+	"identifier\x12L\n" +
+	"\x06source\x18\v \x03(\tB4\x8a\xb5\x180\n" +
+	"\trelationsz\fderived_from\xea\x03\x0fSource resource\xba\x04\x02dcR\x06source\x12J\n" +
+	"\blanguage\x18\f \x03(\tB.\x8a\xb5\x18*\n" +
+	"\blanguage\xea\x03\x18Language of the resource\xba\x04\x02dcR\blanguage\x12j\n" +
+	"\brelation\x18\r \x03(\v2$.spoke.dublincore.v20200120.RelationB(\x8a\xb5\x18$\n" +
+	"\trelations\xea\x03\x11Related resources\xba\x04\x02dcR\brelation\x12q\n" +
+	"\bcoverage\x18\x0e \x03(\v2$.spoke.dublincore.v20200120.CoverageB/\x8a\xb5\x18+\n" +
+	"\x05extra\xea\x03\x1cSpatial or temporal coverage\xba\x04\x02dcR\bcoverage\x12b\n" +
+	"\x06rights\x18\x0f \x03(\v2\".spoke.dublincore.v20200120.RightsB&\x8a\xb5\x18\"\n" +
+	"\x06rights\xea\x03\x12Rights information\xba\x04\x02dcR\x06rights\x12|\n" +
+	"\valternative\x18\x10 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB-\x8a\xb5\x18)\n" +
+	"\talt_title\xea\x03\x11Alternative title\xba\x04\adctermsR\valternative\x12\xa0\x01\n" +
+	"\x11table_of_contents\x18\x11 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringBG\x8a\xb5\x18C\n" +
+	"\x11table_of_contents\xea\x03\x11Table of contents\xb2\x04\x0ftableOfContents\xba\x04\adctermsR\x0ftableOfContents\x12|\n" +
+	"\babstract\x18\x12 \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB3\x8a\xb5\x18/\n" +
+	"\babstract\xea\x03\x18Abstract of the resource\xba\x04\adctermsR\babstract\x12B\n" +
+	"\acreated\x18\x13 \x01(\tB(\x8a\xb5\x18$\n" +
+	"\x05datesR\acreated\xa2\x01\aiso8601\xba\x04\adctermsR\acreated\x12?\n" +
+	"\x05valid\x18\x14 \x01(\tB)\x8a\xb5\x18%\n" +
 	"\x05datesR\x05other\xea\x03\n" +
-	"Date validR\x05valid\x12>\n" +
-	"\tavailable\x18\x15 \x01(\tB \x8a\xb5\x18\x1c\n" +
-	"\x05datesR\tavailable\xa2\x01\aiso8601R\tavailable\x125\n" +
-	"\x06issued\x18\x16 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05datesR\x06issued\xa2\x01\aiso8601R\x06issued\x12:\n" +
-	"\bmodified\x18\x17 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05datesR\aupdated\xa2\x01\aiso8601R\bmodified\x126\n" +
-	"\x06extent\x18\x18 \x03(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Size or durationR\x06extent\x125\n" +
-	"\x06medium\x18\x19 \x03(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fPhysical mediumR\x06medium\x12O\n" +
-	"\ris_version_of\x18\x1a \x03(\tB+\x8a\xb5\x18'\n" +
+	"Date valid\xba\x04\adctermsR\x05valid\x12H\n" +
+	"\tavailable\x18\x15 \x01(\tB*\x8a\xb5\x18&\n" +
+	"\x05datesR\tavailable\xa2\x01\aiso8601\xba\x04\adctermsR\tavailable\x12?\n" +
+	"\x06issued\x18\x16 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05datesR\x06issued\xa2\x01\aiso8601\xba\x04\adctermsR\x06issued\x12D\n" +
+	"\bmodified\x18\x17 \x01(\tB(\x8a\xb5\x18$\n" +
+	"\x05datesR\aupdated\xa2\x01\aiso8601\xba\x04\adctermsR\bmodified\x12@\n" +
+	"\x06extent\x18\x18 \x03(\tB(\x8a\xb5\x18$\n" +
+	"\x05extra\xea\x03\x10Size or duration\xba\x04\adctermsR\x06extent\x12?\n" +
+	"\x06medium\x18\x19 \x03(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\x0fPhysical medium\xba\x04\adctermsR\x06medium\x12g\n" +
+	"\ris_version_of\x18\x1a \x03(\tBC\x8a\xb5\x18?\n" +
 	"\trelationsz\n" +
-	"version_of\xea\x03\rIs version ofR\visVersionOf\x12K\n" +
-	"\vhas_version\x18\x1b \x03(\tB*\x8a\xb5\x18&\n" +
-	"\trelationsz\vhas_version\xea\x03\vHas versionR\n" +
-	"hasVersion\x12S\n" +
-	"\x0eis_replaced_by\x18\x1c \x03(\tB-\x8a\xb5\x18)\n" +
-	"\trelationsz\vreplaced_by\xea\x03\x0eIs replaced byR\fisReplacedBy\x12@\n" +
-	"\breplaces\x18\x1d \x03(\tB$\x8a\xb5\x18 \n" +
-	"\trelationsz\breplaces\xea\x03\bReplacesR\breplaces\x12S\n" +
-	"\x0eis_required_by\x18\x1e \x03(\tB-\x8a\xb5\x18)\n" +
-	"\trelationsz\vrequired_by\xea\x03\x0eIs required byR\fisRequiredBy\x12@\n" +
-	"\brequires\x18\x1f \x03(\tB$\x8a\xb5\x18 \n" +
-	"\trelationsz\brequires\xea\x03\bRequiresR\brequires\x12C\n" +
+	"version_of\xea\x03\rIs version of\xb2\x04\visVersionOf\xba\x04\adctermsR\visVersionOf\x12b\n" +
+	"\vhas_version\x18\x1b \x03(\tBA\x8a\xb5\x18=\n" +
+	"\trelationsz\vhas_version\xea\x03\vHas version\xb2\x04\n" +
+	"hasVersion\xba\x04\adctermsR\n" +
+	"hasVersion\x12l\n" +
+	"\x0eis_replaced_by\x18\x1c \x03(\tBF\x8a\xb5\x18B\n" +
+	"\trelationsz\vreplaced_by\xea\x03\x0eIs replaced by\xb2\x04\fisReplacedBy\xba\x04\adctermsR\fisReplacedBy\x12J\n" +
+	"\breplaces\x18\x1d \x03(\tB.\x8a\xb5\x18*\n" +
+	"\trelationsz\breplaces\xea\x03\bReplaces\xba\x04\adctermsR\breplaces\x12l\n" +
+	"\x0eis_required_by\x18\x1e \x03(\tBF\x8a\xb5\x18B\n" +
+	"\trelationsz\vrequired_by\xea\x03\x0eIs required by\xb2\x04\fisRequiredBy\xba\x04\adctermsR\fisRequiredBy\x12J\n" +
+	"\brequires\x18\x1f \x03(\tB.\x8a\xb5\x18*\n" +
+	"\trelationsz\brequires\xea\x03\bRequires\xba\x04\adctermsR\brequires\x12X\n" +
 	"\n" +
-	"is_part_of\x18  \x03(\tB%\x8a\xb5\x18!\n" +
+	"is_part_of\x18  \x03(\tB:\x8a\xb5\x186\n" +
 	"\trelationsz\apart_of\xea\x03\n" +
-	"Is part ofR\bisPartOf\x12?\n" +
-	"\bhas_part\x18! \x03(\tB$\x8a\xb5\x18 \n" +
-	"\trelationsz\bhas_part\xea\x03\bHas partR\ahasPart\x12V\n" +
-	"\x10is_referenced_by\x18\" \x03(\tB,\x8a\xb5\x18(\n" +
-	"\trelationsz\bcited_by\xea\x03\x10Is referenced byR\x0eisReferencedBy\x12C\n" +
+	"Is part of\xb2\x04\bisPartOf\xba\x04\adctermsR\bisPartOf\x12S\n" +
+	"\bhas_part\x18! \x03(\tB8\x8a\xb5\x184\n" +
+	"\trelationsz\bhas_part\xea\x03\bHas part\xb2\x04\ahasPart\xba\x04\adctermsR\ahasPart\x12q\n" +
+	"\x10is_referenced_by\x18\" \x03(\tBG\x8a\xb5\x18C\n" +
+	"\trelationsz\bcited_by\xea\x03\x10Is referenced by\xb2\x04\x0eisReferencedBy\xba\x04\adctermsR\x0eisReferencedBy\x12M\n" +
 	"\n" +
-	"references\x18# \x03(\tB#\x8a\xb5\x18\x1f\n" +
+	"references\x18# \x03(\tB-\x8a\xb5\x18)\n" +
 	"\trelationsz\x05cites\xea\x03\n" +
-	"ReferencesR\n" +
-	"references\x12G\n" +
-	"\fis_format_of\x18$ \x03(\tB%\x8a\xb5\x18!\n" +
-	"\trelationsz\x05other\xea\x03\fIs format ofR\n" +
-	"isFormatOf\x12B\n" +
+	"References\xba\x04\adctermsR\n" +
+	"references\x12^\n" +
+	"\fis_format_of\x18$ \x03(\tB<\x8a\xb5\x188\n" +
+	"\trelationsz\x05other\xea\x03\fIs format of\xb2\x04\n" +
+	"isFormatOf\xba\x04\adctermsR\n" +
+	"isFormatOf\x12X\n" +
 	"\n" +
-	"has_format\x18% \x03(\tB#\x8a\xb5\x18\x1f\n" +
+	"has_format\x18% \x03(\tB9\x8a\xb5\x185\n" +
 	"\trelationsz\x05other\xea\x03\n" +
-	"Has formatR\thasFormat\x12C\n" +
-	"\vconforms_to\x18& \x03(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Conforms to standardR\n" +
-	"conformsTo\x12e\n" +
-	"\aspatial\x18' \x03(\v2+.spoke.dublincore.v20200120.SpatialCoverageB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Spatial coverageR\aspatial\x12;\n" +
-	"\btemporal\x18( \x03(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Temporal coverageR\btemporal\x12;\n" +
-	"\baudience\x18) \x03(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Intended audienceR\baudience\x12C\n" +
-	"\x0eaccrual_method\x18* \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eAccrual methodR\raccrualMethod\x12R\n" +
-	"\x13accrual_periodicity\x18+ \x01(\tB!\x8a\xb5\x18\x1d\n" +
-	"\x05extra\xea\x03\x13Accrual periodicityR\x12accrualPeriodicity\x12C\n" +
-	"\x0eaccrual_policy\x18, \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eAccrual policyR\raccrualPolicy\x12U\n" +
-	"\x14instructional_method\x18- \x01(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Instructional methodR\x13instructionalMethod\x12o\n" +
+	"Has format\xb2\x04\thasFormat\xba\x04\adctermsR\thasFormat\x12Z\n" +
+	"\vconforms_to\x18& \x03(\tB9\x8a\xb5\x185\n" +
+	"\x05extra\xea\x03\x14Conforms to standard\xb2\x04\n" +
+	"conformsTo\xba\x04\adctermsR\n" +
+	"conformsTo\x12o\n" +
+	"\aspatial\x18' \x03(\v2+.spoke.dublincore.v20200120.SpatialCoverageB(\x8a\xb5\x18$\n" +
+	"\x05extra\xea\x03\x10Spatial coverage\xba\x04\adctermsR\aspatial\x12E\n" +
+	"\btemporal\x18( \x03(\tB)\x8a\xb5\x18%\n" +
+	"\x05extra\xea\x03\x11Temporal coverage\xba\x04\adctermsR\btemporal\x12E\n" +
+	"\baudience\x18) \x03(\tB)\x8a\xb5\x18%\n" +
+	"\x05extra\xea\x03\x11Intended audience\xba\x04\adctermsR\baudience\x12]\n" +
+	"\x0eaccrual_method\x18* \x01(\tB6\x8a\xb5\x182\n" +
+	"\x05extra\xea\x03\x0eAccrual method\xb2\x04\raccrualMethod\xba\x04\adctermsR\raccrualMethod\x12q\n" +
+	"\x13accrual_periodicity\x18+ \x01(\tB@\x8a\xb5\x18<\n" +
+	"\x05extra\xea\x03\x13Accrual periodicity\xb2\x04\x12accrualPeriodicity\xba\x04\adctermsR\x12accrualPeriodicity\x12]\n" +
+	"\x0eaccrual_policy\x18, \x01(\tB6\x8a\xb5\x182\n" +
+	"\x05extra\xea\x03\x0eAccrual policy\xb2\x04\raccrualPolicy\xba\x04\adctermsR\raccrualPolicy\x12u\n" +
+	"\x14instructional_method\x18- \x01(\tBB\x8a\xb5\x18>\n" +
+	"\x05extra\xea\x03\x14Instructional method\xb2\x04\x13instructionalMethod\xba\x04\adctermsR\x13instructionalMethod\x12y\n" +
 	"\n" +
-	"provenance\x18. \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Provenance statementR\n" +
-	"provenance\x12d\n" +
-	"\rrights_holder\x18/ \x03(\v2!.spoke.dublincore.v20200120.AgentB\x1c\x8a\xb5\x18\x18\n" +
-	"\x06rights\xea\x03\rRights holderR\frightsHolder\x12U\n" +
-	"\bmediator\x180 \x03(\v2!.spoke.dublincore.v20200120.AgentB\x16\x8a\xb5\x18\x12\n" +
-	"\x05extra\xea\x03\bMediatorR\bmediator\x12F\n" +
-	"\x0feducation_level\x181 \x03(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fEducation levelR\x0eeducationLevel\x12A\n" +
-	"\raccess_rights\x182 \x03(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x06rights\xea\x03\rAccess rightsR\faccessRights\x12<\n" +
-	"\alicense\x183 \x03(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x06rights\xea\x03\x13License informationR\alicense\x12[\n" +
-	"\x16bibliographic_citation\x184 \x01(\tB$\x8a\xb5\x18 \n" +
-	"\x05extra\xea\x03\x16Bibliographic citationR\x15bibliographicCitation:5\x8a\xb5\x181\n" +
-	"\x06Record\x10\x01\x1a%Dublin Core record maps to Hub Record\"\x93\x01\n" +
-	"\x0fLocalizedString\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12.\n" +
-	"\x04lang\x18\x02 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fLanguage tagR\x04lang:-\x8a\xb5\x18)\n" +
-	"\x06string\x1a\x1fLocalized string extracts value\"\xf0\x01\n" +
-	"\x05Agent\x12,\n" +
-	"\x04name\x18\x01 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x04name\xa2\x01\vbibtex_nameR\x04name\x12(\n" +
+	"provenance\x18. \x03(\v2+.spoke.dublincore.v20200120.LocalizedStringB,\x8a\xb5\x18(\n" +
+	"\x05extra\xea\x03\x14Provenance statement\xba\x04\adctermsR\n" +
+	"provenance\x12}\n" +
+	"\rrights_holder\x18/ \x03(\v2!.spoke.dublincore.v20200120.AgentB5\x8a\xb5\x181\n" +
+	"\x06rights\xea\x03\rRights holder\xb2\x04\frightsHolder\xba\x04\adctermsR\frightsHolder\x12_\n" +
+	"\bmediator\x180 \x03(\v2!.spoke.dublincore.v20200120.AgentB \x8a\xb5\x18\x1c\n" +
+	"\x05extra\xea\x03\bMediator\xba\x04\adctermsR\bmediator\x12a\n" +
+	"\x0feducation_level\x181 \x03(\tB8\x8a\xb5\x184\n" +
+	"\x05extra\xea\x03\x0fEducation level\xb2\x04\x0eeducationLevel\xba\x04\adctermsR\x0eeducationLevel\x12Z\n" +
+	"\raccess_rights\x182 \x03(\tB5\x8a\xb5\x181\n" +
+	"\x06rights\xea\x03\rAccess rights\xb2\x04\faccessRights\xba\x04\adctermsR\faccessRights\x12F\n" +
+	"\alicense\x183 \x03(\tB,\x8a\xb5\x18(\n" +
+	"\x06rights\xea\x03\x13License information\xba\x04\adctermsR\alicense\x12}\n" +
+	"\x16bibliographic_citation\x184 \x01(\tBF\x8a\xb5\x18B\n" +
+	"\x05extra\xea\x03\x16Bibliographic citation\xb2\x04\x15bibliographicCitation\xba\x04\adctermsR\x15bibliographicCitation:\x88\x01\x8a\xb5\x18\x83\x01\n" +
+	"\x06Record\x10\x01\x1a%Dublin Core record maps to Hub RecordR\bmetadataZ#dc=http://purl.org/dc/elements/1.1/Z!dcterms=http://purl.org/dc/terms/\"\xa4\x01\n" +
+	"\x0fLocalizedString\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12<\n" +
+	"\x04lang\x18\x02 \x01(\tB(\x8a\xb5\x18$\n" +
+	"\x05extra\xea\x03\fLanguage tag\xb2\x04\bxml:lang\xc0\x04\x01R\x04lang:-\x8a\xb5\x18)\n" +
+	"\x06string\x1a\x1fLocalized string extracts value\"\xf3\x01\n" +
+	"\x05Agent\x12/\n" +
+	"\x04name\x18\x01 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
+	"\x04name\xa2\x01\vbibtex_name\xc8\x04\x01R\x04name\x12(\n" +
 	"\x03uri\x18\x02 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
 	"\videntifiersZ\x03uriR\x03uri\x12Q\n" +
 	"\x04type\x18\x03 \x01(\x0e2%.spoke.dublincore.v20200120.AgentTypeB\x16\x8a\xb5\x18\x12\n" +
 	"\x10contributor_typeR\x04type:<\x8a\xb5\x188\n" +
-	"\vContributor\x1a)Dublin Core agent maps to Hub Contributor\"\x83\x02\n" +
-	"\aSubject\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x12D\n" +
+	"\vContributor\x1a)Dublin Core agent maps to Hub Contributor\"\x86\x02\n" +
+	"\aSubject\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x12D\n" +
 	"\x06scheme\x18\x02 \x01(\tB,\x8a\xb5\x18(\n" +
 	"\n" +
 	"vocabulary\xea\x03\x19Subject vocabulary schemeR\x06scheme\x12\x1b\n" +
@@ -1762,33 +1767,34 @@ const file_spoke_dublincore_v20200120_dublincore_proto_rawDesc = "" +
 	"\x03uriR\x03uri\x12:\n" +
 	"\x04lang\x18\x04 \x01(\tB&\x8a\xb5\x18\"\n" +
 	"\x05extra\xea\x03\x18Language of subject termR\x04lang:6\x8a\xb5\x182\n" +
-	"\aSubject\x1a'Dublin Core subject maps to Hub Subject\"\xb0\x01\n" +
-	"\x04Date\x12)\n" +
-	"\x05value\x18\x01 \x01(\tB\x13\x8a\xb5\x18\x0f\n" +
-	"\x03raw\xa2\x01\aiso8601R\x05value\x12D\n" +
+	"\aSubject\x1a'Dublin Core subject maps to Hub Subject\"\xb3\x01\n" +
+	"\x04Date\x12,\n" +
+	"\x05value\x18\x01 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
+	"\x03raw\xa2\x01\aiso8601\xc8\x04\x01R\x05value\x12D\n" +
 	"\x04type\x18\x02 \x01(\x0e2$.spoke.dublincore.v20200120.DateTypeB\n" +
 	"\x8a\xb5\x18\x06\n" +
 	"\x04typeR\x04type:7\x8a\xb5\x183\n" +
-	"\tDateValue\x1a&Dublin Core date maps to Hub DateValue\"\xdb\x01\n" +
-	"\tTypeValue\x12'\n" +
-	"\x05value\x18\x01 \x01(\tB\x11\x8a\xb5\x18\r\n" +
-	"\vdescriptionR\x05value\x12<\n" +
+	"\tDateValue\x1a&Dublin Core date maps to Hub DateValue\"\xde\x01\n" +
+	"\tTypeValue\x12*\n" +
+	"\x05value\x18\x01 \x01(\tB\x14\x8a\xb5\x18\x10\n" +
+	"\vdescription\xc8\x04\x01R\x05value\x12<\n" +
 	"\x06scheme\x18\x02 \x01(\tB$\x8a\xb5\x18 \n" +
 	"\x05extra\xea\x03\x16Type vocabulary schemeR\x06scheme\x12(\n" +
 	"\x03uri\x18\x03 \x01(\tB\x16\x8a\xb5\x18\x12\n" +
 	"\x05extra\xea\x03\bType URIR\x03uri:=\x8a\xb5\x189\n" +
-	"\fResourceType\x1a)Dublin Core type maps to Hub ResourceType\"\xa9\x01\n" +
+	"\fResourceType\x1a)Dublin Core type maps to Hub ResourceType\"\xac\x01\n" +
 	"\n" +
-	"Identifier\x12!\n" +
-	"\x05value\x18\x01 \x01(\tB\v\x8a\xb5\x18\a\n" +
-	"\x05valueR\x05value\x127\n" +
+	"Identifier\x12$\n" +
+	"\x05value\x18\x01 \x01(\tB\x0e\x8a\xb5\x18\n" +
+	"\n" +
+	"\x05value\xc8\x04\x01R\x05value\x127\n" +
 	"\x04type\x18\x02 \x01(\tB#\x8a\xb5\x18\x1f\n" +
 	"\x04type\xea\x03\x16Identifier type stringR\x04type:?\x8a\xb5\x18;\n" +
 	"\n" +
-	"Identifier\x1a-Dublin Core identifier maps to Hub Identifier\"\xbe\x01\n" +
-	"\bRelation\x12-\n" +
-	"\x05value\x18\x01 \x01(\tB\x17\x8a\xb5\x18\x13\n" +
-	"\x11target_identifierR\x05value\x12H\n" +
+	"Identifier\x1a-Dublin Core identifier maps to Hub Identifier\"\xc1\x01\n" +
+	"\bRelation\x120\n" +
+	"\x05value\x18\x01 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
+	"\x11target_identifier\xc8\x04\x01R\x05value\x12H\n" +
 	"\x04type\x18\x02 \x01(\x0e2(.spoke.dublincore.v20200120.RelationTypeB\n" +
 	"\x8a\xb5\x18\x06\n" +
 	"\x04typeR\x04type:9\x8a\xb5\x185\n" +
@@ -1815,10 +1821,10 @@ const file_spoke_dublincore_v20200120_dublincore_proto_rawDesc = "" +
 	"\x04west\x18\x01 \x01(\x01R\x04west\x12\x12\n" +
 	"\x04east\x18\x02 \x01(\x01R\x04east\x12\x14\n" +
 	"\x05north\x18\x03 \x01(\x01R\x05north\x12\x14\n" +
-	"\x05south\x18\x04 \x01(\x01R\x05south\"\xcf\x01\n" +
-	"\x06Rights\x12-\n" +
-	"\tstatement\x18\x01 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
-	"\tstatementR\tstatement\x12!\n" +
+	"\x05south\x18\x04 \x01(\x01R\x05south\"\xd2\x01\n" +
+	"\x06Rights\x120\n" +
+	"\tstatement\x18\x01 \x01(\tB\x12\x8a\xb5\x18\x0e\n" +
+	"\tstatement\xc8\x04\x01R\tstatement\x12!\n" +
 	"\x03uri\x18\x02 \x01(\tB\x0f\x8a\xb5\x18\v\n" +
 	"\x03uri\xf2\x01\x03urlR\x03uri\x12>\n" +
 	"\x04lang\x18\x03 \x01(\tB*\x8a\xb5\x18&\n" +

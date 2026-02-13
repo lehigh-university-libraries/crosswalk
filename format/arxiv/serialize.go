@@ -355,13 +355,16 @@ type XMLRecord struct {
 	Submitter      *XMLSubmitter       `xml:"submitter,omitempty"`
 	VersionNum     int                 `xml:"version"`
 	Date           string              `xml:"date"`
+	Proxy          *XMLProxy           `xml:"proxy,omitempty"`
 	Source         *XMLSource          `xml:"source,omitempty"`
+	History        []XMLHistory        `xml:"history,omitempty"`
 	Title          string              `xml:"title"`
 	Authorship     *XMLAuthorship      `xml:"authorship"`
 	Classification []XMLClassification `xml:"classification,omitempty"`
 	Alternate      *XMLAlternate       `xml:"alternate,omitempty"`
 	Comments       []string            `xml:"comments,omitempty"`
 	Abstract       []string            `xml:"abstract,omitempty"`
+	Attic          []XMLAttic          `xml:"attic,omitempty"`
 }
 
 // XMLSubmitter represents submitter information.
@@ -410,4 +413,24 @@ type XMLAlternate struct {
 	ReportNo   []string `xml:"report-no,omitempty"`
 	JournalRef []string `xml:"journal-ref,omitempty"`
 	DOI        []string `xml:"DOI,omitempty"`
+}
+
+// XMLProxy represents proxy submitter information.
+type XMLProxy struct {
+	Identifier       string `xml:"identifier"`
+	RemoteIdentifier string `xml:"remoteIdentifier,omitempty"`
+}
+
+// XMLHistory records information about a previous version.
+type XMLHistory struct {
+	Version int        `xml:"version"`
+	Date    string     `xml:"date"`
+	Source  *XMLSource `xml:"source,omitempty"`
+}
+
+// XMLAttic stores legacy metadata from migrations.
+type XMLAttic struct {
+	Content string `xml:",chardata"`
+	Date    string `xml:"date,attr"`
+	Note    string `xml:"note,attr,omitempty"`
 }

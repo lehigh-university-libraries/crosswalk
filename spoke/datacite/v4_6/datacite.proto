@@ -18,6 +18,9 @@ message Resource {
     target: "Record"
     preserve_unmapped: true
     description: "DataCite Resource maps to Hub Record"
+    xml_name: "resource"
+    xml_default_ns: "http://datacite.org/schema/kernel-4"
+    xml_namespaces: ["xsi=http://www.w3.org/2001/XMLSchema-instance"]
   };
 
   // DOI identifier (required)
@@ -31,11 +34,13 @@ message Resource {
     target: "contributors"
     role: "creator"
     required: true
+    xml_name: "creators"
   }];
   // Titles (required)
   repeated Title titles = 3 [(hub.v1.field) = {
     target: "title"
     required: true
+    xml_name: "titles"
   }];
   // Publisher (required)
   string publisher = 4 [(hub.v1.field) = {
@@ -47,31 +52,38 @@ message Resource {
     target: "dates"
     date_type: "issued"
     required: true
+    xml_name: "publicationYear"
   }];
   // Resource type (required)
   ResourceType resource_type = 6 [(hub.v1.field) = {
     target: "resource_type"
     required: true
+    xml_name: "resourceType"
   }];
 
   // Optional fields
   repeated Subject subjects = 7 [(hub.v1.field) = {
     target: "subjects"
+    xml_name: "subjects"
   }];
   repeated Contributor contributors = 8 [(hub.v1.field) = {
     target: "contributors"
+    xml_name: "contributors"
   }];
   repeated Date dates = 9 [(hub.v1.field) = {
     target: "dates"
+    xml_name: "dates"
   }];
   string language = 10 [(hub.v1.field) = {
     target: "language"
   }];
   repeated AlternateIdentifier alternate_identifiers = 11 [(hub.v1.field) = {
     target: "identifiers"
+    xml_name: "alternateIdentifiers"
   }];
   repeated RelatedIdentifier related_identifiers = 12 [(hub.v1.field) = {
     target: "relations"
+    xml_name: "relatedIdentifiers"
   }];
   repeated string sizes = 13 [(hub.v1.field) = {
     target: "extra"
@@ -87,19 +99,24 @@ message Resource {
   }];
   repeated Rights rights_list = 16 [(hub.v1.field) = {
     target: "rights"
+    xml_name: "rightsList"
   }];
   repeated Description descriptions = 17 [(hub.v1.field) = {
     target: "abstract"
+    xml_name: "descriptions"
   }];
   repeated GeoLocation geo_locations = 18 [(hub.v1.field) = {
     target: "extra"
     description: "Geographic locations"
+    xml_name: "geoLocations"
   }];
   repeated FundingReference funding_references = 19 [(hub.v1.field) = {
     target: "funders"
+    xml_name: "fundingReferences"
   }];
   repeated RelatedItem related_items = 20 [(hub.v1.field) = {
     target: "relations"
+    xml_name: "relatedItems"
   }];
 }
 
@@ -108,6 +125,7 @@ message Identifier {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "DataCite Identifier maps to Hub Identifier"
+    xml_name: "identifier"
   };
 
   // Identifier value
@@ -115,10 +133,13 @@ message Identifier {
     target: "value"
     parser: "doi"
     validators: "doi"
+    xml_chardata: true
   }];
   // Identifier type (always "DOI" for DataCite)
   string identifier_type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "identifierType"
   }];
 }
 
@@ -127,32 +148,39 @@ message Creator {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "DataCite Creator maps to Hub Contributor"
+    xml_name: "creator"
   };
 
   // Name (required)
   string name = 1 [(hub.v1.field) = {
     target: "name"
     required: true
+    xml_name: "creatorName"
   }];
   // Name type: Personal, Organizational
   string name_type = 2 [(hub.v1.field) = {
     target: "contributor_type"
+    xml_name: "nameType"
   }];
   // Given name (for persons)
   string given_name = 3 [(hub.v1.field) = {
     target: "parsed_name.given"
+    xml_name: "givenName"
   }];
   // Family name (for persons)
   string family_name = 4 [(hub.v1.field) = {
     target: "parsed_name.family"
+    xml_name: "familyName"
   }];
   // Name identifiers (ORCID, ISNI, etc.)
   repeated NameIdentifier name_identifiers = 5 [(hub.v1.field) = {
     target: "identifiers"
+    xml_name: "nameIdentifier"
   }];
   // Affiliations
   repeated Affiliation affiliations = 6 [(hub.v1.field) = {
     target: "affiliations"
+    xml_name: "affiliation"
   }];
 }
 
@@ -161,37 +189,46 @@ message Contributor {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "DataCite Contributor maps to Hub Contributor"
+    xml_name: "contributor"
   };
 
   // Contributor type (required)
   ContributorType contributor_type = 1 [(hub.v1.field) = {
     target: "role"
     required: true
+    xml_attr: true
+    xml_name: "contributorType"
   }];
   // Name (required)
   string name = 2 [(hub.v1.field) = {
     target: "name"
     required: true
+    xml_name: "contributorName"
   }];
   // Name type
   string name_type = 3 [(hub.v1.field) = {
     target: "contributor_type"
+    xml_name: "nameType"
   }];
   // Given name
   string given_name = 4 [(hub.v1.field) = {
     target: "parsed_name.given"
+    xml_name: "givenName"
   }];
   // Family name
   string family_name = 5 [(hub.v1.field) = {
     target: "parsed_name.family"
+    xml_name: "familyName"
   }];
   // Name identifiers
   repeated NameIdentifier name_identifiers = 6 [(hub.v1.field) = {
     target: "identifiers"
+    xml_name: "nameIdentifier"
   }];
   // Affiliations
   repeated Affiliation affiliations = 7 [(hub.v1.field) = {
     target: "affiliations"
+    xml_name: "affiliation"
   }];
 }
 
@@ -226,20 +263,26 @@ message NameIdentifier {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "DataCite NameIdentifier maps to Hub Identifier"
+    xml_name: "nameIdentifier"
   };
 
   // Identifier value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Scheme (e.g., ORCID, ISNI, ROR)
   string name_identifier_scheme = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "nameIdentifierScheme"
   }];
   // Scheme URI
   string scheme_uri = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_attr: true
+    xml_name: "schemeURI"
   }];
 }
 
@@ -248,24 +291,32 @@ message Affiliation {
   option (hub.v1.message) = {
     target: "Affiliation"
     description: "DataCite Affiliation maps to Hub Affiliation"
+    xml_name: "affiliation"
   };
 
   // Affiliation name
   string name = 1 [(hub.v1.field) = {
     target: "name"
+    xml_chardata: true
   }];
   // Affiliation identifier
   string affiliation_identifier = 2 [(hub.v1.field) = {
     target: "identifier"
+    xml_attr: true
+    xml_name: "affiliationIdentifier"
   }];
   // Identifier scheme (e.g., ROR)
   string affiliation_identifier_scheme = 3 [(hub.v1.field) = {
     target: "identifier_type"
+    xml_attr: true
+    xml_name: "affiliationIdentifierScheme"
   }];
   // Scheme URI
   string scheme_uri = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_attr: true
+    xml_name: "schemeURI"
   }];
 }
 
@@ -274,22 +325,28 @@ message Title {
   option (hub.v1.message) = {
     target: "string"
     description: "DataCite Title extracts value"
+    xml_name: "title"
   };
 
   // Title value
   string value = 1 [(hub.v1.field) = {
     target: "value"
     required: true
+    xml_chardata: true
   }];
   // Title type
   TitleType title_type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Title type"
+    xml_attr: true
+    xml_name: "titleType"
   }];
   // Language (BCP 47)
   string lang = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Language"
+    xml_attr: true
+    xml_name: "xml:lang"
   }];
 }
 
@@ -307,16 +364,20 @@ message ResourceType {
   option (hub.v1.message) = {
     target: "ResourceType"
     description: "DataCite ResourceType maps to Hub ResourceType"
+    xml_name: "resourceType"
   };
 
   // Resource type general (required)
   ResourceTypeGeneral resource_type_general = 1 [(hub.v1.field) = {
     target: "type"
     required: true
+    xml_attr: true
+    xml_name: "resourceTypeGeneral"
   }];
   // Free-text resource type
   string value = 2 [(hub.v1.field) = {
     target: "description"
+    xml_chardata: true
   }];
 }
 
@@ -360,29 +421,39 @@ message Subject {
   option (hub.v1.message) = {
     target: "Subject"
     description: "DataCite Subject maps to Hub Subject"
+    xml_name: "subject"
   };
 
   // Subject value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Subject scheme (e.g., LCSH, DDC)
   string subject_scheme = 2 [(hub.v1.field) = {
     target: "vocabulary"
+    xml_attr: true
+    xml_name: "subjectScheme"
   }];
   // Scheme URI
   string scheme_uri = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_attr: true
+    xml_name: "schemeURI"
   }];
   // Value URI
   string value_uri = 4 [(hub.v1.field) = {
     target: "uri"
+    xml_attr: true
+    xml_name: "valueURI"
   }];
   // Classification code
   string classification_code = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Classification code"
+    xml_attr: true
+    xml_name: "classificationCode"
   }];
 }
 
@@ -391,21 +462,27 @@ message Date {
   option (hub.v1.message) = {
     target: "DateValue"
     description: "DataCite Date maps to Hub DateValue"
+    xml_name: "date"
   };
 
   // Date value (ISO 8601)
   string value = 1 [(hub.v1.field) = {
     target: "raw"
     parser: "iso8601"
+    xml_chardata: true
   }];
   // Date type
   DateType date_type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "dateType"
   }];
   // Date information (free text)
   string date_information = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Date information"
+    xml_attr: true
+    xml_name: "dateInformation"
   }];
 }
 
@@ -430,15 +507,19 @@ message AlternateIdentifier {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "DataCite AlternateIdentifier maps to Hub Identifier"
+    xml_name: "alternateIdentifier"
   };
 
   // Identifier value
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Identifier type
   string alternate_identifier_type = 2 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "alternateIdentifierType"
   }];
 }
 
@@ -447,40 +528,54 @@ message RelatedIdentifier {
   option (hub.v1.message) = {
     target: "Relation"
     description: "DataCite RelatedIdentifier maps to Hub Relation"
+    xml_name: "relatedIdentifier"
   };
 
   // Identifier value
   string value = 1 [(hub.v1.field) = {
     target: "target_identifier"
+    xml_chardata: true
   }];
   // Identifier type (DOI, URL, ARK, etc.)
   RelatedIdentifierType related_identifier_type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Identifier type"
+    xml_attr: true
+    xml_name: "relatedIdentifierType"
   }];
   // Relation type
   RelationType relation_type = 3 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "relationType"
   }];
   // Related metadata scheme
   string related_metadata_scheme = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Metadata scheme"
+    xml_attr: true
+    xml_name: "relatedMetadataScheme"
   }];
   // Scheme URI
   string scheme_uri = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_attr: true
+    xml_name: "schemeURI"
   }];
   // Scheme type
   string scheme_type = 6 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme type"
+    xml_attr: true
+    xml_name: "schemeType"
   }];
   // Resource type general
   ResourceTypeGeneral resource_type_general = 7 [(hub.v1.field) = {
     target: "extra"
     description: "Related resource type"
+    xml_attr: true
+    xml_name: "resourceTypeGeneral"
   }];
 }
 
@@ -554,36 +649,48 @@ message Rights {
   option (hub.v1.message) = {
     target: "Rights"
     description: "DataCite Rights maps to Hub Rights"
+    xml_name: "rights"
   };
 
   // Rights statement
   string value = 1 [(hub.v1.field) = {
     target: "statement"
+    xml_chardata: true
   }];
   // Rights URI
   string rights_uri = 2 [(hub.v1.field) = {
     target: "uri"
     validators: "url"
+    xml_attr: true
+    xml_name: "rightsURI"
   }];
   // Rights identifier
   string rights_identifier = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Rights identifier"
+    xml_attr: true
+    xml_name: "rightsIdentifier"
   }];
   // Rights identifier scheme
   string rights_identifier_scheme = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Rights identifier scheme"
+    xml_attr: true
+    xml_name: "rightsIdentifierScheme"
   }];
   // Scheme URI
   string scheme_uri = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_attr: true
+    xml_name: "schemeURI"
   }];
   // Language
   string lang = 6 [(hub.v1.field) = {
     target: "extra"
     description: "Language"
+    xml_attr: true
+    xml_name: "xml:lang"
   }];
 }
 
@@ -592,21 +699,27 @@ message Description {
   option (hub.v1.message) = {
     target: "string"
     description: "DataCite Description extracts abstract"
+    xml_name: "description"
   };
 
   // Description text
   string value = 1 [(hub.v1.field) = {
     target: "value"
+    xml_chardata: true
   }];
   // Description type
   DescriptionType description_type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Description type"
+    xml_attr: true
+    xml_name: "descriptionType"
   }];
   // Language
   string lang = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Language"
+    xml_attr: true
+    xml_name: "xml:lang"
   }];
 }
 
@@ -623,69 +736,97 @@ enum DescriptionType {
 
 // GeoLocation - Geographic location of the resource.
 message GeoLocation {
+  option (hub.v1.message) = {
+    xml_name: "geoLocation"
+  };
+
   // Place name
   string geo_location_place = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Place name"
+    xml_name: "geoLocationPlace"
   }];
   // Point coordinates
   GeoLocationPoint geo_location_point = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Point coordinates"
+    xml_name: "geoLocationPoint"
   }];
   // Bounding box
   GeoLocationBox geo_location_box = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Bounding box"
+    xml_name: "geoLocationBox"
   }];
   // Polygon
   repeated GeoLocationPolygon geo_location_polygons = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Polygons"
+    xml_name: "geoLocationPolygon"
   }];
 }
 
 // GeoLocationPoint - A geographic point.
 message GeoLocationPoint {
+  option (hub.v1.message) = {
+    xml_name: "geoLocationPoint"
+  };
+
   double point_longitude = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Longitude"
+    xml_name: "pointLongitude"
   }];
   double point_latitude = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Latitude"
+    xml_name: "pointLatitude"
   }];
 }
 
 // GeoLocationBox - A geographic bounding box.
 message GeoLocationBox {
+  option (hub.v1.message) = {
+    xml_name: "geoLocationBox"
+  };
+
   double west_bound_longitude = 1 [(hub.v1.field) = {
     target: "extra"
     description: "West longitude"
+    xml_name: "westBoundLongitude"
   }];
   double east_bound_longitude = 2 [(hub.v1.field) = {
     target: "extra"
     description: "East longitude"
+    xml_name: "eastBoundLongitude"
   }];
   double south_bound_latitude = 3 [(hub.v1.field) = {
     target: "extra"
     description: "South latitude"
+    xml_name: "southBoundLatitude"
   }];
   double north_bound_latitude = 4 [(hub.v1.field) = {
     target: "extra"
     description: "North latitude"
+    xml_name: "northBoundLatitude"
   }];
 }
 
 // GeoLocationPolygon - A geographic polygon.
 message GeoLocationPolygon {
+  option (hub.v1.message) = {
+    xml_name: "geoLocationPolygon"
+  };
+
   repeated GeoLocationPoint polygon_points = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Polygon points"
+    xml_name: "polygonPoint"
   }];
   GeoLocationPoint in_polygon_point = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Point in polygon"
+    xml_name: "inPolygonPoint"
   }];
 }
 
@@ -694,38 +835,46 @@ message FundingReference {
   option (hub.v1.message) = {
     target: "Funder"
     description: "DataCite FundingReference maps to Hub Funder"
+    xml_name: "fundingReference"
   };
 
   // Funder name
   string funder_name = 1 [(hub.v1.field) = {
     target: "name"
+    xml_name: "funderName"
   }];
   // Funder identifier
   string funder_identifier = 2 [(hub.v1.field) = {
     target: "identifier"
+    xml_name: "funderIdentifier"
   }];
   // Funder identifier type (e.g., Crossref Funder ID)
   string funder_identifier_type = 3 [(hub.v1.field) = {
     target: "identifier_type"
+    xml_name: "funderIdentifierType"
   }];
   // Scheme URI
   string scheme_uri = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Scheme URI"
+    xml_name: "schemeURI"
   }];
   // Award number
   string award_number = 5 [(hub.v1.field) = {
     target: "award_numbers"
+    xml_name: "awardNumber"
   }];
   // Award URI
   string award_uri = 6 [(hub.v1.field) = {
     target: "extra"
     validators: "url"
     description: "Award URI"
+    xml_name: "awardURI"
   }];
   // Award title
   string award_title = 7 [(hub.v1.field) = {
     target: "award_title"
+    xml_name: "awardTitle"
   }];
 }
 
@@ -734,30 +883,38 @@ message RelatedItem {
   option (hub.v1.message) = {
     target: "Relation"
     description: "DataCite RelatedItem maps to Hub Relation"
+    xml_name: "relatedItem"
   };
 
   // Relation type
   RelationType relation_type = 1 [(hub.v1.field) = {
     target: "type"
+    xml_attr: true
+    xml_name: "relationType"
   }];
   // Related item type
   ResourceTypeGeneral related_item_type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Related item type"
+    xml_attr: true
+    xml_name: "relatedItemType"
   }];
   // Titles
   repeated Title titles = 3 [(hub.v1.field) = {
     target: "target_title"
+    xml_name: "titles"
   }];
   // Creators
   repeated Creator creators = 4 [(hub.v1.field) = {
     target: "extra"
     description: "Related item creators"
+    xml_name: "creators"
   }];
   // Publication year
   string publication_year = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Publication year"
+    xml_name: "publicationYear"
   }];
   // Volume
   string volume = 6 [(hub.v1.field) = {

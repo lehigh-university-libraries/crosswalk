@@ -14,14 +14,26 @@ import "hub/v1/options.proto";
 
 // Deposit - Root element for CrossRef deposit.
 message Deposit {
+  option (hub.v1.message) = {
+    xml_name: "doi_batch"
+    xml_default_ns: "http://www.crossref.org/schema/5.3.1"
+    xml_namespaces: ["xsi=http://www.w3.org/2001/XMLSchema-instance"]
+  };
+
   Head head = 1;
   Body body = 2;
 }
 
 // Head - Deposit header information.
 message Head {
+  option (hub.v1.message) = {
+    xml_name: "head"
+  };
+
   // Unique batch ID
-  string doi_batch_id = 1;
+  string doi_batch_id = 1 [(hub.v1.field) = {
+    xml_name: "doi_batch_id"
+  }];
   // Timestamp of deposit
   string timestamp = 2;
   // Depositor information
@@ -32,45 +44,75 @@ message Head {
 
 // Depositor - Information about who is making the deposit.
 message Depositor {
-  string depositor_name = 1;
+  option (hub.v1.message) = {
+    xml_name: "depositor"
+  };
+
+  string depositor_name = 1 [(hub.v1.field) = {
+    xml_name: "depositor_name"
+  }];
   string email_address = 2 [(hub.v1.field) = {
     validators: "email"
+    xml_name: "email_address"
   }];
 }
 
 // Body - Contains the content being registered.
 message Body {
+  option (hub.v1.message) = {
+    xml_name: "body"
+  };
+
   repeated Journal journal = 1;
   repeated Book book = 2;
   repeated Conference conference = 3;
   repeated Dataset dataset = 4;
   repeated Dissertation dissertation = 5;
-  repeated PostedContent posted_content = 6;
-  repeated PeerReview peer_review = 7;
+  repeated PostedContent posted_content = 6 [(hub.v1.field) = {
+    xml_name: "posted_content"
+  }];
+  repeated PeerReview peer_review = 7 [(hub.v1.field) = {
+    xml_name: "peer_review"
+  }];
 }
 
 // Journal - A journal containing issues and articles.
 message Journal {
+  option (hub.v1.message) = {
+    xml_name: "journal"
+  };
+
   JournalMetadata journal_metadata = 1 [(hub.v1.field) = {
     target: "relations"
     relation_type: "part_of"
     description: "Journal metadata"
+    xml_name: "journal_metadata"
   }];
-  repeated JournalIssue journal_issue = 2;
-  repeated JournalArticle journal_article = 3;
+  repeated JournalIssue journal_issue = 2 [(hub.v1.field) = {
+    xml_name: "journal_issue"
+  }];
+  repeated JournalArticle journal_article = 3 [(hub.v1.field) = {
+    xml_name: "journal_article"
+  }];
 }
 
 // JournalMetadata - Metadata about the journal itself.
 message JournalMetadata {
+  option (hub.v1.message) = {
+    xml_name: "journal_metadata"
+  };
+
   // Full journal title
   string full_title = 1 [(hub.v1.field) = {
     target: "title"
     description: "Journal full title"
+    xml_name: "full_title"
   }];
   // Abbreviated title
   string abbrev_title = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Abbreviated title"
+    xml_name: "abbrev_title"
   }];
   // ISSN (print)
   string issn_print = 3 [(hub.v1.field) = {
@@ -78,6 +120,7 @@ message JournalMetadata {
     identifier_type: "issn"
     validators: "issn"
     description: "Print ISSN"
+    xml_name: "issn"
   }];
   // ISSN (electronic)
   string issn_electronic = 4 [(hub.v1.field) = {
@@ -85,20 +128,27 @@ message JournalMetadata {
     identifier_type: "eissn"
     validators: "issn"
     description: "Electronic ISSN"
+    xml_name: "issn"
   }];
   // DOI for the journal
   DoiData doi_data = 5 [(hub.v1.field) = {
     target: "identifiers"
     description: "Journal DOI"
+    xml_name: "doi_data"
   }];
 }
 
 // JournalIssue - A single issue of a journal.
 message JournalIssue {
+  option (hub.v1.message) = {
+    xml_name: "journal_issue"
+  };
+
   // Publication date
   PublicationDate publication_date = 1 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // Volume number
   string volume = 2 [(hub.v1.field) = {
@@ -113,6 +163,7 @@ message JournalIssue {
   // DOI for the issue
   DoiData doi_data = 4 [(hub.v1.field) = {
     target: "identifiers"
+    xml_name: "doi_data"
   }];
 }
 
@@ -122,6 +173,7 @@ message JournalArticle {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef JournalArticle maps to Hub Record with ARTICLE type"
+    xml_name: "journal_article"
   };
 
   // Titles
@@ -137,6 +189,7 @@ message JournalArticle {
   PublicationDate publication_date = 3 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // Pages
   Pages pages = 4 [(hub.v1.field) = {
@@ -146,25 +199,30 @@ message JournalArticle {
   // Abstract
   string abstract = 5 [(hub.v1.field) = {
     target: "abstract"
+    xml_name: "abstract"
   }];
   // DOI data
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
   // Citation list
   CitationList citation_list = 7 [(hub.v1.field) = {
     target: "relations"
     relation_type: "cites"
     description: "References"
+    xml_name: "citation_list"
   }];
   // Funding information
   repeated FundingInfo program = 8 [(hub.v1.field) = {
     target: "funders"
+    xml_name: "program"
   }];
   // License
   repeated License license = 9 [(hub.v1.field) = {
     target: "rights"
+    xml_name: "license_ref"
   }];
 }
 
@@ -174,29 +232,35 @@ message Book {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef Book maps to Hub Record with BOOK type"
+    xml_name: "book"
   };
 
   // Book type: monograph, edited_book, reference
   string book_type = 1 [(hub.v1.field) = {
     target: "resource_type"
     description: "Book type"
+    xml_attr: true
+    xml_name: "book_type"
   }];
   // Book metadata
   BookMetadata book_metadata = 2 [(hub.v1.field) = {
     target: "self"
     description: "Book metadata"
+    xml_name: "book_metadata"
   }];
   // Book series metadata
   BookSeriesMetadata book_series_metadata = 3 [(hub.v1.field) = {
     target: "relations"
     relation_type: "in_series"
     description: "Series information"
+    xml_name: "book_series_metadata"
   }];
   // Content item (chapter)
   repeated ContentItem content_item = 4 [(hub.v1.field) = {
     target: "relations"
     relation_type: "has_part"
     description: "Book chapters"
+    xml_name: "content_item"
   }];
 }
 
@@ -206,6 +270,7 @@ message BookMetadata {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef BookMetadata maps to Hub Record"
+    xml_name: "book_metadata"
   };
 
   // Titles
@@ -221,6 +286,7 @@ message BookMetadata {
   PublicationDate publication_date = 3 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // ISBN (print)
   string isbn_print = 4 [(hub.v1.field) = {
@@ -228,6 +294,7 @@ message BookMetadata {
     identifier_type: "isbn"
     validators: "isbn"
     description: "Print ISBN"
+    xml_name: "isbn"
   }];
   // ISBN (electronic)
   string isbn_electronic = 5 [(hub.v1.field) = {
@@ -235,6 +302,7 @@ message BookMetadata {
     identifier_type: "isbn"
     validators: "isbn"
     description: "Electronic ISBN"
+    xml_name: "noisbn"
   }];
   // Publisher
   Publisher publisher = 6 [(hub.v1.field) = {
@@ -244,20 +312,27 @@ message BookMetadata {
   DoiData doi_data = 7 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
   // Edition number
   string edition_number = 8 [(hub.v1.field) = {
     target: "extra"
     description: "Edition number"
+    xml_name: "edition_number"
   }];
 }
 
 // BookSeriesMetadata - Metadata for a book series.
 message BookSeriesMetadata {
+  option (hub.v1.message) = {
+    xml_name: "book_series_metadata"
+  };
+
   // Series title
   string series_title = 1 [(hub.v1.field) = {
     target: "title"
     description: "Series title"
+    xml_name: "series_title"
   }];
   // ISSN
   string issn = 2 [(hub.v1.field) = {
@@ -278,12 +353,15 @@ message ContentItem {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef ContentItem maps to Hub Record with BOOK_CHAPTER type"
+    xml_name: "content_item"
   };
 
   // Component type: chapter, section, part, etc.
   string component_type = 1 [(hub.v1.field) = {
     target: "resource_type"
     description: "Component type"
+    xml_attr: true
+    xml_name: "component_type"
   }];
   // Titles
   Titles titles = 2 [(hub.v1.field) = {
@@ -298,6 +376,7 @@ message ContentItem {
   PublicationDate publication_date = 4 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // Pages
   Pages pages = 5 [(hub.v1.field) = {
@@ -308,6 +387,7 @@ message ContentItem {
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
 }
 
@@ -317,62 +397,80 @@ message Conference {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef Conference maps to Hub Record with CONFERENCE_PROCEEDING type"
+    xml_name: "conference"
   };
 
   // Event metadata
   EventMetadata event_metadata = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Conference event information"
+    xml_name: "event_metadata"
   }];
   // Proceedings metadata
   ProceedingsMetadata proceedings_metadata = 2 [(hub.v1.field) = {
     target: "self"
     description: "Proceedings metadata"
+    xml_name: "proceedings_metadata"
   }];
   // Conference papers
   repeated ConferencePaper conference_paper = 3 [(hub.v1.field) = {
     target: "relations"
     relation_type: "has_part"
     description: "Conference papers"
+    xml_name: "conference_paper"
   }];
 }
 
 // EventMetadata - Metadata about the conference event.
 message EventMetadata {
+  option (hub.v1.message) = {
+    xml_name: "event_metadata"
+  };
+
   // Conference name
   string conference_name = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Conference name"
+    xml_name: "conference_name"
   }];
   // Conference acronym
   string conference_acronym = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Conference acronym"
+    xml_name: "conference_acronym"
   }];
   // Conference number
   string conference_number = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Conference number"
+    xml_name: "conference_number"
   }];
   // Conference date
   string conference_date = 4 [(hub.v1.field) = {
     target: "dates"
     date_type: "other"
     description: "Conference date"
+    xml_name: "conference_date"
   }];
   // Conference location
   string conference_location = 5 [(hub.v1.field) = {
     target: "extra"
     description: "Conference location"
+    xml_name: "conference_location"
   }];
 }
 
 // ProceedingsMetadata - Metadata about the proceedings.
 message ProceedingsMetadata {
+  option (hub.v1.message) = {
+    xml_name: "proceedings_metadata"
+  };
+
   // Proceedings title
   string proceedings_title = 1 [(hub.v1.field) = {
     target: "title"
     description: "Proceedings title"
+    xml_name: "proceedings_title"
   }];
   // Publisher
   Publisher publisher = 2 [(hub.v1.field) = {
@@ -382,6 +480,7 @@ message ProceedingsMetadata {
   PublicationDate publication_date = 3 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // ISBN
   string isbn = 4 [(hub.v1.field) = {
@@ -393,6 +492,7 @@ message ProceedingsMetadata {
   DoiData doi_data = 5 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
 }
 
@@ -402,6 +502,7 @@ message ConferencePaper {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef ConferencePaper maps to Hub Record with CONFERENCE_PAPER type"
+    xml_name: "conference_paper"
   };
 
   // Titles
@@ -417,6 +518,7 @@ message ConferencePaper {
   PublicationDate publication_date = 3 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // Pages
   Pages pages = 4 [(hub.v1.field) = {
@@ -431,6 +533,7 @@ message ConferencePaper {
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
 }
 
@@ -440,12 +543,15 @@ message Dataset {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef Dataset maps to Hub Record with DATASET type"
+    xml_name: "dataset"
   };
 
   // Dataset type: record, collection, crossmark_policy, etc.
   string dataset_type = 1 [(hub.v1.field) = {
     target: "resource_type"
     description: "Dataset type"
+    xml_attr: true
+    xml_name: "dataset_type"
   }];
   // Titles
   Titles titles = 2 [(hub.v1.field) = {
@@ -464,11 +570,13 @@ message Dataset {
   PublicationDate publication_date = 5 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "publication_date"
   }];
   // DOI data
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
   // Format/MIME type
   repeated string format = 7 [(hub.v1.field) = {
@@ -483,6 +591,7 @@ message Dissertation {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef Dissertation maps to Hub Record with DISSERTATION type"
+    xml_name: "dissertation"
   };
 
   // Titles
@@ -494,12 +603,14 @@ message Dissertation {
   PersonName person_name = 2 [(hub.v1.field) = {
     target: "contributors"
     role: "author"
+    xml_name: "person_name"
   }];
   // Approval date
   PublicationDate approval_date = 3 [(hub.v1.field) = {
     target: "dates"
     date_type: "accepted"
     description: "Approval date"
+    xml_name: "approval_date"
   }];
   // Institution
   Institution institution = 4 [(hub.v1.field) = {
@@ -517,25 +628,33 @@ message Dissertation {
   DoiData doi_data = 7 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
 }
 
 // Institution - An educational institution.
 message Institution {
+  option (hub.v1.message) = {
+    xml_name: "institution"
+  };
+
   // Institution name
   string institution_name = 1 [(hub.v1.field) = {
     target: "name"
     description: "Institution name"
+    xml_name: "institution_name"
   }];
   // Department
   string institution_department = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Department"
+    xml_name: "institution_department"
   }];
   // Place
   string institution_place = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Institution location"
+    xml_name: "institution_place"
   }];
 }
 
@@ -545,12 +664,14 @@ message PostedContent {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef PostedContent maps to Hub Record with PREPRINT type"
+    xml_name: "posted_content"
   };
 
   // Type: preprint, working_paper, letter, etc.
   string type = 1 [(hub.v1.field) = {
     target: "resource_type"
     description: "Posted content type"
+    xml_attr: true
   }];
   // Titles
   Titles titles = 2 [(hub.v1.field) = {
@@ -566,6 +687,7 @@ message PostedContent {
     target: "dates"
     date_type: "issued"
     description: "Posted date"
+    xml_name: "posted_date"
   }];
   // Abstract
   string abstract = 5 [(hub.v1.field) = {
@@ -575,12 +697,14 @@ message PostedContent {
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
   // Group title (e.g., subject area)
   string group_title = 7 [(hub.v1.field) = {
     target: "subjects"
     subject_vocabulary: "local"
     description: "Subject area"
+    xml_name: "group_title"
   }];
 }
 
@@ -590,17 +714,20 @@ message PeerReview {
     target: "Record"
     preserve_unmapped: true
     description: "CrossRef PeerReview maps to Hub Record with PEER_REVIEW type"
+    xml_name: "peer_review"
   };
 
   // Review type: referee-report, editor-report, author-comment, etc.
   string type = 1 [(hub.v1.field) = {
     target: "resource_type"
     description: "Review type"
+    xml_attr: true
   }];
   // Stage: pre-publication, post-publication
   string stage = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Review stage"
+    xml_attr: true
   }];
   // Titles
   Titles titles = 3 [(hub.v1.field) = {
@@ -615,11 +742,13 @@ message PeerReview {
   PublicationDate review_date = 5 [(hub.v1.field) = {
     target: "dates"
     date_type: "issued"
+    xml_name: "review_date"
   }];
   // DOI data
   DoiData doi_data = 6 [(hub.v1.field) = {
     target: "identifiers"
     identifier_type: "doi"
+    xml_name: "doi_data"
   }];
 }
 
@@ -628,6 +757,7 @@ message Titles {
   option (hub.v1.message) = {
     target: "string"
     description: "CrossRef Titles extracts main title"
+    xml_name: "titles"
   };
 
   // Main title
@@ -644,6 +774,7 @@ message Titles {
   string original_language_title = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Original language title"
+    xml_name: "original_language_title"
   }];
 }
 
@@ -652,11 +783,13 @@ message Contributors {
   option (hub.v1.message) = {
     target: "Contributors"
     description: "CrossRef Contributors list"
+    xml_name: "contributors"
   };
 
   repeated PersonName person_name = 1 [(hub.v1.field) = {
     target: "contributors"
     contributor_type: "person"
+    xml_name: "person_name"
   }];
   repeated Organization organization = 2 [(hub.v1.field) = {
     target: "contributors"
@@ -669,20 +802,25 @@ message PersonName {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "CrossRef PersonName maps to Hub Contributor"
+    xml_name: "person_name"
   };
 
   // Contributor role: author, editor, translator, chair
   string contributor_role = 1 [(hub.v1.field) = {
     target: "role"
+    xml_attr: true
+    xml_name: "contributor_role"
   }];
   // Sequence: first, additional
   string sequence = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Contributor sequence"
+    xml_attr: true
   }];
   // Given name
   string given_name = 3 [(hub.v1.field) = {
     target: "parsed_name.given"
+    xml_name: "given_name"
   }];
   // Surname
   string surname = 4 [(hub.v1.field) = {
@@ -698,6 +836,7 @@ message PersonName {
     identifier_type: "orcid"
     parser: "orcid"
     validators: "orcid"
+    xml_name: "ORCID"
   }];
   // Affiliations
   repeated Affiliation affiliation = 7 [(hub.v1.field) = {
@@ -710,20 +849,25 @@ message Organization {
   option (hub.v1.message) = {
     target: "Contributor"
     description: "CrossRef Organization maps to Hub Contributor"
+    xml_name: "organization"
   };
 
   // Contributor role
   string contributor_role = 1 [(hub.v1.field) = {
     target: "role"
+    xml_attr: true
+    xml_name: "contributor_role"
   }];
   // Sequence
   string sequence = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Contributor sequence"
+    xml_attr: true
   }];
   // Organization name
   string name = 3 [(hub.v1.field) = {
     target: "name"
+    xml_chardata: true
   }];
 }
 
@@ -732,22 +876,30 @@ message Affiliation {
   option (hub.v1.message) = {
     target: "Affiliation"
     description: "CrossRef Affiliation maps to Hub Affiliation"
+    xml_name: "affiliation"
   };
 
   string name = 1 [(hub.v1.field) = {
     target: "name"
+    xml_chardata: true
   }];
 }
 
 // Publisher - Publisher information.
 message Publisher {
+  option (hub.v1.message) = {
+    xml_name: "publisher"
+  };
+
   string publisher_name = 1 [(hub.v1.field) = {
     target: "name"
     description: "Publisher name"
+    xml_name: "publisher_name"
   }];
   string publisher_place = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Publisher location"
+    xml_name: "publisher_place"
   }];
 }
 
@@ -756,12 +908,15 @@ message PublicationDate {
   option (hub.v1.message) = {
     target: "DateValue"
     description: "CrossRef PublicationDate maps to Hub DateValue"
+    xml_name: "publication_date"
   };
 
   // Media type: print, online
   string media_type = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Media type"
+    xml_attr: true
+    xml_name: "media_type"
   }];
   // Year
   int32 year = 2 [(hub.v1.field) = {
@@ -779,17 +934,24 @@ message PublicationDate {
 
 // Pages - Page range information.
 message Pages {
+  option (hub.v1.message) = {
+    xml_name: "pages"
+  };
+
   string first_page = 1 [(hub.v1.field) = {
     target: "extra"
     description: "First page"
+    xml_name: "first_page"
   }];
   string last_page = 2 [(hub.v1.field) = {
     target: "extra"
     description: "Last page"
+    xml_name: "last_page"
   }];
   string other_pages = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Other pages"
+    xml_name: "other_pages"
   }];
 }
 
@@ -798,6 +960,7 @@ message DoiData {
   option (hub.v1.message) = {
     target: "Identifier"
     description: "CrossRef DoiData maps to Hub Identifier"
+    xml_name: "doi_data"
   };
 
   // The DOI value
@@ -821,6 +984,10 @@ message DoiData {
 
 // Item - A URL in a DOI collection.
 message Item {
+  option (hub.v1.message) = {
+    xml_name: "item"
+  };
+
   // URL
   string resource = 1 [(hub.v1.field) = {
     target: "extra"
@@ -831,6 +998,7 @@ message Item {
   string mime_type = 2 [(hub.v1.field) = {
     target: "extra"
     description: "MIME type"
+    xml_name: "mime_type"
   }];
   // Label
   string label = 3 [(hub.v1.field) = {
@@ -841,6 +1009,10 @@ message Item {
 
 // CitationList - List of citations.
 message CitationList {
+  option (hub.v1.message) = {
+    xml_name: "citation_list"
+  };
+
   repeated Citation citation = 1 [(hub.v1.field) = {
     target: "relations"
     relation_type: "cites"
@@ -852,12 +1024,14 @@ message Citation {
   option (hub.v1.message) = {
     target: "Relation"
     description: "CrossRef Citation maps to Hub Relation"
+    xml_name: "citation"
   };
 
   // Citation key
   string key = 1 [(hub.v1.field) = {
     target: "extra"
     description: "Citation key"
+    xml_attr: true
   }];
   // DOI of cited work
   string doi = 2 [(hub.v1.field) = {
@@ -869,11 +1043,13 @@ message Citation {
   string unstructured_citation = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Unstructured citation"
+    xml_name: "unstructured_citation"
   }];
   // Journal title
   string journal_title = 4 [(hub.v1.field) = {
     target: "target_title"
     description: "Journal title"
+    xml_name: "journal_title"
   }];
   // Author
   string author = 5 [(hub.v1.field) = {
@@ -894,16 +1070,19 @@ message Citation {
   string first_page = 8 [(hub.v1.field) = {
     target: "extra"
     description: "First page"
+    xml_name: "first_page"
   }];
   // Year
   string year = 9 [(hub.v1.field) = {
     target: "extra"
     description: "Year"
+    xml_name: "cYear"
   }];
   // Article title
   string article_title = 10 [(hub.v1.field) = {
     target: "target_title"
     description: "Article title"
+    xml_name: "article_title"
   }];
 }
 
@@ -912,21 +1091,25 @@ message FundingInfo {
   option (hub.v1.message) = {
     target: "Funder"
     description: "CrossRef FundingInfo maps to Hub Funder"
+    xml_name: "program"
   };
 
   // Funder name
   string name = 1 [(hub.v1.field) = {
     target: "name"
+    xml_name: "name"
   }];
   // Funder DOI
   string funder_identifier = 2 [(hub.v1.field) = {
     target: "identifier"
     parser: "doi"
     validators: "doi"
+    xml_name: "funder_identifier"
   }];
   // Award numbers
   repeated string award_number = 3 [(hub.v1.field) = {
     target: "award_numbers"
+    xml_name: "award_number"
   }];
 }
 
@@ -935,21 +1118,28 @@ message License {
   option (hub.v1.message) = {
     target: "Rights"
     description: "CrossRef License maps to Hub Rights"
+    xml_name: "license_ref"
   };
 
   // License URL
   string license_ref = 1 [(hub.v1.field) = {
     target: "uri"
     validators: "url"
+    xml_name: "license_ref"
+    xml_chardata: true
   }];
   // Start date
   string start_date = 2 [(hub.v1.field) = {
     target: "extra"
     description: "License start date"
+    xml_attr: true
+    xml_name: "start_date"
   }];
   // Applies to: vor, am, tdm
   string applies_to = 3 [(hub.v1.field) = {
     target: "extra"
     description: "Applies to version"
+    xml_attr: true
+    xml_name: "applies_to"
   }];
 }

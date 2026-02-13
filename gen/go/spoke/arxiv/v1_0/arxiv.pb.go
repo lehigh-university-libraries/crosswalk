@@ -951,7 +951,7 @@ var File_spoke_arxiv_v1_0_arxiv_proto protoreflect.FileDescriptor
 
 const file_spoke_arxiv_v1_0_arxiv_proto_rawDesc = "" +
 	"\n" +
-	"\x1cspoke/arxiv/v1_0/arxiv.proto\x12\x10spoke.arxiv.v1_0\x1a\x14hub/v1/options.proto\"\xae\n" +
+	"\x1cspoke/arxiv/v1_0/arxiv.proto\x12\x10spoke.arxiv.v1_0\x1a\x14hub/v1/options.proto\"\xd9\n" +
 	"\n" +
 	"\x06Record\x12T\n" +
 	"\n" +
@@ -992,85 +992,86 @@ const file_spoke_arxiv_v1_0_arxiv_proto_rawDesc = "" +
 	"\n" +
 	"\babstractR\babstract\x12L\n" +
 	"\x05attic\x18\x10 \x03(\v2\x17.spoke.arxiv.v1_0.AtticB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fLegacy metadataR\x05attic:B\x8a\xb5\x18>\n" +
-	"\x06Record\x10\x01\x1a2arXiv Record maps to Hub Record with PREPRINT type\"\x89\x01\n" +
+	"\x05extra\xea\x03\x0fLegacy metadataR\x05attic:m\x8a\xb5\x18i\n" +
+	"\x06Record\x10\x01\x1a2arXiv Record maps to Hub Record with PREPRINT typeR\varXivRecordb\x1chttp://arXiv.org/arXivRecord\"\x9a\x01\n" +
 	"\tSubmitter\x12;\n" +
 	"\x05email\x18\x01 \x01(\tB%\x8a\xb5\x18!\n" +
 	"\x05extra\xf2\x01\x05email\xea\x03\x0fSubmitter emailR\x05email\x12?\n" +
 	"\n" +
 	"identifier\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
 	"\x05extra\xea\x03\x11Submitter user IDR\n" +
-	"identifier\"\x92\x01\n" +
+	"identifier:\x0f\x8a\xb5\x18\vR\tsubmitter\"\xb2\x01\n" +
 	"\x05Proxy\x12;\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\tB\x1b\x8a\xb5\x18\x17\n" +
 	"\x05extra\xea\x03\rProxy user IDR\n" +
-	"identifier\x12L\n" +
-	"\x11remote_identifier\x18\x02 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
-	"\x05extra\xea\x03\x11Remote identifierR\x10remoteIdentifier\"\xbe\x01\n" +
+	"identifier\x12_\n" +
+	"\x11remote_identifier\x18\x02 \x01(\tB2\x8a\xb5\x18.\n" +
+	"\x05extra\xea\x03\x11Remote identifier\xb2\x04\x10remoteIdentifierR\x10remoteIdentifier:\v\x8a\xb5\x18\aR\x05proxy\"\xcc\x01\n" +
 	"\x06Source\x12P\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x1c.spoke.arxiv.v1_0.SourceTypeB\x1e\x8a\xb5\x18\x1a\n" +
 	"\x05extra\xea\x03\x10Source file typeR\x04type\x124\n" +
 	"\x04size\x18\x02 \x01(\x03B \x8a\xb5\x18\x1c\n" +
 	"\x05extra\xea\x03\x12File size in bytesR\x04size\x12,\n" +
 	"\x03md5\x18\x03 \x01(\tB\x1a\x8a\xb5\x18\x16\n" +
-	"\x05extra\xea\x03\fMD5 checksumR\x03md5\"\xc8\x01\n" +
+	"\x05extra\xea\x03\fMD5 checksumR\x03md5:\f\x8a\xb5\x18\bR\x06source\"\xd7\x01\n" +
 	"\aHistory\x126\n" +
 	"\aversion\x18\x01 \x01(\x05B\x1c\x8a\xb5\x18\x18\n" +
 	"\x05extra\xea\x03\x0eVersion numberR\aversion\x121\n" +
 	"\x04date\x18\x02 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
 	"\x05extra\xea\x03\x0fSubmission dateR\x04date\x12R\n" +
 	"\x06source\x18\x03 \x01(\v2\x18.spoke.arxiv.v1_0.SourceB \x8a\xb5\x18\x1c\n" +
-	"\x05extra\xea\x03\x12Source informationR\x06source\"\xff\x01\n" +
+	"\x05extra\xea\x03\x12Source informationR\x06source:\r\x8a\xb5\x18\tR\ahistory\"\xa2\x02\n" +
 	"\n" +
-	"Authorship\x12e\n" +
-	"\faffiliations\x18\x01 \x03(\v2\x1d.spoke.arxiv.v1_0.AffiliationB\"\x8a\xb5\x18\x1e\n" +
-	"\x05extra\xea\x03\x14Indexed affiliationsR\faffiliations\x12V\n" +
-	"\aauthors\x18\x02 \x03(\v2\x18.spoke.arxiv.v1_0.AuthorB\"\x8a\xb5\x18\x1e\n" +
-	"\fcontributorsj\x06authorr\x06personR\aauthors:2\x8a\xb5\x18.\n" +
-	"\x04self\x1a&arXiv Authorship extracts contributors\"\xfd\x01\n" +
-	"\vAffiliation\x122\n" +
-	"\x05affid\x18\x01 \x01(\x05B\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eAffiliation IDR\x05affid\x12?\n" +
+	"Authorship\x12s\n" +
+	"\faffiliations\x18\x01 \x03(\v2\x1d.spoke.arxiv.v1_0.AffiliationB0\x8a\xb5\x18,\n" +
+	"\x05extra\xea\x03\x14Indexed affiliations\xb2\x04\vaffiliationR\faffiliations\x12_\n" +
+	"\aauthors\x18\x02 \x03(\v2\x18.spoke.arxiv.v1_0.AuthorB+\x8a\xb5\x18'\n" +
+	"\fcontributorsj\x06authorr\x06person\xb2\x04\x06authorR\aauthors:>\x8a\xb5\x18:\n" +
+	"\x04self\x1a&arXiv Authorship extracts contributorsR\n" +
+	"authorship\"\x8d\x02\n" +
+	"\vAffiliation\x125\n" +
+	"\x05affid\x18\x01 \x01(\x05B\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eAffiliation ID\xc0\x04\x01R\x05affid\x12?\n" +
 	"\vinstitution\x18\x02 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
 	"\x04name\xea\x03\x10Institution nameR\vinstitution\x12;\n" +
 	"\aaddress\x18\x03 \x01(\tB!\x8a\xb5\x18\x1d\n" +
-	"\x05extra\xea\x03\x13Institution addressR\aaddress:<\x8a\xb5\x188\n" +
-	"\vAffiliation\x1a)arXiv Affiliation maps to Hub Affiliation\"\x8b\x03\n" +
+	"\x05extra\xea\x03\x13Institution addressR\aaddress:I\x8a\xb5\x18E\n" +
+	"\vAffiliation\x1a)arXiv Affiliation maps to Hub AffiliationR\vaffiliation\"\x96\x03\n" +
 	"\x06Author\x12K\n" +
 	"\tbeforekey\x18\x01 \x01(\tB-\x8a\xb5\x18)\n" +
 	"\x11parsed_name.given\xea\x03\x13Given name/forenameR\tbeforekey\x12K\n" +
 	"\akeyname\x18\x02 \x01(\tB1\x8a\xb5\x18-\n" +
 	"\x12parsed_name.family\xea\x03\x13Family name/surname\xf8\x03\x01R\akeyname\x12B\n" +
 	"\bafterkey\x18\x03 \x01(\tB&\x8a\xb5\x18\"\n" +
-	"\x12parsed_name.suffix\xea\x03\vName suffixR\bafterkey\x12<\n" +
-	"\x06affref\x18\x04 \x01(\tB$\x8a\xb5\x18 \n" +
-	"\x05extra\xea\x03\x16Affiliation referencesR\x06affref\x12,\n" +
+	"\x12parsed_name.suffix\xea\x03\vName suffixR\bafterkey\x12?\n" +
+	"\x06affref\x18\x04 \x01(\tB'\x8a\xb5\x18#\n" +
+	"\x05extra\xea\x03\x16Affiliation references\xc0\x04\x01R\x06affref\x12,\n" +
 	"\x04role\x18\x05 \x01(\tB\x18\x8a\xb5\x18\x14\n" +
-	"\x04role\xea\x03\vAuthor roleR\x04role:7\x8a\xb5\x183\n" +
-	"\vContributor\x1a$arXiv Author maps to Hub Contributor\"\xed\x01\n" +
-	"\x0eClassification\x12h\n" +
-	"\x06scheme\x18\x01 \x01(\x0e2&.spoke.arxiv.v1_0.ClassificationSchemeB(\x8a\xb5\x18$\n" +
+	"\x04role\xea\x03\vAuthor roleR\x04role:?\x8a\xb5\x18;\n" +
+	"\vContributor\x1a$arXiv Author maps to Hub ContributorR\x06author\"\x80\x02\n" +
+	"\x0eClassification\x12k\n" +
+	"\x06scheme\x18\x01 \x01(\x0e2&.spoke.arxiv.v1_0.ClassificationSchemeB+\x8a\xb5\x18'\n" +
 	"\n" +
-	"vocabulary\xea\x03\x15Classification schemeR\x06scheme\x128\n" +
+	"vocabulary\xea\x03\x15Classification scheme\xc0\x04\x01R\x06scheme\x128\n" +
 	"\x05value\x18\x02 \x03(\tB\"\x8a\xb5\x18\x1e\n" +
-	"\x05value\xea\x03\x14Classification codesR\x05value:7\x8a\xb5\x183\n" +
-	"\aSubject\x1a(arXiv Classification maps to Hub Subject\"\xfc\x01\n" +
-	"\tAlternate\x12G\n" +
-	"\treport_no\x18\x01 \x03(\tB*\x8a\xb5\x18&\n" +
-	"\videntifiersZ\x06report\xea\x03\x0eReport numbersR\breportNo\x12S\n" +
-	"\vjournal_ref\x18\x02 \x03(\tB2\x8a\xb5\x18.\n" +
-	"\trelationsz\fpublished_in\xea\x03\x12Journal referencesR\n" +
-	"journalRef\x12Q\n" +
-	"\x03doi\x18\x03 \x03(\tB?\x8a\xb5\x18;\n" +
-	"\videntifiersZ\x03doi\xa2\x01\x03doi\xf2\x01\x03doi\xea\x03\x1aDigital Object IdentifiersR\x03doi\"\xa6\x01\n" +
-	"\x05Attic\x126\n" +
-	"\acontent\x18\x01 \x01(\tB\x1c\x8a\xb5\x18\x18\n" +
-	"\x05extra\xea\x03\x0eLegacy contentR\acontent\x121\n" +
-	"\x04date\x18\x02 \x01(\tB\x1d\x8a\xb5\x18\x19\n" +
-	"\x05extra\xea\x03\x0fConversion dateR\x04date\x122\n" +
-	"\x04note\x18\x03 \x01(\tB\x1e\x8a\xb5\x18\x1a\n" +
-	"\x05extra\xea\x03\x10Conversion notesR\x04note*\xb4\x01\n" +
+	"\x05value\xea\x03\x14Classification codesR\x05value:G\x8a\xb5\x18C\n" +
+	"\aSubject\x1a(arXiv Classification maps to Hub SubjectR\x0eclassification\"\xad\x02\n" +
+	"\tAlternate\x12S\n" +
+	"\treport_no\x18\x01 \x03(\tB6\x8a\xb5\x182\n" +
+	"\videntifiersZ\x06report\xea\x03\x0eReport numbers\xb2\x04\treport-noR\breportNo\x12a\n" +
+	"\vjournal_ref\x18\x02 \x03(\tB@\x8a\xb5\x18<\n" +
+	"\trelationsz\fpublished_in\xea\x03\x12Journal references\xb2\x04\vjournal-refR\n" +
+	"journalRef\x12W\n" +
+	"\x03doi\x18\x03 \x03(\tBE\x8a\xb5\x18A\n" +
+	"\videntifiersZ\x03doi\xa2\x01\x03doi\xf2\x01\x03doi\xea\x03\x1aDigital Object Identifiers\xb2\x04\x03DOIR\x03doi:\x0f\x8a\xb5\x18\vR\talternate\"\xbc\x01\n" +
+	"\x05Attic\x129\n" +
+	"\acontent\x18\x01 \x01(\tB\x1f\x8a\xb5\x18\x1b\n" +
+	"\x05extra\xea\x03\x0eLegacy content\xc8\x04\x01R\acontent\x124\n" +
+	"\x04date\x18\x02 \x01(\tB \x8a\xb5\x18\x1c\n" +
+	"\x05extra\xea\x03\x0fConversion date\xc0\x04\x01R\x04date\x125\n" +
+	"\x04note\x18\x03 \x01(\tB!\x8a\xb5\x18\x1d\n" +
+	"\x05extra\xea\x03\x10Conversion notes\xc0\x04\x01R\x04note:\v\x8a\xb5\x18\aR\x05attic*\xb4\x01\n" +
 	"\n" +
 	"SourceType\x12\x1b\n" +
 	"\x17SOURCE_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +

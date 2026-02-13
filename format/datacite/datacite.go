@@ -16,6 +16,7 @@ type Format struct{}
 // Ensure Format implements the interfaces
 var (
 	_ format.Format     = (*Format)(nil)
+	_ format.Parser     = (*Format)(nil)
 	_ format.Serializer = (*Format)(nil)
 )
 
