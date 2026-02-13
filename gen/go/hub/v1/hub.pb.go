@@ -1449,6 +1449,7 @@ func (x *Group) GetMembers() []*Record {
 }
 
 // Contributor represents a person or organization that contributed to a work.
+// Maps to schema.org Person or Organization with contributor-specific extensions.
 type Contributor struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Name is the full name as a single string (e.g., "Fries, Albert F. Jr.")
@@ -1468,9 +1469,29 @@ type Contributor struct {
 	// SourceID is the original ID from the source system
 	SourceId string `protobuf:"bytes,8,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
 	// Affiliations for the contributor (preferred over single affiliation field)
-	Affiliations  []*Affiliation `protobuf:"bytes,9,rep,name=affiliations,proto3" json:"affiliations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Affiliations []*Affiliation `protobuf:"bytes,9,rep,name=affiliations,proto3" json:"affiliations,omitempty"`
+	// Email address (schema.org Person.email)
+	Email string `protobuf:"bytes,10,opt,name=email,proto3" json:"email,omitempty"`
+	// Status or job title (e.g., "Graduate Student", "Faculty", "Professor")
+	// Maps to schema.org Person.jobTitle
+	Status string `protobuf:"bytes,11,opt,name=status,proto3" json:"status,omitempty"`
+	// URL for the contributor's profile or homepage (schema.org Person.url)
+	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
+	// Description or bio (schema.org Person.description)
+	Description string `protobuf:"bytes,13,opt,name=description,proto3" json:"description,omitempty"`
+	// AdditionalName for middle names or other name parts (schema.org Person.additionalName)
+	AdditionalName string `protobuf:"bytes,14,opt,name=additional_name,json=additionalName,proto3" json:"additional_name,omitempty"`
+	// AlumniOf lists educational institutions the person attended (schema.org Person.alumniOf)
+	// Each entry is an organization name; use Affiliation for structured data with identifiers
+	AlumniOf []string `protobuf:"bytes,15,rep,name=alumni_of,json=alumniOf,proto3" json:"alumni_of,omitempty"`
+	// AuthorityURI is a canonical URI for the contributor from a name authority
+	// (e.g., LCNAF, VIAF, ULAN). In Islandora, this comes from field_authority_link.
+	// This is a convenience field; the same URI should also be in identifiers[].
+	AuthorityUri string `protobuf:"bytes,16,opt,name=authority_uri,json=authorityUri,proto3" json:"authority_uri,omitempty"`
+	// AuthoritySource identifies the vocabulary (e.g., "lcnaf", "viaf", "ulan")
+	AuthoritySource string `protobuf:"bytes,17,opt,name=authority_source,json=authoritySource,proto3" json:"authority_source,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Contributor) Reset() {
@@ -1564,6 +1585,62 @@ func (x *Contributor) GetAffiliations() []*Affiliation {
 		return x.Affiliations
 	}
 	return nil
+}
+
+func (x *Contributor) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *Contributor) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Contributor) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *Contributor) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Contributor) GetAdditionalName() string {
+	if x != nil {
+		return x.AdditionalName
+	}
+	return ""
+}
+
+func (x *Contributor) GetAlumniOf() []string {
+	if x != nil {
+		return x.AlumniOf
+	}
+	return nil
+}
+
+func (x *Contributor) GetAuthorityUri() string {
+	if x != nil {
+		return x.AuthorityUri
+	}
+	return ""
+}
+
+func (x *Contributor) GetAuthoritySource() string {
+	if x != nil {
+		return x.AuthoritySource
+	}
+	return ""
 }
 
 // ParsedName contains parsed components of a personal name.
@@ -2805,7 +2882,7 @@ const file_hub_v1_hub_proto_rawDesc = "" +
 	"\x05Group\x12%\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x11.hub.v1.GroupTypeR\x04type\x12,\n" +
 	"\tcontainer\x18\x02 \x01(\v2\x0e.hub.v1.RecordR\tcontainer\x12(\n" +
-	"\amembers\x18\x03 \x03(\v2\x0e.hub.v1.RecordR\amembers\"\xe2\x02\n" +
+	"\amembers\x18\x03 \x03(\v2\x0e.hub.v1.RecordR\amembers\"\xda\x04\n" +
 	"\vContributor\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x123\n" +
 	"\vparsed_name\x18\x02 \x01(\v2\x12.hub.v1.ParsedNameR\n" +
@@ -2816,7 +2893,16 @@ const file_hub_v1_hub_proto_rawDesc = "" +
 	"\videntifiers\x18\x06 \x03(\v2\x12.hub.v1.IdentifierR\videntifiers\x12 \n" +
 	"\vaffiliation\x18\a \x01(\tR\vaffiliation\x12\x1b\n" +
 	"\tsource_id\x18\b \x01(\tR\bsourceId\x127\n" +
-	"\faffiliations\x18\t \x03(\v2\x13.hub.v1.AffiliationR\faffiliations\"\xbf\x01\n" +
+	"\faffiliations\x18\t \x03(\v2\x13.hub.v1.AffiliationR\faffiliations\x12\x14\n" +
+	"\x05email\x18\n" +
+	" \x01(\tR\x05email\x12\x16\n" +
+	"\x06status\x18\v \x01(\tR\x06status\x12\x10\n" +
+	"\x03url\x18\f \x01(\tR\x03url\x12 \n" +
+	"\vdescription\x18\r \x01(\tR\vdescription\x12'\n" +
+	"\x0fadditional_name\x18\x0e \x01(\tR\x0eadditionalName\x12\x1b\n" +
+	"\talumni_of\x18\x0f \x03(\tR\balumniOf\x12#\n" +
+	"\rauthority_uri\x18\x10 \x01(\tR\fauthorityUri\x12)\n" +
+	"\x10authority_source\x18\x11 \x01(\tR\x0fauthoritySource\"\xbf\x01\n" +
 	"\n" +
 	"ParsedName\x12\x16\n" +
 	"\x06family\x18\x01 \x01(\tR\x06family\x12\x14\n" +

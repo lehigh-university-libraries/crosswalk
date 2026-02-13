@@ -2,6 +2,7 @@ package csv
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -79,8 +80,6 @@ func buildColumnMap(header []string, profile *mapping.Profile) map[int]string {
 			"authors":           "Contributors",
 			"author":            "Contributors",
 			"creator":           "Contributors",
-			"contributor_roles": "ContributorRoles",
-			"roles":             "ContributorRoles",
 			"date_issued":       "Dates.issued",
 			"date_created":      "Dates.created",
 			"date":              "Dates.issued",
@@ -127,9 +126,6 @@ func buildColumnMap(header []string, profile *mapping.Profile) map[int]string {
 func rowToRecord(row []string, header []string, colMap map[int]string, sep string, opts *format.ParseOptions) (*hubv1.Record, error) {
 	record := &hubv1.Record{}
 
-	// Track contributor roles separately for pairing
-	var roles []string
-
 	for i, value := range row {
 		if i >= len(header) {
 			break
@@ -166,16 +162,13 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			record.Description = cleanValue(value, opts)
 
 		case "Contributors":
-			names := splitMultiValue(value, sep)
-			for _, name := range names {
-				record.Contributors = append(record.Contributors, &hubv1.Contributor{
-					Name:       name,
-					ParsedName: helpers.ParseName(name),
-				})
+			// Contributors always use " ; " as multi-value separator to match serialization
+			entries := splitMultiValue(value, " ; ")
+			for _, entry := range entries {
+				if c := parseContributor(entry); c != nil {
+					record.Contributors = append(record.Contributors, c)
+				}
 			}
-
-		case "ContributorRoles":
-			roles = splitMultiValue(value, sep)
 
 		case "Dates":
 			dateType := dateTypeFromString(subtype)
@@ -252,16 +245,6 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 
 		case "Extra":
 			hub.SetExtra(record, subtype, value)
-		}
-	}
-
-	// Apply roles to contributors
-	if len(roles) > 0 {
-		for i := range record.Contributors {
-			if i < len(roles) && roles[i] != "" {
-				record.Contributors[i].Role = helpers.RelatorLabel(roles[i])
-				record.Contributors[i].RoleCode = helpers.RoleToCode(roles[i])
-			}
 		}
 	}
 
@@ -373,4 +356,131 @@ func cleanValue(value string, opts *format.ParseOptions) string {
 		return helpers.CleanText(value)
 	}
 	return value
+}
+
+// parseContributor parses a contributor from either JSON format or a plain prefixed string.
+//
+// JSON format: {"name":"relators:cre:person:Qin, Tian","institution":"...","orcid":"..."}
+// Plain format: "relators:cre:person:Qin, Tian" (Islandora workbench style)
+// Simple format: "Qin, Tian"
+func parseContributor(s string) *hubv1.Contributor {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+
+	if strings.HasPrefix(s, "{") {
+		var obj map[string]any
+		if err := json.Unmarshal([]byte(s), &obj); err == nil {
+			return parseContributorFromJSON(obj)
+		}
+	}
+
+	return parseContributorFromString(s)
+}
+
+// parseContributorFromString parses a plain or prefixed contributor string.
+// Prefixed format: "relators:cre:person:Qin, Tian" (role_code:type:name)
+func parseContributorFromString(s string) *hubv1.Contributor {
+	roleCode, contribType, name := parseNamePrefix(s)
+	c := &hubv1.Contributor{
+		Name:       name,
+		Type:       contribType,
+		ParsedName: helpers.ParseName(name),
+	}
+	if roleCode != "" {
+		c.RoleCode = roleCode
+		c.Role = helpers.RelatorLabel(roleCode)
+	}
+	return c
+}
+
+// parseContributorFromJSON builds a Contributor from a decoded JSON object.
+func parseContributorFromJSON(obj map[string]any) *hubv1.Contributor {
+	c := &hubv1.Contributor{}
+
+	if nameVal, ok := obj["name"].(string); ok {
+		roleCode, contribType, name := parseNamePrefix(nameVal)
+		c.Name = name
+		c.Type = contribType
+		c.ParsedName = helpers.ParseName(name)
+		if roleCode != "" {
+			c.RoleCode = roleCode
+			c.Role = helpers.RelatorLabel(roleCode)
+		}
+	}
+
+	if institution, ok := obj["institution"].(string); ok && institution != "" {
+		c.Affiliations = append(c.Affiliations, &hubv1.Affiliation{Name: institution})
+	}
+
+	if orcid, ok := obj["orcid"].(string); ok && orcid != "" {
+		c.Identifiers = append(c.Identifiers, hub.NewIdentifier(orcid, hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID))
+	}
+
+	if email, ok := obj["email"].(string); ok && email != "" {
+		c.Email = email
+	}
+
+	if status, ok := obj["status"].(string); ok && status != "" {
+		c.Status = status
+	}
+
+	if url, ok := obj["url"].(string); ok && url != "" {
+		c.Url = url
+	}
+
+	if additionalName, ok := obj["additional_name"].(string); ok && additionalName != "" {
+		c.AdditionalName = additionalName
+	}
+
+	if authorityURI, ok := obj["authority_uri"].(string); ok && authorityURI != "" {
+		c.AuthorityUri = authorityURI
+	}
+
+	if authoritySource, ok := obj["authority_source"].(string); ok && authoritySource != "" {
+		c.AuthoritySource = authoritySource
+	}
+
+	if alumniOf, ok := obj["alumni_of"].([]any); ok {
+		for _, a := range alumniOf {
+			if s, ok := a.(string); ok && s != "" {
+				c.AlumniOf = append(c.AlumniOf, s)
+			}
+		}
+	}
+
+	return c
+}
+
+// parseNamePrefix extracts role code, contributor type, and name from a prefixed string.
+// Format: "[roleCode:]type:name" where type is "person" or "organization".
+// Example: "relators:cre:person:Qin, Tian" → ("relators:cre", PERSON, "Qin, Tian")
+func parseNamePrefix(s string) (roleCode string, contribType hubv1.ContributorType, name string) {
+	contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
+
+	for _, keyword := range []string{"person", "organization"} {
+		// Look for ":keyword:" in the middle of the string
+		marker := ":" + keyword + ":"
+		if idx := strings.Index(s, marker); idx >= 0 {
+			roleCode = s[:idx]
+			name = s[idx+len(marker):]
+			if keyword == "organization" {
+				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
+			}
+			return
+		}
+		// Look for "keyword:" at the start (no role prefix)
+		if strings.HasPrefix(s, keyword+":") {
+			name = s[len(keyword)+1:]
+			if keyword == "organization" {
+				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
+			}
+			return
+		}
+	}
+
+	// No type prefix found — treat the whole string as the name
+	name = s
+	return
 }

@@ -62,12 +62,47 @@
                     },
                     "type": "array",
                     "description": "Affiliations for the contributor (preferred over single affiliation field)"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email address (schema.org Person.email)"
+                },
+                "status": {
+                    "type": "string",
+                    "description": "Status or job title (e.g., \"Graduate Student\", \"Faculty\", \"Professor\") Maps to schema.org Person.jobTitle"
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL for the contributor's profile or homepage (schema.org Person.url)"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description or bio (schema.org Person.description)"
+                },
+                "additional_name": {
+                    "type": "string",
+                    "description": "AdditionalName for middle names or other name parts (schema.org Person.additionalName)"
+                },
+                "alumni_of": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "AlumniOf lists educational institutions the person attended (schema.org Person.alumniOf) Each entry is an organization name; use Affiliation for structured data with identifiers"
+                },
+                "authority_uri": {
+                    "type": "string",
+                    "description": "AuthorityURI is a canonical URI for the contributor from a name authority (e.g., LCNAF, VIAF, ULAN). In Islandora, this comes from field_authority_link. This is a convenience field; the same URI should also be in identifiers[]."
+                },
+                "authority_source": {
+                    "type": "string",
+                    "description": "AuthoritySource identifies the vocabulary (e.g., \"lcnaf\", \"viaf\", \"ulan\")"
                 }
             },
             "additionalProperties": true,
             "type": "object",
             "title": "Contributor",
-            "description": "Contributor represents a person or organization that contributed to a work."
+            "description": "Contributor represents a person or organization that contributed to a work. Maps to schema.org Person or Organization with contributor-specific extensions."
         },
         "hub.v1.Affiliation": {
             "properties": {
