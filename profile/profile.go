@@ -120,8 +120,20 @@ func (p *Profile) GetCSVDelimiter() string {
 	return ","
 }
 
+// configDirOverride holds a user-specified configuration directory.
+// When empty, the default $HOME/.crosswalk is used.
+var configDirOverride string
+
+// SetConfigDir overrides the default configuration directory.
+func SetConfigDir(dir string) {
+	configDirOverride = dir
+}
+
 // ConfigDir returns the crosswalk configuration directory.
 func ConfigDir() (string, error) {
+	if configDirOverride != "" {
+		return configDirOverride, nil
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("getting home directory: %w", err)
