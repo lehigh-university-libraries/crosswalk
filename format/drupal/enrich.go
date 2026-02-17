@@ -12,12 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/lehigh-university-libraries/crosswalk/profile"
 )
 
-const (
-	cacheDir     = ".crosswalk/cache"
-	cacheVersion = "v1"
-)
+const cacheVersion = "v1"
 
 // Enricher fetches and caches entity references from a Drupal site.
 type Enricher struct {
@@ -279,12 +278,12 @@ func (e *Enricher) fetchEntity(url string) ([]byte, error) {
 // Cache operations
 
 func getCacheDir() (string, error) {
-	home, err := os.UserHomeDir()
+	configDir, err := profile.ConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("getting home dir: %w", err)
+		return "", fmt.Errorf("getting config dir: %w", err)
 	}
 
-	dir := filepath.Join(home, cacheDir, "drupal", cacheVersion)
+	dir := filepath.Join(configDir, "cache", "drupal", cacheVersion)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("creating cache dir: %w", err)
 	}
@@ -375,13 +374,13 @@ func (e *Enricher) ClearCache() error {
 
 // ClearAllCache removes all cached Drupal entity data.
 func ClearAllCache() error {
-	home, err := os.UserHomeDir()
+	configDir, err := profile.ConfigDir()
 	if err != nil {
 		return err
 	}
 
-	cacheDir := filepath.Join(home, cacheDir, "drupal")
-	return os.RemoveAll(cacheDir)
+	dir := filepath.Join(configDir, "cache", "drupal")
+	return os.RemoveAll(dir)
 }
 
 // CachedEntity represents cached entity data with metadata.

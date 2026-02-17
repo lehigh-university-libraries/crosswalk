@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/lehigh-university-libraries/crosswalk/profile"
 	"github.com/spf13/cobra"
 )
 
@@ -65,6 +66,13 @@ func Execute() {
 
 func init() {
 	setupLogger()
+	rootCmd.PersistentFlags().String("config-dir", "", "path to crosswalk configuration directory (default $HOME/.crosswalk)")
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if dir, _ := cmd.Flags().GetString("config-dir"); dir != "" {
+			profile.SetConfigDir(dir)
+		}
+		return nil
+	}
 	rootCmd.AddCommand(convertCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(profilesCmd)
