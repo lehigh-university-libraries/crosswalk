@@ -79,7 +79,11 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	for _, c := range record.Contributors {
 		name := &cslv1.Name{}
 		if c.ParsedName != nil {
+			// CSL "given" covers all given names including middle initials.
 			name.Given = c.ParsedName.Given
+			if c.ParsedName.Middle != "" {
+				name.Given = strings.TrimSpace(name.Given + " " + c.ParsedName.Middle)
+			}
 			name.Family = c.ParsedName.Family
 			name.Suffix = c.ParsedName.Suffix
 		} else if c.Name != "" {
