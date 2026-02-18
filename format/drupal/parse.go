@@ -67,12 +67,11 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 
 func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Record, error) {
 	record := &hubv1.Record{}
-	profile := opts.Profile
-
-	// If no profile, use a default field-to-hub mapping
-	if profile == nil {
-		profile = defaultProfile()
-	}
+	// Always start from the built-in default so that field types like
+	// part_detail, related_item, etc. are mapped even when a spoke-generated
+	// profile (which may not enumerate every Drupal field) is active.
+	// An explicit profile overrides the defaults field-by-field.
+	profile := mapping.MergeProfiles(defaultProfile(), opts.Profile)
 
 	// Track which hub fields have been set with their priorities
 	priorities := make(map[string]int)
@@ -85,9 +84,14 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			continue
 		}
 
-		// Check priority - only skip if a value was actually set at that priority
-		// Use full IR path for priority tracking (e.g., "Extra.nid" not just "Extra")
+		// Check priority - only skip if a value was actually set at that priority.
+		// Use IR+Type as the key so that fields targeting the same IR base but
+		// different logical sub-types (e.g. Publication/related_item vs
+		// Publication/part_detail) don't block each other.
 		priorityKey := fieldMapping.IR
+		if fieldMapping.Type != "" {
+			priorityKey = fieldMapping.IR + "/" + fieldMapping.Type
+		}
 		currentPriority, hasPriority := priorities[priorityKey]
 		if hasPriority && fieldMapping.Priority <= currentPriority {
 			continue

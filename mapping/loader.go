@@ -125,8 +125,21 @@ func (r *ProfileRegistry) LoadFromDirectory(dir string) error {
 }
 
 // MergeProfiles merges a custom profile over a base profile.
-// Custom fields override base fields.
+// Custom fields override base fields. If custom is nil, a copy of base is returned.
 func MergeProfiles(base, custom *Profile) *Profile {
+	if custom == nil {
+		merged := &Profile{
+			Name:        base.Name,
+			Format:      base.Format,
+			Description: base.Description,
+			Fields:      make(map[string]FieldMapping, len(base.Fields)),
+			Options:     base.Options,
+		}
+		for k, v := range base.Fields {
+			merged.Fields[k] = v
+		}
+		return merged
+	}
 	merged := &Profile{
 		Name:        custom.Name,
 		Format:      custom.Format,

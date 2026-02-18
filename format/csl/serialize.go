@@ -123,6 +123,21 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 		}
 	}
 
+	// Publication details (volume, issue, pages, container title)
+	if record.Publication != nil {
+		item.Volume = record.Publication.Volume
+		item.Issue = record.Publication.Issue
+		item.Page = record.Publication.Pages
+		if record.Publication.Issn != "" {
+			item.Issn = record.Publication.Issn
+		}
+		// Publication.Title is the container/journal title; prefer a
+		// PART_OF relation title (set above) if both are present.
+		if item.ContainerTitle == "" && record.Publication.Title != "" {
+			item.ContainerTitle = record.Publication.Title
+		}
+	}
+
 	// Edition
 	item.Edition = record.Edition
 
