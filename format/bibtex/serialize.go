@@ -263,122 +263,122 @@ func spokeToBibtex(entry *bibtexv1.Entry) string {
 
 	// Entry type
 	entryType := entryTypeToString(entry.EntryType)
-	sb.WriteString(fmt.Sprintf("@%s{%s,\n", entryType, entry.CitationKey))
+	fmt.Fprintf(&sb, "@%s{%s,\n", entryType, entry.CitationKey)
 
 	// Required/common fields first
 	if entry.Title != "" {
-		sb.WriteString(fmt.Sprintf("  title = {%s},\n", escapeBibtex(entry.Title)))
+		fmt.Fprintf(&sb, "  title = {%s},\n", escapeBibtex(entry.Title))
 	}
 
 	// Authors
 	if len(entry.Author) > 0 {
 		authors := formatPersons(entry.Author)
-		sb.WriteString(fmt.Sprintf("  author = {%s},\n", authors))
+		fmt.Fprintf(&sb, "  author = {%s},\n", authors)
 	}
 
 	// Editors
 	if len(entry.Editor) > 0 {
 		editors := formatPersons(entry.Editor)
-		sb.WriteString(fmt.Sprintf("  editor = {%s},\n", editors))
+		fmt.Fprintf(&sb, "  editor = {%s},\n", editors)
 	}
 
 	// Year and month
 	if entry.Year != "" {
-		sb.WriteString(fmt.Sprintf("  year = {%s},\n", entry.Year))
+		fmt.Fprintf(&sb, "  year = {%s},\n", entry.Year)
 	}
 	if entry.Month != "" {
-		sb.WriteString(fmt.Sprintf("  month = %s,\n", entry.Month))
+		fmt.Fprintf(&sb, "  month = %s,\n", entry.Month)
 	}
 
 	// Journal/booktitle based on type
 	if entry.Journal != "" {
-		sb.WriteString(fmt.Sprintf("  journal = {%s},\n", escapeBibtex(entry.Journal)))
+		fmt.Fprintf(&sb, "  journal = {%s},\n", escapeBibtex(entry.Journal))
 	}
 	if entry.Booktitle != "" {
-		sb.WriteString(fmt.Sprintf("  booktitle = {%s},\n", escapeBibtex(entry.Booktitle)))
+		fmt.Fprintf(&sb, "  booktitle = {%s},\n", escapeBibtex(entry.Booktitle))
 	}
 
 	// Publisher info
 	if entry.Publisher != "" {
-		sb.WriteString(fmt.Sprintf("  publisher = {%s},\n", escapeBibtex(entry.Publisher)))
+		fmt.Fprintf(&sb, "  publisher = {%s},\n", escapeBibtex(entry.Publisher))
 	}
 	if entry.Address != "" {
-		sb.WriteString(fmt.Sprintf("  address = {%s},\n", escapeBibtex(entry.Address)))
+		fmt.Fprintf(&sb, "  address = {%s},\n", escapeBibtex(entry.Address))
 	}
 
 	// Volume/number/pages
 	if entry.Volume != "" {
-		sb.WriteString(fmt.Sprintf("  volume = {%s},\n", entry.Volume))
+		fmt.Fprintf(&sb, "  volume = {%s},\n", entry.Volume)
 	}
 	if entry.Number != "" {
-		sb.WriteString(fmt.Sprintf("  number = {%s},\n", entry.Number))
+		fmt.Fprintf(&sb, "  number = {%s},\n", entry.Number)
 	}
 	if entry.Pages != "" {
-		sb.WriteString(fmt.Sprintf("  pages = {%s},\n", entry.Pages))
+		fmt.Fprintf(&sb, "  pages = {%s},\n", entry.Pages)
 	}
 
 	// Series and edition
 	if entry.Series != "" {
-		sb.WriteString(fmt.Sprintf("  series = {%s},\n", escapeBibtex(entry.Series)))
+		fmt.Fprintf(&sb, "  series = {%s},\n", escapeBibtex(entry.Series))
 	}
 	if entry.Edition != "" {
-		sb.WriteString(fmt.Sprintf("  edition = {%s},\n", escapeBibtex(entry.Edition)))
+		fmt.Fprintf(&sb, "  edition = {%s},\n", escapeBibtex(entry.Edition))
 	}
 
 	// Thesis-specific
 	if entry.School != "" {
-		sb.WriteString(fmt.Sprintf("  school = {%s},\n", escapeBibtex(entry.School)))
+		fmt.Fprintf(&sb, "  school = {%s},\n", escapeBibtex(entry.School))
 	}
 	if entry.Institution != "" {
-		sb.WriteString(fmt.Sprintf("  institution = {%s},\n", escapeBibtex(entry.Institution)))
+		fmt.Fprintf(&sb, "  institution = {%s},\n", escapeBibtex(entry.Institution))
 	}
 	if entry.Type != "" {
-		sb.WriteString(fmt.Sprintf("  type = {%s},\n", escapeBibtex(entry.Type)))
+		fmt.Fprintf(&sb, "  type = {%s},\n", escapeBibtex(entry.Type))
 	}
 
 	// Identifiers
 	if entry.Doi != "" {
-		sb.WriteString(fmt.Sprintf("  doi = {%s},\n", entry.Doi))
+		fmt.Fprintf(&sb, "  doi = {%s},\n", entry.Doi)
 	}
 	if entry.Isbn != "" {
-		sb.WriteString(fmt.Sprintf("  isbn = {%s},\n", entry.Isbn))
+		fmt.Fprintf(&sb, "  isbn = {%s},\n", entry.Isbn)
 	}
 	if entry.Issn != "" {
-		sb.WriteString(fmt.Sprintf("  issn = {%s},\n", entry.Issn))
+		fmt.Fprintf(&sb, "  issn = {%s},\n", entry.Issn)
 	}
 	if entry.Url != "" {
-		sb.WriteString(fmt.Sprintf("  url = {%s},\n", entry.Url))
+		fmt.Fprintf(&sb, "  url = {%s},\n", entry.Url)
 	}
 
 	// Eprint (arXiv)
 	if entry.Eprint != "" {
-		sb.WriteString(fmt.Sprintf("  eprint = {%s},\n", entry.Eprint))
+		fmt.Fprintf(&sb, "  eprint = {%s},\n", entry.Eprint)
 		if entry.Eprinttype != "" {
-			sb.WriteString(fmt.Sprintf("  eprinttype = {%s},\n", entry.Eprinttype))
+			fmt.Fprintf(&sb, "  eprinttype = {%s},\n", entry.Eprinttype)
 		}
 		if entry.Primaryclass != "" {
-			sb.WriteString(fmt.Sprintf("  primaryclass = {%s},\n", entry.Primaryclass))
+			fmt.Fprintf(&sb, "  primaryclass = {%s},\n", entry.Primaryclass)
 		}
 	}
 
 	// Keywords
 	if len(entry.Keywords) > 0 {
-		sb.WriteString(fmt.Sprintf("  keywords = {%s},\n", strings.Join(entry.Keywords, ", ")))
+		fmt.Fprintf(&sb, "  keywords = {%s},\n", strings.Join(entry.Keywords, ", "))
 	}
 
 	// Abstract
 	if entry.Abstract != "" {
-		sb.WriteString(fmt.Sprintf("  abstract = {%s},\n", escapeBibtex(entry.Abstract)))
+		fmt.Fprintf(&sb, "  abstract = {%s},\n", escapeBibtex(entry.Abstract))
 	}
 
 	// Note
 	if entry.Note != "" {
-		sb.WriteString(fmt.Sprintf("  note = {%s},\n", escapeBibtex(entry.Note)))
+		fmt.Fprintf(&sb, "  note = {%s},\n", escapeBibtex(entry.Note))
 	}
 
 	// Language
 	if entry.Language != "" {
-		sb.WriteString(fmt.Sprintf("  language = {%s},\n", entry.Language))
+		fmt.Fprintf(&sb, "  language = {%s},\n", entry.Language)
 	}
 
 	sb.WriteString("}\n")

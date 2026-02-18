@@ -1,0 +1,53 @@
+{
+  "nid": [{"value": 1953}],
+  "uuid": [{"value": "4e33a2f9-1953-4356-b282-6fa350daa317"}],
+  "title": [{"value": "Molecular Structure of Nucleic Acids: A Structure for Deoxyribose Nucleic Acid"}],
+  "field_abstract": [{"value": "We wish to suggest a structure for the salt of deoxyribose nucleic acid (D.N.A.). This structure has novel features which are of considerable biological interest."}],
+  "field_edtf_date_issued": [{"value": "1953-04-25"}],
+  "field_resource_type": [
+    {
+      "target_id": 11,
+      "target_type": "taxonomy_term",
+      "_entity": {"name": [{"value": "Journal Article"}]}
+    }
+  ],
+  "field_linked_agent": [
+    {
+      "target_id": 101,
+      "rel_type": "relators:aut",
+      "target_type": "taxonomy_term",
+      "_entity": {"name": [{"value": "Watson, James D."}]}
+    },
+    {
+      "target_id": 102,
+      "rel_type": "relators:aut",
+      "target_type": "taxonomy_term",
+      "_entity": {"name": [{"value": "Crick, Francis H. C."}]}
+    }
+  ],
+  "field_identifier": [
+    {"attr0": "doi", "attr1": null, "value": "10.1038/171737a0"}
+  ],
+  "field_related_item": [
+    {
+      "identifier": "0028-0836",
+      "identifier_type": "l-issn",
+      "number": null,
+      "title": "Nature"
+    }
+  ],
+  "field_part_detail": [
+    {"type": "volume",  "caption": null, "number": "171",     "title": null},
+    {"type": "issue",   "caption": null, "number": "4356",    "title": null},
+    {"type": "page",    "caption": null, "number": "737-738", "title": null},
+    {"type": "section", "caption": null, "number": "1",       "title": "Double Helix"}
+  ],
+  "field_language": [
+    {
+      "target_id": 859,
+      "target_type": "taxonomy_term",
+      "_entity": {"name": [{"value": "English"}]}
+    }
+  ],
+  "field_rights": [{"value": "http://rightsstatements.org/vocab/InC/1.0/"}]
+}

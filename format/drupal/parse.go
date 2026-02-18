@@ -67,12 +67,11 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 
 func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Record, error) {
 	record := &hubv1.Record{}
-	profile := opts.Profile
-
-	// If no profile, use a default field-to-hub mapping
-	if profile == nil {
-		profile = defaultProfile()
-	}
+	// Always start from the built-in default so that field types like
+	// part_detail, related_item, etc. are mapped even when a spoke-generated
+	// profile (which may not enumerate every Drupal field) is active.
+	// An explicit profile overrides the defaults field-by-field.
+	profile := mapping.MergeProfiles(defaultProfile(), opts.Profile)
 
 	// Track which hub fields have been set with their priorities
 	priorities := make(map[string]int)
@@ -85,9 +84,14 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			continue
 		}
 
-		// Check priority - only skip if a value was actually set at that priority
-		// Use full IR path for priority tracking (e.g., "Extra.nid" not just "Extra")
+		// Check priority - only skip if a value was actually set at that priority.
+		// Use IR+Type as the key so that fields targeting the same IR base but
+		// different logical sub-types (e.g. Publication/related_item vs
+		// Publication/part_detail) don't block each other.
 		priorityKey := fieldMapping.IR
+		if fieldMapping.Type != "" {
+			priorityKey = fieldMapping.IR + "/" + fieldMapping.Type
+		}
 		currentPriority, hasPriority := priorities[priorityKey]
 		if hasPriority && fieldMapping.Priority <= currentPriority {
 			continue
@@ -663,46 +667,84 @@ func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 		return added, nil
 	}
 
-	// Handle part_detail field type
+	// Handle part_detail field type.
+	// Types mirror MODS <detail type="...">: volume, issue, page, chapter,
+	// section, heading, illustration, article.
 	if fieldMapping.Type == "part_detail" {
 		parts, _ := ExtractPartDetails(rawValue)
 		for _, part := range parts {
 			switch part.Type {
 			case "volume":
+				// Number holds the actual volume value; Caption is a display
+				// label ("Vol.") and should not be stored as the volume number.
 				if part.Number != "" {
 					record.Publication.Volume = part.Number
 					added = true
-				} else if part.Caption != "" {
-					record.Publication.Volume = part.Caption
-					added = true
 				}
 			case "issue":
+				// Same reasoning as volume — Caption is a label, not a value.
 				if part.Number != "" {
 					record.Publication.Issue = part.Number
 					added = true
-				} else if part.Caption != "" {
-					record.Publication.Issue = part.Caption
-					added = true
 				}
 			case "page":
-				if part.Number != "" {
-					if record.Publication.Pages != "" {
-						record.Publication.Pages += "-" + part.Number
-					} else {
-						record.Publication.Pages = part.Number
-					}
-					added = true
-				}
-			case "article":
-				// Article number, could be stored in pages or a separate field
+				// Number already encodes the full page range (e.g. "1-15").
+				// Two separate page entries do not mean start/end pages.
 				if part.Number != "" && record.Publication.Pages == "" {
 					record.Publication.Pages = part.Number
 					added = true
 				}
+			case "chapter":
+				if part.Number != "" {
+					hub.SetExtra(record, "chapter_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "chapter_title", part.Title)
+					added = true
+				}
 			case "section":
-				// Section info - could be stored in title or extra
-				if part.Title != "" && record.Publication.Title == "" {
-					record.Publication.Title = part.Title
+				// Section info belongs in extra — Publication.Title is the
+				// container/journal title, not a section heading.
+				if part.Number != "" {
+					hub.SetExtra(record, "section_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "section_title", part.Title)
+					added = true
+				}
+			case "heading":
+				// Heading text lives in Title per the MODS <detail type="heading"> convention.
+				if part.Title != "" {
+					hub.SetExtra(record, "part_heading", part.Title)
+					added = true
+				}
+			case "illustration":
+				// Illustrations are descriptive; Caption is the primary carrier.
+				if part.Caption != "" {
+					hub.SetExtra(record, "part_illustration", part.Caption)
+					added = true
+				} else if part.Title != "" {
+					hub.SetExtra(record, "part_illustration", part.Title)
+					added = true
+				}
+			case "article":
+				// An article number is an electronic locator (e.g. e12345),
+				// not a page range.  Store separately so downstream serializers
+				// can choose the right output field (e.g. CrossRef articleNumber).
+				if part.Number != "" {
+					hub.SetExtra(record, "article_number", part.Number)
+					added = true
+				}
+			default:
+				// Preserve unrecognised part types in extra so no data is lost.
+				if part.Number != "" {
+					hub.SetExtra(record, "part_"+part.Type+"_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "part_"+part.Type+"_title", part.Title)
 					added = true
 				}
 			}

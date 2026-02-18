@@ -79,7 +79,11 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	for _, c := range record.Contributors {
 		name := &cslv1.Name{}
 		if c.ParsedName != nil {
+			// CSL "given" covers all given names including middle initials.
 			name.Given = c.ParsedName.Given
+			if c.ParsedName.Middle != "" {
+				name.Given = strings.TrimSpace(name.Given + " " + c.ParsedName.Middle)
+			}
 			name.Family = c.ParsedName.Family
 			name.Suffix = c.ParsedName.Suffix
 		} else if c.Name != "" {
@@ -120,6 +124,21 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 				}},
 			}
 			break
+		}
+	}
+
+	// Publication details (volume, issue, pages, container title)
+	if record.Publication != nil {
+		item.Volume = record.Publication.Volume
+		item.Issue = record.Publication.Issue
+		item.Page = record.Publication.Pages
+		if record.Publication.Issn != "" {
+			item.Issn = record.Publication.Issn
+		}
+		// Publication.Title is the container/journal title; prefer a
+		// PART_OF relation title (set above) if both are present.
+		if item.ContainerTitle == "" && record.Publication.Title != "" {
+			item.ContainerTitle = record.Publication.Title
 		}
 	}
 
