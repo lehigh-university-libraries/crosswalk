@@ -663,46 +663,84 @@ func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMap
 		return added, nil
 	}
 
-	// Handle part_detail field type
+	// Handle part_detail field type.
+	// Types mirror MODS <detail type="...">: volume, issue, page, chapter,
+	// section, heading, illustration, article.
 	if fieldMapping.Type == "part_detail" {
 		parts, _ := ExtractPartDetails(rawValue)
 		for _, part := range parts {
 			switch part.Type {
 			case "volume":
+				// Number holds the actual volume value; Caption is a display
+				// label ("Vol.") and should not be stored as the volume number.
 				if part.Number != "" {
 					record.Publication.Volume = part.Number
 					added = true
-				} else if part.Caption != "" {
-					record.Publication.Volume = part.Caption
-					added = true
 				}
 			case "issue":
+				// Same reasoning as volume — Caption is a label, not a value.
 				if part.Number != "" {
 					record.Publication.Issue = part.Number
 					added = true
-				} else if part.Caption != "" {
-					record.Publication.Issue = part.Caption
-					added = true
 				}
 			case "page":
-				if part.Number != "" {
-					if record.Publication.Pages != "" {
-						record.Publication.Pages += "-" + part.Number
-					} else {
-						record.Publication.Pages = part.Number
-					}
-					added = true
-				}
-			case "article":
-				// Article number, could be stored in pages or a separate field
+				// Number already encodes the full page range (e.g. "1-15").
+				// Two separate page entries do not mean start/end pages.
 				if part.Number != "" && record.Publication.Pages == "" {
 					record.Publication.Pages = part.Number
 					added = true
 				}
+			case "chapter":
+				if part.Number != "" {
+					hub.SetExtra(record, "chapter_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "chapter_title", part.Title)
+					added = true
+				}
 			case "section":
-				// Section info - could be stored in title or extra
-				if part.Title != "" && record.Publication.Title == "" {
-					record.Publication.Title = part.Title
+				// Section info belongs in extra — Publication.Title is the
+				// container/journal title, not a section heading.
+				if part.Number != "" {
+					hub.SetExtra(record, "section_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "section_title", part.Title)
+					added = true
+				}
+			case "heading":
+				// Heading text lives in Title per the MODS <detail type="heading"> convention.
+				if part.Title != "" {
+					hub.SetExtra(record, "part_heading", part.Title)
+					added = true
+				}
+			case "illustration":
+				// Illustrations are descriptive; Caption is the primary carrier.
+				if part.Caption != "" {
+					hub.SetExtra(record, "part_illustration", part.Caption)
+					added = true
+				} else if part.Title != "" {
+					hub.SetExtra(record, "part_illustration", part.Title)
+					added = true
+				}
+			case "article":
+				// An article number is an electronic locator (e.g. e12345),
+				// not a page range.  Store separately so downstream serializers
+				// can choose the right output field (e.g. CrossRef articleNumber).
+				if part.Number != "" {
+					hub.SetExtra(record, "article_number", part.Number)
+					added = true
+				}
+			default:
+				// Preserve unrecognised part types in extra so no data is lost.
+				if part.Number != "" {
+					hub.SetExtra(record, "part_"+part.Type+"_number", part.Number)
+					added = true
+				}
+				if part.Title != "" {
+					hub.SetExtra(record, "part_"+part.Type+"_title", part.Title)
 					added = true
 				}
 			}
