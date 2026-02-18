@@ -241,16 +241,16 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 	var sb strings.Builder
 
 	sb.WriteString("=== Extras Field Audit Report ===\n\n")
-	sb.WriteString(fmt.Sprintf("Total records: %d\n", report.TotalRecords))
-	sb.WriteString(fmt.Sprintf("Records with extras: %d (%.1f%%)\n\n",
+	fmt.Fprintf(&sb, "Total records: %d\n", report.TotalRecords)
+	fmt.Fprintf(&sb, "Records with extras: %d (%.1f%%)\n\n",
 		report.RecordsWithExtras,
-		float64(report.RecordsWithExtras)/float64(report.TotalRecords)*100))
+		float64(report.RecordsWithExtras)/float64(report.TotalRecords)*100)
 
 	// Promotion candidates
 	if len(report.PromotionCandidates) > 0 {
 		sb.WriteString("🚨 PROMOTION CANDIDATES (should become Hub fields):\n")
 		for _, pc := range report.PromotionCandidates {
-			sb.WriteString(fmt.Sprintf("  • %s: %d records (%.1f%%)\n", pc.Field, pc.Count, pc.Percentage))
+			fmt.Fprintf(&sb, "  • %s: %d records (%.1f%%)\n", pc.Field, pc.Count, pc.Percentage)
 		}
 		sb.WriteString("\n")
 	}
@@ -259,7 +259,7 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 	if len(report.TypeInconsistency) > 0 {
 		sb.WriteString("⚠️  TYPE INCONSISTENCIES (mixed types for same field):\n")
 		for field, types := range report.TypeInconsistency {
-			sb.WriteString(fmt.Sprintf("  • %s: %s\n", field, strings.Join(types, ", ")))
+			fmt.Fprintf(&sb, "  • %s: %s\n", field, strings.Join(types, ", "))
 		}
 		sb.WriteString("\n")
 	}
@@ -268,7 +268,7 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 	if len(report.InvalidKeys) > 0 {
 		sb.WriteString("❌ INVALID KEYS (contain spaces, should use snake_case):\n")
 		for _, key := range report.InvalidKeys {
-			sb.WriteString(fmt.Sprintf("  • \"%s\"\n", key))
+			fmt.Fprintf(&sb, "  • \"%s\"\n", key)
 		}
 		sb.WriteString("\n")
 	}
@@ -290,9 +290,9 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 	})
 
 	for _, item := range sorted {
-		sb.WriteString(fmt.Sprintf("  %s: %d (%.1f%%)\n", item.key, item.stats.Count, item.stats.Percentage))
+		fmt.Fprintf(&sb, "  %s: %d (%.1f%%)\n", item.key, item.stats.Count, item.stats.Percentage)
 		if len(item.stats.Examples) > 0 {
-			sb.WriteString(fmt.Sprintf("    examples: %s\n", strings.Join(item.stats.Examples, ", ")))
+			fmt.Fprintf(&sb, "    examples: %s\n", strings.Join(item.stats.Examples, ", "))
 		}
 	}
 
