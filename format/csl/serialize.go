@@ -9,6 +9,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	cslv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/csl/v1"
+	"github.com/lehigh-university-libraries/crosswalk/helpers"
 )
 
 // Serialize writes hub records as CSL-JSON.
@@ -90,14 +91,18 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 			name.Literal = c.Name
 		}
 
-		role := strings.ToLower(c.Role)
-		switch role {
-		case "editor", "edt":
+		// Prefer RoleCode (e.g., relators:ths) and normalize to MARC relator code.
+		switch contributorRoleCode(c) {
+		case "edt":
 			item.Editor = append(item.Editor, name)
-		case "translator", "trl":
+		case "trl":
 			item.Translator = append(item.Translator, name)
-		default:
+		case "aut", "cre", "":
+			// Empty role is treated as author for backward compatibility.
 			item.Author = append(item.Author, name)
+		default:
+			// Non-authorial contributors (e.g., thesis advisor "ths") do not
+			// map to CSL author/editor/translator name lists.
 		}
 	}
 
@@ -196,6 +201,16 @@ func mapResourceTypeToCSL(rt *hubv1.ResourceType) cslv1.ItemType {
 	default:
 		return cslv1.ItemType_ITEM_TYPE_DOCUMENT
 	}
+}
+
+func contributorRoleCode(c *hubv1.Contributor) string {
+	if c == nil {
+		return ""
+	}
+	if code := helpers.NormalizeRole(c.RoleCode); code != "" {
+		return code
+	}
+	return helpers.NormalizeRole(c.Role)
 }
 
 // generateID creates an ID from record metadata.
