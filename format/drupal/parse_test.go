@@ -164,3 +164,44 @@ func TestParseGenreAuthorityNotClobberedByUnresolvedResourceType(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultProfile_FieldKeywordsResolvesTermLabels(t *testing.T) {
+	input := `{
+		"title": [{"value": "Keyword label test"}],
+		"field_keywords": [
+			{
+				"target_id": 159882,
+				"target_type": "taxonomy_term",
+				"_entity": {"name": [{"value": "organic semiconductors"}]}
+			},
+			{
+				"target_id": 159883,
+				"target_type": "taxonomy_term",
+				"_entity": {"name": [{"value": "charge transport"}]}
+			}
+		]
+	}`
+
+	f := &Format{}
+	records, err := f.Parse(strings.NewReader(input), format.NewParseOptions())
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+
+	r := records[0]
+	if len(r.Subjects) != 2 {
+		t.Fatalf("subjects count = %d, want 2", len(r.Subjects))
+	}
+	if r.Subjects[0].Value != "organic semiconductors" {
+		t.Fatalf("subjects[0].Value = %q, want %q", r.Subjects[0].Value, "organic semiconductors")
+	}
+	if r.Subjects[0].Vocabulary != hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_KEYWORDS {
+		t.Fatalf("subjects[0].Vocabulary = %v, want KEYWORDS", r.Subjects[0].Vocabulary)
+	}
+	if r.Subjects[1].Value != "charge transport" {
+		t.Fatalf("subjects[1].Value = %q, want %q", r.Subjects[1].Value, "charge transport")
+	}
+}

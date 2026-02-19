@@ -543,47 +543,47 @@ func processSubjects(record *hubv1.Record, rawValue json.RawMessage, fieldMappin
 	if fieldMapping.Resolve != "" {
 		// Entity references
 		refs, err := ExtractEntityRefs(rawValue)
-		if err != nil {
-			return false, err
-		}
-		for _, ref := range refs {
-			subject := &hubv1.Subject{
-				Vocabulary: vocab,
-				SourceId:   ref.GetTargetID(),
-			}
-
-			// Try to get the label from enriched data
-			if name, ok := ref.GetResolvedName(); ok {
-				subject.Value = name
-			} else if opts.TaxonomyResolver != nil {
-				subject.Value, _ = opts.TaxonomyResolver.Resolve(ref.GetTargetID(), "")
-			}
-			if subject.Value == "" {
-				subject.Value = ref.GetTargetID()
-			}
-
-			// Try to get the full authority link from enriched data (Islandora specific)
-			if link, ok := ref.GetAuthorityLink(); ok {
-				subject.Uri = link.URI
-				// Map source to vocabulary if it provides more specific info than profile
-				if authorityVocab := authoritySourceToVocabulary(link.Source); authorityVocab != hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_UNSPECIFIED {
-					subject.Vocabulary = authorityVocab
+		if err == nil && len(refs) > 0 {
+			for _, ref := range refs {
+				subject := &hubv1.Subject{
+					Vocabulary: vocab,
+					SourceId:   ref.GetTargetID(),
 				}
-			}
 
-			record.Subjects = append(record.Subjects, subject)
-			added = true
+				// Try to get the label from enriched data
+				if name, ok := ref.GetResolvedName(); ok {
+					subject.Value = name
+				} else if opts.TaxonomyResolver != nil {
+					subject.Value, _ = opts.TaxonomyResolver.Resolve(ref.GetTargetID(), "")
+				}
+				if subject.Value == "" {
+					subject.Value = ref.GetTargetID()
+				}
+
+				// Try to get the full authority link from enriched data (Islandora specific)
+				if link, ok := ref.GetAuthorityLink(); ok {
+					subject.Uri = link.URI
+					// Map source to vocabulary if it provides more specific info than profile
+					if authorityVocab := authoritySourceToVocabulary(link.Source); authorityVocab != hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_UNSPECIFIED {
+						subject.Vocabulary = authorityVocab
+					}
+				}
+
+				record.Subjects = append(record.Subjects, subject)
+				added = true
+			}
+			return added, nil
 		}
-	} else {
-		// Plain text values
-		vals, _ := ExtractStrings(rawValue)
-		for _, val := range vals {
-			record.Subjects = append(record.Subjects, &hubv1.Subject{
-				Value:      cleanText(val, opts),
-				Vocabulary: vocab,
-			})
-			added = true
-		}
+	}
+
+	// Plain text values (or fallback when resolve-mode parsing has no refs).
+	vals, _ := ExtractStrings(rawValue)
+	for _, val := range vals {
+		record.Subjects = append(record.Subjects, &hubv1.Subject{
+			Value:      cleanText(val, opts),
+			Vocabulary: vocab,
+		})
+		added = true
 	}
 
 	return added, nil
@@ -1013,7 +1013,7 @@ func defaultProfile() *mapping.Profile {
 			"field_rights":            {IR: "Rights", Type: "uri"},
 			"field_subject":           {IR: "Subjects", Resolve: "taxonomy_term"},
 			"field_lcsh_topic":        {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "lcsh"},
-			"field_keywords":          {IR: "Subjects", Vocabulary: "keywords"},
+			"field_keywords":          {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "keywords"},
 			"field_publisher":         {IR: "Publisher"},
 			"field_place_published":   {IR: "PlacePublished"},
 			"field_member_of":         {IR: "Relations", RelationType: "member_of", Resolve: "node"},
