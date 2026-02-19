@@ -8,6 +8,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	bibtexv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/bibtex/v1"
+	"github.com/lehigh-university-libraries/crosswalk/helpers"
 )
 
 // Serialize writes hub records as BibTeX entries.
@@ -93,11 +94,15 @@ func hubToSpoke(record *hubv1.Record) (*bibtexv1.Entry, error) {
 			}
 		}
 
-		role := strings.ToLower(c.Role)
-		if role == "editor" || role == "edt" {
+		switch contributorRoleCode(c) {
+		case "edt":
 			entry.Editor = append(entry.Editor, person)
-		} else {
+		case "aut", "cre", "":
+			// Empty role is treated as author for backward compatibility.
 			entry.Author = append(entry.Author, person)
+		default:
+			// Non-authorial contributors (e.g., thesis advisor "ths") are
+			// intentionally excluded from author/editor fields.
 		}
 	}
 
@@ -204,6 +209,16 @@ func mapResourceTypeToBibtex(rt *hubv1.ResourceType) bibtexv1.EntryType {
 	default:
 		return bibtexv1.EntryType_ENTRY_TYPE_MISC
 	}
+}
+
+func contributorRoleCode(c *hubv1.Contributor) string {
+	if c == nil {
+		return ""
+	}
+	if code := helpers.NormalizeRole(c.RoleCode); code != "" {
+		return code
+	}
+	return helpers.NormalizeRole(c.Role)
 }
 
 // generateCitationKey creates a citation key from record metadata.

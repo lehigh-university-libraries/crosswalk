@@ -142,6 +142,33 @@ func TestSerializeDataset(t *testing.T) {
 	}
 }
 
+func TestSerializeThesis(t *testing.T) {
+	record := &hubv1.Record{
+		Title: "Test Thesis",
+		ResourceType: &hubv1.ResourceType{
+			Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS,
+		},
+	}
+
+	f := &Format{}
+	var buf bytes.Buffer
+	opts := &format.SerializeOptions{Pretty: true}
+
+	err := f.Serialize(&buf, []*hubv1.Record{record}, opts)
+	if err != nil {
+		t.Fatalf("Serialize failed: %v", err)
+	}
+
+	var doc map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+		t.Fatalf("Invalid JSON output: %v", err)
+	}
+
+	if doc["@type"] != "Thesis" {
+		t.Errorf("Expected @type 'Thesis', got %v", doc["@type"])
+	}
+}
+
 func TestParseScholarlyArticle(t *testing.T) {
 	input := `{
 		"@context": "https://schema.org",

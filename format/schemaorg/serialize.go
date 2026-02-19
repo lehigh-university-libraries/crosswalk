@@ -50,6 +50,8 @@ func recordToSchemaOrg(record *hubv1.Record) (any, error) {
 		return recordToDataset(record), nil
 	case TypeCollection:
 		return recordToCollection(record), nil
+	case TypeThesis:
+		return recordToThesis(record), nil
 	case TypeDigitalDocument:
 		return recordToDigitalDocument(record), nil
 	case TypeManuscript:
@@ -93,8 +95,10 @@ func determineSchemaType(record *hubv1.Record) SchemaType {
 		return TypeCollection
 
 	case hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS,
-		hubv1.ResourceTypeValue_RESOURCE_TYPE_DISSERTATION,
-		hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT,
+		hubv1.ResourceTypeValue_RESOURCE_TYPE_DISSERTATION:
+		return TypeThesis
+
+	case hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT,
 		hubv1.ResourceTypeValue_RESOURCE_TYPE_TECHNICAL_REPORT:
 		return TypeDigitalDocument
 
@@ -632,6 +636,34 @@ func recordToCollection(record *hubv1.Record) *Collection {
 	return &Collection{
 		CreativeWork: base,
 	}
+}
+
+func recordToThesis(record *hubv1.Record) *CreativeWork {
+	base := buildCreativeWorkBase(record, TypeThesis)
+
+	// Preserve thesis/dissertation-specific enrichment that was previously
+	// done in DigitalDocument output.
+	if record.DegreeInfo != nil {
+		if record.DegreeInfo.Institution != "" {
+			base.Publisher = &Organization{
+				Thing: Thing{
+					Type: TypeOrganization,
+					Name: record.DegreeInfo.Institution,
+				},
+			}
+		}
+		if record.DegreeInfo.DegreeName != "" {
+			if base.Description != "" {
+				base.Description += ". "
+			}
+			base.Description += record.DegreeInfo.DegreeName
+			if record.DegreeInfo.Department != "" {
+				base.Description += ", " + record.DegreeInfo.Department
+			}
+		}
+	}
+
+	return &base
 }
 
 func recordToDigitalDocument(record *hubv1.Record) *DigitalDocument {
