@@ -626,6 +626,13 @@ func recordToBook(record *hubv1.Record) *Book {
 
 func recordToDataset(record *hubv1.Record) *Dataset {
 	base := buildCreativeWorkBase(record, TypeDataset)
+	// For Dataset, consumers expect summary text in description.
+	if base.Abstract != "" {
+		if base.Description == "" {
+			base.Description = base.Abstract
+		}
+		base.Abstract = ""
+	}
 	return &Dataset{
 		CreativeWork: base,
 	}
