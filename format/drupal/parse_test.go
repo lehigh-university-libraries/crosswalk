@@ -11,24 +11,29 @@ import (
 
 func TestResourceTypeFromGenreAuthorityURI(t *testing.T) {
 	tests := []struct {
+		name  string
 		uri   string
+		want  hubv1.ResourceTypeValue
 		match bool
 	}{
-		{uri: "http://vocab.getty.edu/page/aat/300028029", match: true},
-		{uri: "http://vocab.getty.edu/page/aat/300028028", match: true},
-		{uri: "http://vocab.getty.edu/page/aat/300048715", match: true},
-		{uri: "http://vocab.getty.edu/page/aat/300048715/", match: true},
-		{uri: "http://example.org/not-mapped", match: false},
+		{name: "thesis uri 300028029", uri: "http://vocab.getty.edu/page/aat/300028029", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS, match: true},
+		{name: "thesis uri 300028028", uri: "http://vocab.getty.edu/page/aat/300028028", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS, match: true},
+		{name: "article uri 300048715", uri: "http://vocab.getty.edu/page/aat/300048715", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, match: true},
+		{name: "article uri 300048715 with trailing slash", uri: "http://vocab.getty.edu/page/aat/300048715/", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, match: true},
+		{name: "dataset loc genreform", uri: "http://id.loc.gov/authorities/genreForms/gf2018026119", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET, match: true},
+		{name: "unmapped", uri: "http://example.org/not-mapped", match: false},
 	}
 
 	for _, tt := range tests {
-		got, ok := resourceTypeFromGenreAuthorityURI(tt.uri)
-		if ok != tt.match {
-			t.Fatalf("resourceTypeFromGenreAuthorityURI(%q) match=%v, want %v", tt.uri, ok, tt.match)
-		}
-		if tt.match && got != hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE {
-			t.Fatalf("resourceTypeFromGenreAuthorityURI(%q) type=%v, want ARTICLE", tt.uri, got)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := resourceTypeFromGenreAuthorityURI(tt.uri)
+			if ok != tt.match {
+				t.Fatalf("resourceTypeFromGenreAuthorityURI(%q) match=%v, want %v", tt.uri, ok, tt.match)
+			}
+			if tt.match && got != tt.want {
+				t.Fatalf("resourceTypeFromGenreAuthorityURI(%q) type=%v, want %v", tt.uri, got, tt.want)
+			}
+		})
 	}
 }
 
@@ -68,8 +73,8 @@ func TestParseGenreSetsArticleResourceTypeFromAuthorityURI(t *testing.T) {
 	}
 
 	r := records[0]
-	if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE {
-		t.Fatalf("resource type = %v, want ARTICLE", r.ResourceType)
+	if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS {
+		t.Fatalf("resource type = %v, want THESIS", r.ResourceType)
 	}
 	if len(r.Genres) != 1 {
 		t.Fatalf("expected 1 genre, got %d", len(r.Genres))
@@ -112,8 +117,8 @@ func TestParseResourceTypeFromAuthorityURIWhenGenreMappedAsResourceType(t *testi
 	}
 
 	r := records[0]
-	if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE {
-		t.Fatalf("resource type = %v, want ARTICLE", r.ResourceType)
+	if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS {
+		t.Fatalf("resource type = %v, want THESIS", r.ResourceType)
 	}
 }
 
@@ -159,8 +164,8 @@ func TestParseGenreAuthorityNotClobberedByUnresolvedResourceType(t *testing.T) {
 			t.Fatalf("iteration %d: expected 1 record, got %d", i, len(records))
 		}
 		r := records[0]
-		if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE {
-			t.Fatalf("iteration %d: resource type = %v, want ARTICLE", i, r.ResourceType)
+		if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS {
+			t.Fatalf("iteration %d: resource type = %v, want THESIS", i, r.ResourceType)
 		}
 	}
 }

@@ -8,6 +8,7 @@ const (
 	TypeBook              SchemaType = "Book"
 	TypeDataset           SchemaType = "Dataset"
 	TypeCollection        SchemaType = "Collection"
+	TypeThesis            SchemaType = "Thesis"
 	TypeDigitalDocument   SchemaType = "DigitalDocument"
 	TypeManuscript        SchemaType = "Manuscript"
 	TypeAudioObject       SchemaType = "AudioObject"

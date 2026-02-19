@@ -451,9 +451,12 @@ func authoritySourceToVocabulary(source string) hubv1.SubjectVocabulary {
 func resourceTypeFromGenreAuthorityURI(uri string) (hubv1.ResourceTypeValue, bool) {
 	switch normalizeAuthorityURI(uri) {
 	case "http://vocab.getty.edu/page/aat/300028029",
-		"http://vocab.getty.edu/page/aat/300028028",
-		"http://vocab.getty.edu/page/aat/300048715":
+		"http://vocab.getty.edu/page/aat/300028028":
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS, true
+	case "http://vocab.getty.edu/page/aat/300048715":
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, true
+	case "http://id.loc.gov/authorities/genreforms/gf2018026119":
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET, true
 	default:
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED, false
 	}
