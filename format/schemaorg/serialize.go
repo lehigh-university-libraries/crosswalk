@@ -663,6 +663,10 @@ func recordToThesis(record *hubv1.Record) *CreativeWork {
 		}
 	}
 
+	// Google rich results do not support Thesis directly. Emit both types so
+	// consumers can treat the record as ScholarlyArticle while preserving Thesis.
+	base.Type = []string{string(TypeScholarlyArticle), string(TypeThesis)}
+
 	return &base
 }
 

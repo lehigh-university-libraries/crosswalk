@@ -23,14 +23,14 @@ const (
 
 // Thing is the base schema.org type.
 type Thing struct {
-	Context     any        `json:"@context,omitempty"`
-	Type        SchemaType `json:"@type"`
-	ID          string     `json:"@id,omitempty"`
-	Name        string     `json:"name,omitempty"`
-	Description string     `json:"description,omitempty"`
-	URL         string     `json:"url,omitempty"`
-	Identifier  any        `json:"identifier,omitempty"` // string, []string, or []PropertyValue
-	SameAs      any        `json:"sameAs,omitempty"`     // string or []string
+	Context     any    `json:"@context,omitempty"`
+	Type        any    `json:"@type"`
+	ID          string `json:"@id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url,omitempty"`
+	Identifier  any    `json:"identifier,omitempty"` // string, []string, or []PropertyValue
+	SameAs      any    `json:"sameAs,omitempty"`     // string or []string
 }
 
 // CreativeWork extends Thing with properties common to creative works.
