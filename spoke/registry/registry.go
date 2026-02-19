@@ -68,6 +68,14 @@ func buildProfile(format string, fields map[string]FieldMeta) *mapping.Profile {
 			Parser:     meta.Parser,
 		}
 
+		// Generated Drupal RDF mappings frequently map dcterms:type-backed
+		// field_genre terms to ResourceType. In the Islandora data model this
+		// field should populate Genre, while field_resource_type should drive
+		// Hub ResourceType. If both map to ResourceType they race/override.
+		if meta.DrupalField == "field_genre" && meta.TargetBundle == "genre" {
+			fm.IR = "Genre"
+		}
+
 		// Set Drupal type — for typed_relation this is the primary type signal
 		fm.Type = meta.DrupalType
 

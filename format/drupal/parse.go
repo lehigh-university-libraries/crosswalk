@@ -340,6 +340,27 @@ func dateTypeFromString(s string) hubv1.DateType {
 }
 
 func processResourceType(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
+	refs, err := ExtractEntityRefs(rawValue)
+	if err != nil {
+		return false, err
+	}
+
+	// If this is a genre term carrying an authority URI, map known AAT URIs
+	// directly to canonical ResourceType values.
+	if len(refs) > 0 {
+		ref := refs[0]
+		if link, ok := ref.GetAuthorityLink(); ok {
+			if rt, matched := resourceTypeFromGenreAuthorityURI(link.URI); matched {
+				record.ResourceType = &hubv1.ResourceType{
+					Type:       rt,
+					Original:   link.URI,
+					Vocabulary: link.Source,
+				}
+				return true, nil
+			}
+		}
+	}
+
 	val := resolveEntityRef(rawValue, fieldMapping, opts)
 	if val != "" {
 		record.ResourceType = hub.NewResourceType(val, "")
@@ -381,6 +402,16 @@ func processGenre(record *hubv1.Record, rawValue json.RawMessage, fieldMapping m
 			if vocab := authoritySourceToVocabulary(link.Source); vocab != hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_UNSPECIFIED {
 				genre.Vocabulary = vocab
 			}
+			// Some Islandora genre AAT terms represent article-like works.
+			// If no explicit resource type is set, infer one from known AAT URIs.
+			if rt, matched := resourceTypeFromGenreAuthorityURI(link.URI); matched &&
+				(record.ResourceType == nil || record.ResourceType.Type == hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED) {
+				record.ResourceType = &hubv1.ResourceType{
+					Type:       rt,
+					Original:   link.URI,
+					Vocabulary: link.Source,
+				}
+			}
 		}
 
 		record.Genres = append(record.Genres, genre)
@@ -407,6 +438,21 @@ func authoritySourceToVocabulary(source string) hubv1.SubjectVocabulary {
 	default:
 		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_UNSPECIFIED
 	}
+}
+
+func resourceTypeFromGenreAuthorityURI(uri string) (hubv1.ResourceTypeValue, bool) {
+	switch normalizeAuthorityURI(uri) {
+	case "http://vocab.getty.edu/page/aat/300028029",
+		"http://vocab.getty.edu/page/aat/300028028",
+		"http://vocab.getty.edu/page/aat/300048715":
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, true
+	default:
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED, false
+	}
+}
+
+func normalizeAuthorityURI(uri string) string {
+	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(uri)), "/")
 }
 
 // islandoraModelToResourceType maps Islandora model names to ResourceTypeValue.

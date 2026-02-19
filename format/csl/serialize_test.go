@@ -218,3 +218,54 @@ func TestDrupalToCSL_PartDetail_ArticleNumber(t *testing.T) {
 		t.Errorf("Pages = %q; article number must not land in Pages", record.Publication.Pages)
 	}
 }
+
+func TestDrupalToCSL_RelatorsExcludeThesisAdvisorFromAuthor(t *testing.T) {
+	const drupalJSON = `{
+		"title": [{"value": "Relator Role Test"}],
+		"field_linked_agent": [
+			{
+				"target_id": 1,
+				"rel_type": "relators:cre",
+				"target_type": "taxonomy_term",
+				"_entity": {"name": [{"value": "Alex Rivera"}]}
+			},
+			{
+				"target_id": 2,
+				"rel_type": "relators:ths",
+				"target_type": "taxonomy_term",
+				"_entity": {"name": [{"value": "Jordan Lee"}]}
+			}
+		]
+	}`
+
+	drupalFmt := &drupal.Format{}
+	records, err := drupalFmt.Parse(bytes.NewReader([]byte(drupalJSON)), format.NewParseOptions())
+	if err != nil {
+		t.Fatalf("parsing drupal JSON: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+
+	cslFmt := &csl.Format{}
+	var buf bytes.Buffer
+	if err := cslFmt.Serialize(&buf, records, format.NewSerializeOptions()); err != nil {
+		t.Fatalf("serializing to CSL: %v", err)
+	}
+
+	var item map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &item); err != nil {
+		t.Fatalf("parsing CSL JSON output: %v", err)
+	}
+
+	authors, _ := item["author"].([]any)
+	if len(authors) != 1 {
+		t.Fatalf("CSL author count = %d, want 1", len(authors))
+	}
+
+	author, _ := authors[0].(map[string]any)
+	family, _ := author["family"].(string)
+	if family != "Rivera" {
+		t.Errorf("author family = %q, want %q", family, "Rivera")
+	}
+}
