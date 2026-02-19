@@ -450,13 +450,116 @@ func authoritySourceToVocabulary(source string) hubv1.SubjectVocabulary {
 
 func resourceTypeFromGenreAuthorityURI(uri string) (hubv1.ResourceTypeValue, bool) {
 	switch normalizeAuthorityURI(uri) {
+	// Theses and dissertations
 	case "http://vocab.getty.edu/page/aat/300028029",
 		"http://vocab.getty.edu/page/aat/300028028":
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_THESIS, true
+
+	// Articles
 	case "http://vocab.getty.edu/page/aat/300048715":
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, true
+
+	// Dataset
 	case "http://id.loc.gov/authorities/genreforms/gf2018026119":
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET, true
+
+	// Maps and atlases
+	case "http://vocab.getty.edu/page/aat/300028053", // atlases
+		"http://vocab.getty.edu/page/aat/300028233", // historical maps
+		"http://vocab.getty.edu/page/aat/300028217", // mine maps
+		"http://vocab.getty.edu/page/aat/300028273": // public utility maps
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_MAP, true
+
+	// Audio / video
+	case "http://vocab.getty.edu/page/aat/300310137": // podcasts
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_AUDIO, true
+	case "http://vocab.getty.edu/page/aat/300375156", // documentary film
+		"http://vocab.getty.edu/page/aat/300310110": // streaming video
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_VIDEO, true
+
+	// Periodicals / serials
+	case "http://vocab.getty.edu/page/aat/300215390", // journals (periodicals)
+		"http://vocab.getty.edu/page/aat/300215389", // magazines (periodicals)
+		"http://vocab.getty.edu/page/aat/300026657", // periodicals
+		"http://vocab.getty.edu/page/aat/300311679", // bulletins
+		"http://vocab.getty.edu/page/aat/300026652": // newsletters
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_PERIODICAL, true
+
+	// Reports
+	case "http://vocab.getty.edu/page/aat/300027268", // administrative reports
+		"http://vocab.getty.edu/page/aat/300027292", // annual reports
+		"http://vocab.getty.edu/page/aat/300027299", // comprehensive plans (reports)
+		"http://vocab.getty.edu/page/aat/300045075", // financial statements
+		"http://vocab.getty.edu/page/aat/300027297", // plans (reports)
+		"http://vocab.getty.edu/page/aat/300027267", // reports
+		"http://vocab.getty.edu/page/aat/300027323": // technical reports
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT, true
+
+	// Presentations / lectures / speeches
+	case "http://vocab.getty.edu/page/aat/300258677", // presentations (communicative events)
+		"http://vocab.getty.edu/page/aat/300026673", // lectures
+		"http://vocab.getty.edu/page/aat/300026671", // speeches (documents)
+		"http://vocab.getty.edu/page/aat/300027204": // lecture notes
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_PRESENTATION, true
+
+	// Posters and related visual communication
+	case "http://vocab.getty.edu/page/aat/300426530", // instructional poster
+		"http://vocab.getty.edu/page/aat/300434609": // theater poster
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_POSTER, true
+
+	// Book-like long-form textual works
+	case "http://vocab.getty.edu/page/aat/300080102", // biographies (literary works)
+		"http://vocab.getty.edu/page/aat/300202580", // novels
+		"http://vocab.getty.edu/page/aat/300220572", // pamphlets
+		"http://vocab.getty.edu/page/aat/300028024", // school yearbook/yearbooks
+		"http://vocab.getty.edu/page/aat/300060422", // collected works
+		"http://vocab.getty.edu/page/aat/300163404", // reference sources
+		"http://vocab.getty.edu/page/aat/300026554", // indexes (reference sources)
+		"http://vocab.getty.edu/page/aat/300252008", // chronologies (lists)
+		"http://vocab.getty.edu/page/aat/300026059", // catalogs (documents)
+		"http://vocab.getty.edu/page/aat/300026096": // exhibition catalogs
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_BOOK, true
+
+	// Article-like short textual works
+	case "http://vocab.getty.edu/page/aat/300026284", // editorials
+		"http://vocab.getty.edu/page/aat/300026291", // essays
+		"http://vocab.getty.edu/page/aat/300026480", // reviews (documents)
+		"http://vocab.getty.edu/page/aat/300026707", // announcements
+		"http://vocab.getty.edu/page/aat/300417367": // exhibition announcements
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, true
+
+	// Archival/manuscript-like document forms
+	case "http://vocab.getty.edu/page/aat/300027112", // diaries
+		"http://vocab.getty.edu/page/aat/300264354", // notebooks
+		"http://vocab.getty.edu/page/aat/300027201", // field notes
+		"http://vocab.getty.edu/page/aat/300026916", // business letters
+		"http://vocab.getty.edu/page/aat/300026879", // letters (correspondence)
+		"http://vocab.getty.edu/page/aat/300027440", // minutes (administrative records)
+		"http://vocab.getty.edu/page/aat/300027772", // corporation records
+		"http://vocab.getty.edu/page/aat/300027777", // government records
+		"http://vocab.getty.edu/page/aat/300026992", // organization files
+		"http://vocab.getty.edu/page/aat/300027764", // wills
+		"http://vocab.getty.edu/page/aat/300312154": // extracts (partial documents)
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_MANUSCRIPT, true
+
+	// Generic textual/other documents
+	case "http://vocab.getty.edu/page/aat/300417822", // academic addresses (documents)
+		"http://vocab.getty.edu/page/aat/300027628", // agreements
+		"http://vocab.getty.edu/page/aat/300026256", // alumni directories
+		"http://vocab.getty.edu/page/aat/300248280", // brochures
+		"http://vocab.getty.edu/page/aat/300026741", // calendars (documents)
+		"http://vocab.getty.edu/page/aat/300026769", // catalog cards
+		"http://vocab.getty.edu/page/aat/300417647", // endowments (legal property)
+		"http://vocab.getty.edu/page/aat/300047896", // installations (visual works)
+		"http://vocab.getty.edu/page/aat/300027083", // invitations
+		"http://vocab.getty.edu/page/aat/300027889", // legislative acts
+		"http://vocab.getty.edu/page/aat/300251993", // local histories
+		"http://vocab.getty.edu/page/aat/300379015", // memorial services
+		"http://vocab.getty.edu/page/aat/300027240", // programs (documents)
+		"http://vocab.getty.edu/page/aat/300026427", // scores (documents for music)
+		"http://vocab.getty.edu/page/aat/300027217", // theater programs
+		"http://vocab.getty.edu/page/aat/300026676": // testimonials
+		return hubv1.ResourceTypeValue_RESOURCE_TYPE_TEXT, true
 	default:
 		return hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED, false
 	}

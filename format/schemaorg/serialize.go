@@ -52,6 +52,16 @@ func recordToSchemaOrg(record *hubv1.Record) (any, error) {
 		return recordToCollection(record), nil
 	case TypeThesis:
 		return recordToThesis(record), nil
+	case TypeReport:
+		return recordToCreativeWork(record, schemaType), nil
+	case TypePeriodical:
+		return recordToCreativeWork(record, schemaType), nil
+	case TypeMap:
+		return recordToCreativeWork(record, schemaType), nil
+	case TypePoster:
+		return recordToCreativeWork(record, schemaType), nil
+	case TypePresentationDoc:
+		return recordToCreativeWork(record, schemaType), nil
 	case TypeDigitalDocument:
 		return recordToDigitalDocument(record), nil
 	case TypeManuscript:
@@ -100,7 +110,16 @@ func determineSchemaType(record *hubv1.Record) SchemaType {
 
 	case hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT,
 		hubv1.ResourceTypeValue_RESOURCE_TYPE_TECHNICAL_REPORT:
-		return TypeDigitalDocument
+		return TypeReport
+
+	case hubv1.ResourceTypeValue_RESOURCE_TYPE_MAP:
+		return TypeMap
+
+	case hubv1.ResourceTypeValue_RESOURCE_TYPE_POSTER:
+		return TypePoster
+
+	case hubv1.ResourceTypeValue_RESOURCE_TYPE_PRESENTATION:
+		return TypePresentationDoc
 
 	case hubv1.ResourceTypeValue_RESOURCE_TYPE_MANUSCRIPT:
 		return TypeManuscript
@@ -116,7 +135,7 @@ func determineSchemaType(record *hubv1.Record) SchemaType {
 
 	case hubv1.ResourceTypeValue_RESOURCE_TYPE_PERIODICAL,
 		hubv1.ResourceTypeValue_RESOURCE_TYPE_JOURNAL:
-		return TypePublicationVolume
+		return TypePeriodical
 
 	default:
 		return TypeCreativeWork
@@ -128,7 +147,7 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 	cw := CreativeWork{
 		Thing: Thing{
 			Context: "https://schema.org",
-			Type:    schemaType,
+			Type:    schemaTypeWithGoogleFallback(schemaType),
 		},
 	}
 
@@ -260,6 +279,17 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 	}
 
 	return cw
+}
+
+func schemaTypeWithGoogleFallback(schemaType SchemaType) any {
+	// Keep a broadly supported fallback type for schema.org classes that are
+	// commonly not consumed by Google rich results.
+	switch schemaType {
+	case TypeReport, TypePeriodical, TypeMap, TypePoster, TypePresentationDoc:
+		return []string{string(schemaType), string(TypeCreativeWork)}
+	default:
+		return schemaType
+	}
 }
 
 // categorizeContributors splits contributors by role.
