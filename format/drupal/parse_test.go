@@ -116,3 +116,51 @@ func TestParseResourceTypeFromAuthorityURIWhenGenreMappedAsResourceType(t *testi
 		t.Fatalf("resource type = %v, want ARTICLE", r.ResourceType)
 	}
 }
+
+func TestParseGenreAuthorityNotClobberedByUnresolvedResourceType(t *testing.T) {
+	input := `{
+		"title": [{"value": "Test"}],
+		"field_resource_type": [{
+			"target_id": 11,
+			"target_type": "taxonomy_term"
+		}],
+		"field_genre": [{
+			"target_id": 2026,
+			"target_type": "taxonomy_term",
+			"_entity": {
+				"name": [{"value": "dissertations"}],
+				"field_authority_link": [{
+					"uri": "http://vocab.getty.edu/page/aat/300028029",
+					"title": "",
+					"source": "aat"
+				}]
+			}
+		}]
+	}`
+
+	p := &mapping.Profile{
+		Name:   "test",
+		Format: "drupal",
+		Fields: map[string]mapping.FieldMapping{
+			"title":               {IR: "Title"},
+			"field_resource_type": {IR: "ResourceType", Resolve: "taxonomy_term"},
+			"field_genre":         {IR: "Genre", Resolve: "taxonomy_term"},
+		},
+	}
+
+	f := &Format{}
+	// Parse repeatedly to exercise randomized map iteration order.
+	for i := 0; i < 100; i++ {
+		records, err := f.Parse(strings.NewReader(input), &format.ParseOptions{Profile: p})
+		if err != nil {
+			t.Fatalf("Parse failed on iteration %d: %v", i, err)
+		}
+		if len(records) != 1 {
+			t.Fatalf("iteration %d: expected 1 record, got %d", i, len(records))
+		}
+		r := records[0]
+		if r.ResourceType == nil || r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE {
+			t.Fatalf("iteration %d: resource type = %v, want ARTICLE", i, r.ResourceType)
+		}
+	}
+}

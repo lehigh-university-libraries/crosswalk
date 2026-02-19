@@ -363,7 +363,15 @@ func processResourceType(record *hubv1.Record, rawValue json.RawMessage, fieldMa
 
 	val := resolveEntityRef(rawValue, fieldMapping, opts)
 	if val != "" {
-		record.ResourceType = hub.NewResourceType(val, "")
+		candidate := hub.NewResourceType(val, "")
+		// Avoid clobbering a specific type (e.g., inferred from genre authority URI)
+		// with an unresolved/unspecified fallback value (e.g., raw taxonomy ID "11").
+		if record.ResourceType != nil &&
+			record.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED &&
+			candidate.Type == hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED {
+			return false, nil
+		}
+		record.ResourceType = candidate
 		return true, nil
 	}
 	return false, nil
