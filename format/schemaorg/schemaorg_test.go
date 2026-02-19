@@ -164,8 +164,15 @@ func TestSerializeThesis(t *testing.T) {
 		t.Fatalf("Invalid JSON output: %v", err)
 	}
 
-	if doc["@type"] != "Thesis" {
-		t.Errorf("Expected @type 'Thesis', got %v", doc["@type"])
+	rawType, ok := doc["@type"].([]any)
+	if !ok {
+		t.Fatalf("Expected @type array, got %T (%v)", doc["@type"], doc["@type"])
+	}
+	if len(rawType) != 2 {
+		t.Fatalf("Expected @type length 2, got %d (%v)", len(rawType), rawType)
+	}
+	if rawType[0] != "ScholarlyArticle" || rawType[1] != "Thesis" {
+		t.Errorf("Expected @type [ScholarlyArticle Thesis], got %v", rawType)
 	}
 }
 
