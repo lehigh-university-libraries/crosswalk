@@ -142,6 +142,40 @@ func TestSerializeDataset(t *testing.T) {
 	}
 }
 
+func TestSerializeDatasetAbstractMapsToDescription(t *testing.T) {
+	record := &hubv1.Record{
+		Title:    "Dataset With Abstract",
+		Abstract: "Dataset summary text.",
+		ResourceType: &hubv1.ResourceType{
+			Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET,
+		},
+	}
+
+	f := &Format{}
+	var buf bytes.Buffer
+	opts := &format.SerializeOptions{Pretty: true}
+
+	err := f.Serialize(&buf, []*hubv1.Record{record}, opts)
+	if err != nil {
+		t.Fatalf("Serialize failed: %v", err)
+	}
+
+	var doc map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+		t.Fatalf("Invalid JSON output: %v", err)
+	}
+
+	if doc["@type"] != "Dataset" {
+		t.Fatalf("Expected @type Dataset, got %v", doc["@type"])
+	}
+	if doc["description"] != "Dataset summary text." {
+		t.Errorf("Expected description from abstract, got %v", doc["description"])
+	}
+	if _, ok := doc["abstract"]; ok {
+		t.Errorf("Did not expect abstract field for dataset when mapped to description")
+	}
+}
+
 func TestSerializeThesis(t *testing.T) {
 	record := &hubv1.Record{
 		Title: "Test Thesis",
