@@ -210,6 +210,49 @@ func TestSerializeThesis(t *testing.T) {
 	}
 }
 
+func TestSerializeAdditionalSchemaTypes(t *testing.T) {
+	tests := []struct {
+		name string
+		rt   hubv1.ResourceTypeValue
+		want string
+	}{
+		{name: "map", rt: hubv1.ResourceTypeValue_RESOURCE_TYPE_MAP, want: "Map"},
+		{name: "periodical", rt: hubv1.ResourceTypeValue_RESOURCE_TYPE_PERIODICAL, want: "Periodical"},
+		{name: "report", rt: hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT, want: "Report"},
+		{name: "presentation", rt: hubv1.ResourceTypeValue_RESOURCE_TYPE_PRESENTATION, want: "PresentationDigitalDocument"},
+		{name: "poster", rt: hubv1.ResourceTypeValue_RESOURCE_TYPE_POSTER, want: "Poster"},
+	}
+
+	f := &Format{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			record := &hubv1.Record{
+				Title: "Type Test",
+				ResourceType: &hubv1.ResourceType{
+					Type: tt.rt,
+				},
+			}
+
+			var buf bytes.Buffer
+			if err := f.Serialize(&buf, []*hubv1.Record{record}, &format.SerializeOptions{Pretty: true}); err != nil {
+				t.Fatalf("Serialize failed: %v", err)
+			}
+
+			var doc map[string]any
+			if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+				t.Fatalf("Invalid JSON output: %v", err)
+			}
+			gotTypes, ok := doc["@type"].([]any)
+			if !ok || len(gotTypes) != 2 {
+				t.Fatalf("Expected @type array of length 2, got %T (%v)", doc["@type"], doc["@type"])
+			}
+			if gotTypes[0] != tt.want || gotTypes[1] != "CreativeWork" {
+				t.Fatalf("Expected @type [%q CreativeWork], got %v", tt.want, gotTypes)
+			}
+		})
+	}
+}
+
 func TestParseScholarlyArticle(t *testing.T) {
 	input := `{
 		"@context": "https://schema.org",

@@ -21,6 +21,14 @@ func TestResourceTypeFromGenreAuthorityURI(t *testing.T) {
 		{name: "article uri 300048715", uri: "http://vocab.getty.edu/page/aat/300048715", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, match: true},
 		{name: "article uri 300048715 with trailing slash", uri: "http://vocab.getty.edu/page/aat/300048715/", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, match: true},
 		{name: "dataset loc genreform", uri: "http://id.loc.gov/authorities/genreForms/gf2018026119", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET, match: true},
+		{name: "map atlas", uri: "http://vocab.getty.edu/page/aat/300028053", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_MAP, match: true},
+		{name: "periodical journal", uri: "http://vocab.getty.edu/page/aat/300215390", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_PERIODICAL, match: true},
+		{name: "report", uri: "http://vocab.getty.edu/page/aat/300027267", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_REPORT, match: true},
+		{name: "presentation", uri: "http://vocab.getty.edu/page/aat/300258677", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_PRESENTATION, match: true},
+		{name: "poster", uri: "http://vocab.getty.edu/page/aat/300426530", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_POSTER, match: true},
+		{name: "manuscript letters", uri: "http://vocab.getty.edu/page/aat/300026879", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_MANUSCRIPT, match: true},
+		{name: "book-like novel", uri: "http://vocab.getty.edu/page/aat/300202580", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_BOOK, match: true},
+		{name: "generic text", uri: "http://vocab.getty.edu/page/aat/300417822", want: hubv1.ResourceTypeValue_RESOURCE_TYPE_TEXT, match: true},
 		{name: "unmapped", uri: "http://example.org/not-mapped", match: false},
 	}
 
