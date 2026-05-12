@@ -61,11 +61,18 @@ CSV          →   column mappings → (normalized) →     field rules   →  C
 | BibTeX              | ✓     | ✓         |
 | CSL-JSON            | ✓     | ✓         |
 | MODS XML            | ✓     | ✓         |
+| MARC21              | ✓     | ✓         |
 | Dublin Core         | ✓     | ✓         |
 | arXiv               | ✓     | ✓         |
 | Islandora Workbench | ✓     | ✓         |
 | Web of Science      | planned | planned |
 | Scopus              | planned | planned |
+
+### MARC21
+
+MARC support consumes `github.com/hectorcorrea/marcli/pkg/marc` directly as the tag/subfield record model and maps between that model and the Hub record. There is intentionally no `spoke/marc` proto: a proto would duplicate the external package's dynamic MARC structure without improving conversion. Add a MARC proto later only if we need generated annotation-based mappings or schema-visible MARC fields.
+
+MARC serialization defaults to binary ISO 2709. Use `--pretty` when converting to `marc` to write readable MARCXML.
 
 Have an idea for a new format? Issues and Pull Requests welcome!
 

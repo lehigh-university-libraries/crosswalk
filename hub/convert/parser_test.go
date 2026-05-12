@@ -280,6 +280,9 @@ func TestParseRelator(t *testing.T) {
 	}{
 		{"author term", "author", "aut"},
 		{"editor term", "editor", "edt"},
+		{"interviewer term", "interviewer", "ivr"},
+		{"prefixed relator code", "relators:ive", "ive"},
+		{"full relator uri", "http://id.loc.gov/vocabulary/relators/ths", "ths"},
 		{"already code", "aut", "aut"},
 		{"uppercase code", "AUT", "aut"},
 		{"unknown", "unknown_role", "unknown_role"},

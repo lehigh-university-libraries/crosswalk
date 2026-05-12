@@ -16,8 +16,8 @@ clean: ## Clean generated files
 	rm -f crosswalk
 	@echo "Done"
 
-fmt: ## Format all go code the CLI
-	find . -type f -name "*.go" -exec gofmt -w {} \;
+fmt: ## Format all go code
+	gofmt -w **/*.go
 
 generate: ## Generate Go code and JSON Schema from .proto files
 	@echo "Generating protobuf code..."
@@ -42,3 +42,4 @@ lint: ## Lint proto files and Go code
 
 test: ## Run all tests
 	go test -v -race ./...
+

@@ -22,6 +22,7 @@ import (
 	_ "github.com/lehigh-university-libraries/crosswalk/format/csl"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/datacite"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/dublincore"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/marc"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/mods"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/proquest"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/schemaorg"
