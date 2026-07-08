@@ -1,9 +1,11 @@
 package crossref
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 
@@ -11,6 +13,16 @@ import (
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	crossrefv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/crossref/v5_3_1"
 )
+
+const (
+	gettyArticleURI       = "http://vocab.getty.edu/page/aat/300048715"
+	gettyJournalURI       = "http://vocab.getty.edu/page/aat/300215390"
+	gettyIssueURI         = "http://vocab.getty.edu/page/aat/300312349"
+	gettyVolumeURI        = "http://vocab.getty.edu/page/aat/300265632"
+	gettyUnboundVolumeURI = "http://vocab.getty.edu/page/aat/300417904"
+)
+
+var doiWhitespaceRE = regexp.MustCompile(`\s+`)
 
 // Serialize writes hub records as CrossRef deposit XML.
 func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.SerializeOptions) error {
@@ -58,6 +70,14 @@ func hubToSpoke(records []*hubv1.Record, opts *format.SerializeOptions) (*crossr
 	for _, record := range records {
 		// Determine content type from resource type
 		if record.ResourceType == nil {
+			if rel := findJournalParentRelation(record); rel != nil {
+				addJournalArticle(deposit, record, rel, opts)
+			}
+			continue
+		}
+
+		if rel := findJournalParentRelation(record); rel != nil {
+			addJournalArticle(deposit, record, rel, opts)
 			continue
 		}
 
@@ -84,6 +104,294 @@ func hubToSpoke(records []*hubv1.Record, opts *format.SerializeOptions) (*crossr
 	}
 
 	return deposit, nil
+}
+
+func addJournalArticle(deposit *crossrefv1.Deposit, record *hubv1.Record, rel *hubv1.Relation, opts *format.SerializeOptions) {
+	context := journalContextFromRelation(rel)
+	if context.Issue != nil && context.Issue.PublicationDate == nil {
+		context.Issue.PublicationDate = publicationDateFromRecord(record)
+	}
+	key := context.JournalResource
+	if key == "" {
+		key = context.JournalTitle
+	}
+
+	for _, journal := range deposit.Body.Journal {
+		if journal.JournalMetadata == nil {
+			continue
+		}
+		journalKey := journal.JournalMetadata.FullTitle
+		if journal.JournalMetadata.DoiData != nil && journal.JournalMetadata.DoiData.Resource != "" {
+			journalKey = journal.JournalMetadata.DoiData.Resource
+		}
+		if journalKey == key {
+			if context.Issue != nil {
+				addJournalIssue(journal, context.Issue)
+			}
+			journal.JournalArticle = append(journal.JournalArticle, buildJournalArticle(record, opts))
+			return
+		}
+	}
+
+	journal := &crossrefv1.Journal{
+		JournalMetadata: buildJournalMetadataFromContext(context),
+		JournalArticle:  []*crossrefv1.JournalArticle{buildJournalArticle(record, opts)},
+	}
+	if context.Issue != nil {
+		journal.JournalIssue = append(journal.JournalIssue, context.Issue)
+	}
+	deposit.Body.Journal = append(deposit.Body.Journal, journal)
+}
+
+func addJournalIssue(journal *crossrefv1.Journal, issue *crossrefv1.JournalIssue) {
+	if issue == nil {
+		return
+	}
+	key := ""
+	if issue.DoiData != nil {
+		key = issue.DoiData.Resource
+		if key == "" {
+			key = issue.DoiData.Doi
+		}
+	}
+	if key == "" {
+		key = issue.Volume + ":" + issue.Issue
+	}
+	for _, existing := range journal.JournalIssue {
+		existingKey := ""
+		if existing.DoiData != nil {
+			existingKey = existing.DoiData.Resource
+			if existingKey == "" {
+				existingKey = existing.DoiData.Doi
+			}
+		}
+		if existingKey == "" {
+			existingKey = existing.Volume + ":" + existing.Issue
+		}
+		if existingKey == key {
+			return
+		}
+	}
+	journal.JournalIssue = append(journal.JournalIssue, issue)
+}
+
+func buildJournalMetadataFromContext(context journalContext) *crossrefv1.JournalMetadata {
+	return &crossrefv1.JournalMetadata{
+		FullTitle: context.JournalTitle,
+		DoiData: &crossrefv1.DoiData{
+			Doi:      context.JournalDOI,
+			Resource: context.JournalResource,
+		},
+	}
+}
+
+func journalContextFromRelation(rel *hubv1.Relation) journalContext {
+	meta := relationMetadata(rel)
+	current := relationNodeFromRelation(rel, meta)
+	context := journalContext{
+		JournalTitle:    current.Title,
+		JournalDOI:      current.DOI,
+		JournalResource: current.Resource,
+	}
+
+	switch {
+	case current.hasGenre(gettyJournalURI):
+		return context
+	case current.hasGenre(gettyIssueURI):
+		context.Issue = current.toJournalIssue()
+		if current.Parent != nil {
+			parent := current.Parent
+			context.JournalTitle = parent.Title
+			context.JournalDOI = parent.DOI
+			context.JournalResource = parent.Resource
+		}
+	case current.hasGenre(gettyVolumeURI) || current.hasGenre(gettyUnboundVolumeURI):
+		return context
+	default:
+		if current.Parent != nil {
+			parent := current.Parent
+			if parent.hasGenre(gettyJournalURI) || parent.hasGenre(gettyVolumeURI) || parent.hasGenre(gettyUnboundVolumeURI) {
+				context.JournalTitle = parent.Title
+				context.JournalDOI = parent.DOI
+				context.JournalResource = parent.Resource
+			}
+		}
+	}
+
+	return context
+}
+
+type journalContext struct {
+	JournalTitle    string
+	JournalDOI      string
+	JournalResource string
+	Issue           *crossrefv1.JournalIssue
+}
+
+func relationNodeFromRelation(rel *hubv1.Relation, meta relationMeta) relationNode {
+	node := relationNode{
+		Title:    meta.Title,
+		DOI:      meta.DOI,
+		Resource: meta.Resource,
+		Genres:   meta.Genres,
+	}
+	if node.Title == "" && rel != nil {
+		node.Title = rel.TargetTitle
+	}
+	if node.Resource == "" && rel != nil {
+		node.Resource = rel.TargetUri
+	}
+	if meta.Parent != nil {
+		node.Parent = relationNodeFromMeta(*meta.Parent)
+	}
+	return node
+}
+
+func relationNodeFromMeta(meta relationMeta) *relationNode {
+	node := &relationNode{
+		Title:    meta.Title,
+		DOI:      meta.DOI,
+		Resource: meta.Resource,
+		Genres:   meta.Genres,
+	}
+	if meta.Parent != nil {
+		node.Parent = relationNodeFromMeta(*meta.Parent)
+	}
+	return node
+}
+
+type relationNode struct {
+	Title    string
+	DOI      string
+	Resource string
+	Genres   []string
+	Parent   *relationNode
+}
+
+func (n relationNode) hasGenre(uri string) bool {
+	for _, genre := range n.Genres {
+		if normalizeAuthorityURI(genre) == uri {
+			return true
+		}
+	}
+	return false
+}
+
+func (n relationNode) toJournalIssue() *crossrefv1.JournalIssue {
+	return &crossrefv1.JournalIssue{
+		DoiData: &crossrefv1.DoiData{
+			Doi:      n.DOI,
+			Resource: n.Resource,
+		},
+	}
+}
+
+func buildJournalArticle(record *hubv1.Record, opts *format.SerializeOptions) *crossrefv1.JournalArticle {
+	article := &crossrefv1.JournalArticle{
+		Titles:       buildTitles(record),
+		Contributors: buildContributors(record.Contributors),
+		Abstract:     record.Abstract,
+		DoiData:      buildDoiData(record),
+	}
+	if opts != nil {
+		article.CitationList = buildCitationList(opts.ReferenceDOIs)
+	}
+
+	article.PublicationDate = publicationDateFromRecord(record)
+
+	return article
+}
+
+func publicationDateFromRecord(record *hubv1.Record) *crossrefv1.PublicationDate {
+	for _, d := range record.Dates {
+		if d.Type == hubv1.DateType_DATE_TYPE_ISSUED || d.Type == hubv1.DateType_DATE_TYPE_PUBLISHED {
+			return buildPublicationDate(d)
+		}
+	}
+	return nil
+}
+
+func findJournalParentRelation(record *hubv1.Record) *hubv1.Relation {
+	if !isJournalArticleLike(record) {
+		return nil
+	}
+
+	for _, rel := range record.Relations {
+		if rel.Type == hubv1.RelationType_RELATION_TYPE_MEMBER_OF ||
+			rel.Type == hubv1.RelationType_RELATION_TYPE_PART_OF {
+			return rel
+		}
+	}
+
+	return nil
+}
+
+func isJournalArticleLike(record *hubv1.Record) bool {
+	for _, genre := range record.Genres {
+		switch normalizeAuthorityURI(genre.Uri) {
+		case gettyArticleURI, gettyVolumeURI, gettyUnboundVolumeURI:
+			return true
+		}
+	}
+	return false
+}
+
+type relationMeta struct {
+	Source   string        `json:"source,omitempty"`
+	Title    string        `json:"title,omitempty"`
+	DOI      string        `json:"doi,omitempty"`
+	Resource string        `json:"resource,omitempty"`
+	Genres   []string      `json:"genres,omitempty"`
+	Parent   *relationMeta `json:"parent,omitempty"`
+}
+
+func relationMetadata(rel *hubv1.Relation) relationMeta {
+	var meta relationMeta
+	if rel == nil || rel.Description == "" {
+		return meta
+	}
+	_ = json.Unmarshal([]byte(rel.Description), &meta)
+	return meta
+}
+
+func normalizeAuthorityURI(uri string) string {
+	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(uri)), "/")
+}
+
+func buildCitationList(referenceDOIs []string) *crossrefv1.CitationList {
+	if len(referenceDOIs) == 0 {
+		return nil
+	}
+	citations := &crossrefv1.CitationList{}
+	seen := make(map[string]bool)
+	for _, raw := range referenceDOIs {
+		doi := NormalizeReferenceDOI(raw)
+		if doi == "" || seen[doi] {
+			continue
+		}
+		seen[doi] = true
+		citations.Citation = append(citations.Citation, &crossrefv1.Citation{
+			Key: fmt.Sprintf("ref%d", len(citations.Citation)+1),
+			Doi: doi,
+		})
+	}
+	if len(citations.Citation) == 0 {
+		return nil
+	}
+	return citations
+}
+
+func NormalizeReferenceDOI(raw string) string {
+	doi := strings.TrimSpace(raw)
+	doi = strings.TrimPrefix(doi, "https://doi.org/")
+	doi = strings.TrimPrefix(doi, "http://doi.org/")
+	doi = strings.TrimPrefix(doi, "doi.org/")
+	doi = strings.TrimPrefix(doi, "https://dx.doi.org/")
+	doi = strings.TrimPrefix(doi, "http://dx.doi.org/")
+	doi = strings.TrimPrefix(doi, "dx.doi.org/")
+	doi = strings.TrimPrefix(doi, "doi:")
+	doi = doiWhitespaceRE.ReplaceAllString(doi, "")
+	return strings.TrimSpace(doi)
 }
 
 func buildDissertation(record *hubv1.Record) *crossrefv1.Dissertation {
@@ -319,6 +627,11 @@ func spokeToXML(spoke *crossrefv1.Deposit) *XMLDeposit {
 
 	deposit.Body = &XMLBody{}
 
+	for _, journal := range spoke.Body.Journal {
+		xmlJournal := journalToXML(journal)
+		deposit.Body.Journal = append(deposit.Body.Journal, xmlJournal)
+	}
+
 	// Dissertations
 	for _, diss := range spoke.Body.Dissertation {
 		xmlDiss := dissertationToXML(diss)
@@ -332,9 +645,12 @@ func spokeToXML(spoke *crossrefv1.Deposit) *XMLDeposit {
 	}
 
 	// Datasets
-	for _, ds := range spoke.Body.Dataset {
-		xmlDS := datasetToXML(ds)
-		deposit.Body.Dataset = append(deposit.Body.Dataset, xmlDS)
+	if len(spoke.Body.Dataset) > 0 {
+		deposit.Body.Database = &XMLDatabase{}
+		for _, ds := range spoke.Body.Dataset {
+			xmlDS := datasetToXML(ds)
+			deposit.Body.Database.Dataset = append(deposit.Body.Database.Dataset, xmlDS)
+		}
 	}
 
 	// Books
@@ -344,6 +660,85 @@ func spokeToXML(spoke *crossrefv1.Deposit) *XMLDeposit {
 	}
 
 	return deposit
+}
+
+func journalToXML(journal *crossrefv1.Journal) *XMLJournal {
+	xmlJournal := &XMLJournal{}
+
+	if journal.JournalMetadata != nil {
+		xmlJournal.JournalMetadata = &XMLJournalMetadata{
+			Language:    "en",
+			FullTitle:   journal.JournalMetadata.FullTitle,
+			AbbrevTitle: journal.JournalMetadata.AbbrevTitle,
+		}
+		if journal.JournalMetadata.IssnPrint != "" {
+			xmlJournal.JournalMetadata.ISSN = append(xmlJournal.JournalMetadata.ISSN, journal.JournalMetadata.IssnPrint)
+		}
+		if journal.JournalMetadata.IssnElectronic != "" {
+			xmlJournal.JournalMetadata.ISSN = append(xmlJournal.JournalMetadata.ISSN, journal.JournalMetadata.IssnElectronic)
+		}
+		if journal.JournalMetadata.DoiData != nil && journal.JournalMetadata.DoiData.Doi != "" {
+			xmlJournal.JournalMetadata.DoiData = doiDataToXML(journal.JournalMetadata.DoiData)
+		}
+	}
+
+	for _, issue := range journal.JournalIssue {
+		xmlIssue := &XMLJournalIssue{
+			Volume: issue.Volume,
+			Issue:  issue.Issue,
+		}
+		if issue.PublicationDate != nil {
+			xmlIssue.PublicationDate = publicationDateToXML(issue.PublicationDate)
+		}
+		if issue.DoiData != nil && issue.DoiData.Doi != "" {
+			xmlIssue.DoiData = doiDataToXML(issue.DoiData)
+		}
+		xmlJournal.JournalIssue = append(xmlJournal.JournalIssue, xmlIssue)
+	}
+
+	for _, article := range journal.JournalArticle {
+		xmlJournal.JournalArticle = append(xmlJournal.JournalArticle, journalArticleToXML(article))
+	}
+
+	return xmlJournal
+}
+
+func journalArticleToXML(article *crossrefv1.JournalArticle) *XMLJournalArticle {
+	xmlArticle := &XMLJournalArticle{
+		PublicationType: "full_text",
+	}
+
+	if article.Titles != nil {
+		xmlArticle.Titles = titlesToXML(article.Titles)
+	}
+	if article.Contributors != nil {
+		xmlArticle.Contributors = contributorsToXML(article.Contributors)
+	}
+	if article.PublicationDate != nil {
+		xmlArticle.PublicationDate = publicationDateToXML(article.PublicationDate)
+	}
+	if article.Abstract != "" {
+		xmlArticle.Abstract = &XMLAbstract{Content: article.Abstract}
+	}
+	if article.DoiData != nil && article.DoiData.Doi != "" {
+		xmlArticle.DoiData = doiDataToXML(article.DoiData)
+	}
+	if article.CitationList != nil && len(article.CitationList.Citation) > 0 {
+		xmlArticle.CitationList = citationListToXML(article.CitationList)
+	}
+
+	return xmlArticle
+}
+
+func citationListToXML(citations *crossrefv1.CitationList) *XMLCitationList {
+	xmlList := &XMLCitationList{}
+	for _, citation := range citations.Citation {
+		xmlList.Citation = append(xmlList.Citation, &XMLCitation{
+			Key: citation.Key,
+			DOI: citation.Doi,
+		})
+	}
+	return xmlList
 }
 
 func dissertationToXML(diss *crossrefv1.Dissertation) *XMLDissertation {
@@ -540,10 +935,55 @@ type XMLDepositor struct {
 }
 
 type XMLBody struct {
+	Journal       []*XMLJournal       `xml:"journal,omitempty"`
 	Dissertation  []*XMLDissertation  `xml:"dissertation,omitempty"`
 	PostedContent []*XMLPostedContent `xml:"posted_content,omitempty"`
-	Dataset       []*XMLDataset       `xml:"database>dataset,omitempty"`
+	Database      *XMLDatabase        `xml:"database,omitempty"`
 	Book          []*XMLBook          `xml:"book,omitempty"`
+}
+
+type XMLDatabase struct {
+	Dataset []*XMLDataset `xml:"dataset,omitempty"`
+}
+
+type XMLJournal struct {
+	JournalMetadata *XMLJournalMetadata  `xml:"journal_metadata,omitempty"`
+	JournalIssue    []*XMLJournalIssue   `xml:"journal_issue,omitempty"`
+	JournalArticle  []*XMLJournalArticle `xml:"journal_article,omitempty"`
+}
+
+type XMLJournalMetadata struct {
+	Language    string      `xml:"language,attr,omitempty"`
+	FullTitle   string      `xml:"full_title,omitempty"`
+	AbbrevTitle string      `xml:"abbrev_title,omitempty"`
+	ISSN        []string    `xml:"issn,omitempty"`
+	DoiData     *XMLDoiData `xml:"doi_data,omitempty"`
+}
+
+type XMLJournalIssue struct {
+	PublicationDate *XMLPublicationDate `xml:"publication_date,omitempty"`
+	Volume          string              `xml:"journal_volume>volume,omitempty"`
+	Issue           string              `xml:"issue,omitempty"`
+	DoiData         *XMLDoiData         `xml:"doi_data,omitempty"`
+}
+
+type XMLJournalArticle struct {
+	PublicationType string              `xml:"publication_type,attr,omitempty"`
+	Titles          *XMLTitles          `xml:"titles,omitempty"`
+	Contributors    *XMLContributors    `xml:"contributors,omitempty"`
+	PublicationDate *XMLPublicationDate `xml:"publication_date,omitempty"`
+	Abstract        *XMLAbstract        `xml:"abstract,omitempty"`
+	DoiData         *XMLDoiData         `xml:"doi_data,omitempty"`
+	CitationList    *XMLCitationList    `xml:"citation_list,omitempty"`
+}
+
+type XMLCitationList struct {
+	Citation []*XMLCitation `xml:"citation,omitempty"`
+}
+
+type XMLCitation struct {
+	Key string `xml:"key,attr,omitempty"`
+	DOI string `xml:"doi,omitempty"`
 }
 
 type XMLDissertation struct {
@@ -609,9 +1049,9 @@ type XMLPersonName struct {
 
 type XMLPublicationDate struct {
 	MediaType string `xml:"media_type,attr,omitempty"`
-	Year      int32  `xml:"year,omitempty"`
 	Month     int32  `xml:"month,omitempty"`
 	Day       int32  `xml:"day,omitempty"`
+	Year      int32  `xml:"year,omitempty"`
 }
 
 type XMLInstitution struct {

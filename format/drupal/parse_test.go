@@ -1,6 +1,7 @@
 package drupal
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -42,6 +43,95 @@ func TestResourceTypeFromGenreAuthorityURI(t *testing.T) {
 				t.Fatalf("resourceTypeFromGenreAuthorityURI(%q) type=%v, want %v", tt.uri, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestParseMemberOfPreservesParentDoiInRelationDescription(t *testing.T) {
+	input := `{
+		"title": [{"value": "Operationalizing Ghana's mobile money reforms"}],
+		"nid": [{"value": 504922}],
+		"path": [{"alias": "/lehigh-scholarship/example"}],
+		"field_member_of": [{
+			"target_id": 453223,
+			"target_type": "node",
+			"url": "/node/453223",
+			"_entity": {
+				"title": [{"value": "Martindale Policy Briefs"}],
+				"uuid": [{"value": "caf1bda2-5b5f-48b0-a607-243439faa3ca"}],
+				"field_genre": [{
+					"target_id": 1,
+					"target_type": "taxonomy_term",
+					"_entity": {
+						"name": [{"value": "journals"}],
+						"field_authority_link": [{
+							"uri": "http://vocab.getty.edu/page/aat/300215390",
+							"source": "aat"
+						}]
+					}
+				}],
+				"field_identifier": [{
+					"attr0": "doi",
+					"value": "10.18275/martindale-pb"
+				}]
+			}
+		}]
+	}`
+
+	p := &mapping.Profile{
+		Name:   "test",
+		Format: "drupal",
+		Fields: map[string]mapping.FieldMapping{
+			"title":           {IR: "Title"},
+			"nid":             {IR: "Extra.nid"},
+			"path":            {IR: "Extra.path"},
+			"field_member_of": {IR: "Relations", RelationType: "member_of", Resolve: "node"},
+		},
+	}
+
+	f := &Format{}
+	records, err := f.Parse(strings.NewReader(input), &format.ParseOptions{
+		Profile: p,
+		BaseURL: "https://preserve.lehigh.edu",
+	})
+	if err != nil {
+		t.Fatalf("Parse failed: %v", err)
+	}
+
+	r := records[0]
+	if len(r.Relations) != 1 {
+		t.Fatalf("expected 1 relation, got %d", len(r.Relations))
+	}
+	if r.Relations[0].TargetTitle != "Martindale Policy Briefs" {
+		t.Fatalf("target title = %q", r.Relations[0].TargetTitle)
+	}
+
+	var meta struct {
+		DOI      string   `json:"doi"`
+		Resource string   `json:"resource"`
+		Genres   []string `json:"genres"`
+	}
+	if err := json.Unmarshal([]byte(r.Relations[0].Description), &meta); err != nil {
+		t.Fatalf("relation description is not JSON: %v", err)
+	}
+	if meta.DOI != "10.18275/martindale-pb" {
+		t.Fatalf("parent DOI = %q", meta.DOI)
+	}
+	if meta.Resource != "https://preserve.lehigh.edu/node/453223" {
+		t.Fatalf("parent resource = %q", meta.Resource)
+	}
+	if len(meta.Genres) != 1 || meta.Genres[0] != "http://vocab.getty.edu/page/aat/300215390" {
+		t.Fatalf("parent genres = %#v", meta.Genres)
+	}
+
+	foundURL := false
+	for _, id := range r.Identifiers {
+		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_URL &&
+			id.Value == "https://preserve.lehigh.edu/node/504922" {
+			foundURL = true
+		}
+	}
+	if !foundURL {
+		t.Fatalf("expected record URL identifier, got %#v", r.Identifiers)
 	}
 }
 

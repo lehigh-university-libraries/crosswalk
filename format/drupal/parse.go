@@ -12,6 +12,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/helpers"
 	"github.com/lehigh-university-libraries/crosswalk/hub"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
+	"github.com/lehigh-university-libraries/crosswalk/value"
 )
 
 // Parse reads Drupal JSON and returns hub records.
@@ -110,6 +111,8 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			priorities[priorityKey] = fieldMapping.Priority
 		}
 	}
+
+	addDrupalResourceIdentifier(record, entity, opts)
 
 	return record, nil
 }
@@ -765,6 +768,10 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 			rel.TargetIdType = hubv1.IdentifierType_IDENTIFIER_TYPE_NID
 		}
 
+		if desc := drupalRelationDescription(ref, rel.TargetUri, opts.BaseURL); desc != "" {
+			rel.Description = desc
+		}
+
 		// Extract target resource type from enriched node data (e.g., Collection, Image)
 		if model, ok := ref.GetNodeModel(); ok {
 			slog.Debug("extracted node model", "targetId", ref.GetTargetID(), "model", model)
@@ -785,6 +792,191 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 	}
 
 	return true, nil
+}
+
+type drupalRelationMetadata struct {
+	Source      string                  `json:"source,omitempty"`
+	Title       string                  `json:"title,omitempty"`
+	DOI         string                  `json:"doi,omitempty"`
+	Resource    string                  `json:"resource,omitempty"`
+	TargetNID   string                  `json:"target_nid,omitempty"`
+	TargetUUID  string                  `json:"target_uuid,omitempty"`
+	TargetAlias string                  `json:"target_alias,omitempty"`
+	Genres      []string                `json:"genres,omitempty"`
+	Parent      *drupalRelationMetadata `json:"parent,omitempty"`
+}
+
+func drupalRelationDescription(ref FieldValue, resource, baseURL string) string {
+	meta := buildDrupalRelationMetadata(ref, resource, baseURL, 0)
+	if meta == nil {
+		return ""
+	}
+
+	b, err := json.Marshal(meta)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func buildDrupalRelationMetadata(ref FieldValue, resource, baseURL string, depth int) *drupalRelationMetadata {
+	if len(ref.Entity) == 0 {
+		return nil
+	}
+
+	var entity map[string]json.RawMessage
+	if err := json.Unmarshal(ref.Entity, &entity); err != nil {
+		return nil
+	}
+
+	meta := drupalRelationMetadata{
+		Source:    "drupal",
+		Title:     titleFromDrupalEntity(entity),
+		DOI:       doiFromDrupalEntity(entity),
+		Resource:  resource,
+		TargetNID: ref.GetTargetID(),
+		Genres:    genreURIsFromDrupalEntity(entity),
+	}
+	if uuidRaw, ok := entity["uuid"]; ok {
+		meta.TargetUUID = valueFromDrupalTextField(uuidRaw)
+	}
+	if pathRaw, ok := entity["path"]; ok {
+		meta.TargetAlias = aliasFromDrupalPath(pathRaw)
+	}
+
+	if depth == 0 {
+		if parent := parentRelationMetadataFromDrupalEntity(entity, baseURL, depth+1); parent != nil {
+			meta.Parent = parent
+		}
+	}
+
+	if meta.Title == "" && meta.DOI == "" && meta.Resource == "" && meta.TargetNID == "" &&
+		meta.TargetUUID == "" && meta.TargetAlias == "" && len(meta.Genres) == 0 && meta.Parent == nil {
+		return nil
+	}
+	return &meta
+}
+
+func parentRelationMetadataFromDrupalEntity(entity map[string]json.RawMessage, baseURL string, depth int) *drupalRelationMetadata {
+	raw, ok := entity["field_member_of"]
+	if !ok {
+		return nil
+	}
+	refs, err := ExtractEntityRefs(raw)
+	if err != nil || len(refs) == 0 {
+		return nil
+	}
+	ref := refs[0]
+	resource := ""
+	if baseURL != "" && ref.TargetURL != "" {
+		resource = strings.TrimSuffix(baseURL, "/") + ref.TargetURL
+	} else if baseURL != "" && ref.GetTargetID() != "" {
+		resource = strings.TrimSuffix(baseURL, "/") + "/node/" + ref.GetTargetID()
+	}
+	return buildDrupalRelationMetadata(ref, resource, baseURL, depth)
+}
+
+func addDrupalResourceIdentifier(record *hubv1.Record, entity DrupalEntity, opts *format.ParseOptions) {
+	if opts == nil || opts.BaseURL == "" || hasIdentifier(record, hubv1.IdentifierType_IDENTIFIER_TYPE_URL) {
+		return
+	}
+
+	resource := ""
+	if raw, ok := entity["nid"]; ok {
+		if nid := valueFromDrupalTextField(raw); nid != "" {
+			resource = strings.TrimSuffix(opts.BaseURL, "/") + "/node/" + nid
+		}
+	}
+	if resource == "" {
+		if raw, ok := entity["path"]; ok {
+			if alias := aliasFromDrupalPath(raw); alias != "" {
+				resource = strings.TrimSuffix(opts.BaseURL, "/") + alias
+			}
+		}
+	}
+	if resource != "" {
+		record.Identifiers = append(record.Identifiers, hub.NewIdentifier(resource, hubv1.IdentifierType_IDENTIFIER_TYPE_URL))
+	}
+}
+
+func hasIdentifier(record *hubv1.Record, idType hubv1.IdentifierType) bool {
+	for _, id := range record.Identifiers {
+		if id.Type == idType && id.Value != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func doiFromDrupalEntity(entity map[string]json.RawMessage) string {
+	raw, ok := entity["field_identifier"]
+	if !ok {
+		return ""
+	}
+
+	attrFields, _ := ExtractAttrFields(raw)
+	for _, field := range attrFields {
+		if strings.EqualFold(field.Attr0, "doi") && field.Value != "" {
+			return field.Value
+		}
+	}
+
+	return ""
+}
+
+func titleFromDrupalEntity(entity map[string]json.RawMessage) string {
+	if raw, ok := entity["title"]; ok {
+		return valueFromDrupalTextField(raw)
+	}
+	if raw, ok := entity["name"]; ok {
+		return valueFromDrupalTextField(raw)
+	}
+	return ""
+}
+
+func genreURIsFromDrupalEntity(entity map[string]json.RawMessage) []string {
+	raw, ok := entity["field_genre"]
+	if !ok {
+		return nil
+	}
+	refs, err := ExtractEntityRefs(raw)
+	if err != nil {
+		return nil
+	}
+	uris := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		if uri, ok := ref.GetAuthorityURI(); ok {
+			uris = append(uris, uri)
+		}
+	}
+	return uris
+}
+
+func valueFromDrupalTextField(raw json.RawMessage) string {
+	var vals []struct {
+		Value any `json:"value"`
+	}
+	if err := json.Unmarshal(raw, &vals); err != nil || len(vals) == 0 {
+		return ""
+	}
+	return value.Text(vals[0].Value)
+}
+
+func aliasFromDrupalPath(raw json.RawMessage) string {
+	var vals []struct {
+		Alias any `json:"alias"`
+	}
+	if err := json.Unmarshal(raw, &vals); err != nil || len(vals) == 0 {
+		return ""
+	}
+	alias := value.Text(vals[0].Alias)
+	if alias == "" || alias == "null" {
+		return ""
+	}
+	if !strings.HasPrefix(alias, "/") {
+		alias = "/" + alias
+	}
+	return alias
 }
 
 func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
