@@ -80,6 +80,10 @@ type SerializeOptions struct {
 	// Pretty enables pretty-printing (for JSON/XML formats)
 	Pretty bool
 
+	// ReferenceDOIs are DOI references to attach to each serialized work when
+	// the target format supports citation lists.
+	ReferenceDOIs []string
+
 	// ExtraWriters holds additional output writers for formats that produce
 	// more than one output file. Keys are format-specific names.
 	// Example: the islandora-workbench format writes an agents CSV to ExtraWriters["agents"].

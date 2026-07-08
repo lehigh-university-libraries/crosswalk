@@ -1,14 +1,19 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
+	crossreffmt "github.com/lehigh-university-libraries/crosswalk/format/crossref"
 	csvfmt "github.com/lehigh-university-libraries/crosswalk/format/csv"
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
@@ -18,7 +23,6 @@ import (
 	// Register all format plugins
 	_ "github.com/lehigh-university-libraries/crosswalk/format/arxiv"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/bibtex"
-	_ "github.com/lehigh-university-libraries/crosswalk/format/crossref"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/csl"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/datacite"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/dublincore"
@@ -32,17 +36,19 @@ import (
 )
 
 var (
-	inputFile     string
-	outputFile    string
-	profileName   string
-	profileFile   string
-	taxonomyFile  string
-	columns       []string
-	multiValueSep string
-	stripHTML     bool
-	pretty        bool
-	baseURL       string
-	enrichDepth   int
+	inputFile                  string
+	outputFile                 string
+	profileName                string
+	profileFile                string
+	taxonomyFile               string
+	columns                    []string
+	multiValueSep              string
+	stripHTML                  bool
+	pretty                     bool
+	baseURL                    string
+	enrichDepth                int
+	referenceDOIs              []string
+	skipReferenceDOIValidation bool
 )
 
 var convertCmd = &cobra.Command{
@@ -87,6 +93,8 @@ func init() {
 	convertCmd.Flags().BoolVar(&pretty, "pretty", false, "Pretty-print JSON output")
 	convertCmd.Flags().StringVar(&baseURL, "base-url", "", "Drupal site base URL for enriching entity references")
 	convertCmd.Flags().IntVar(&enrichDepth, "enrich-depth", 2, "Maximum depth for recursive entity enrichment")
+	convertCmd.Flags().StringSliceVar(&referenceDOIs, "reference-doi", nil, "DOI referenced by this work; repeat or comma-separate")
+	convertCmd.Flags().BoolVar(&skipReferenceDOIValidation, "skip-reference-doi-validation", false, "Do not resolve --reference-doi values with DOI.org before writing output")
 }
 
 func runConvert(cmd *cobra.Command, args []string) (err error) {
@@ -121,6 +129,12 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("enriching input: %w", err)
 		}
 		input = enrichedInput
+	}
+
+	if len(referenceDOIs) > 0 && !skipReferenceDOIValidation {
+		if err := validateReferenceDOIValues(referenceDOIs); err != nil {
+			return err
+		}
 	}
 
 	// Determine output destination
@@ -192,6 +206,7 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 		MultiValueSeparator: multiValueSep,
 		IncludeHeader:       true,
 		Pretty:              pretty,
+		ReferenceDOIs:       referenceDOIs,
 	}
 
 	if len(serializeOpts.Columns) == 0 && toFormat == "csv" {
@@ -200,6 +215,47 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 
 	if err := serializer.Serialize(output, records, serializeOpts); err != nil {
 		return fmt.Errorf("serializing output: %w", err)
+	}
+
+	return nil
+}
+
+type doiHandleResponse struct {
+	ResponseCode int `json:"responseCode"`
+}
+
+func validateReferenceDOIValues(values []string) error {
+	client := &http.Client{Timeout: 10 * time.Second}
+	seen := make(map[string]bool)
+
+	for _, raw := range values {
+		doi := crossreffmt.NormalizeReferenceDOI(raw)
+		if doi == "" || seen[doi] {
+			continue
+		}
+		seen[doi] = true
+
+		handleURL := "https://doi.org/api/handles/" + url.PathEscape(doi)
+		resp, err := client.Get(handleURL)
+		if err != nil {
+			return fmt.Errorf("validating reference DOI %q: %w", doi, err)
+		}
+
+		var handle doiHandleResponse
+		decodeErr := json.NewDecoder(resp.Body).Decode(&handle)
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			return fmt.Errorf("validating reference DOI %q: %w", doi, closeErr)
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return fmt.Errorf("reference DOI %q did not resolve through DOI.org: HTTP %d", doi, resp.StatusCode)
+		}
+		if decodeErr != nil {
+			return fmt.Errorf("validating reference DOI %q: decoding DOI.org response: %w", doi, decodeErr)
+		}
+		if handle.ResponseCode != 1 {
+			return fmt.Errorf("reference DOI %q did not resolve through DOI.org: responseCode %d", doi, handle.ResponseCode)
+		}
 	}
 
 	return nil
