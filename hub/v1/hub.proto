@@ -125,6 +125,17 @@ message SourceInfo {
   string profile = 5;
   // Fields that were placed in 'extra' (for audit purposes)
   repeated string unmapped_fields = 6;
+  // Origin identifies the source system or installation that supplied the
+  // record, independent of the serialization format.
+  string origin = 7;
+  // Source URI is the canonical API or public locator for the source record.
+  string source_uri = 8;
+  // Profile fingerprint identifies the exact immutable mapping contract used
+  // to parse this record. It is populated together with model_fingerprint.
+  string profile_fingerprint = 9;
+  // Model fingerprint identifies the exact source-system schema snapshot to
+  // which the profile was bound.
+  string model_fingerprint = 10;
 }
 
 // Group represents a container with child records.
@@ -299,6 +310,31 @@ message Identifier {
   string value = 2;
   string display = 3;     // Optional human-readable display form
   bool is_preferred = 4;  // Is this the preferred identifier of its type?
+  // Scheme is the open, canonical machine name for the identifier namespace
+  // (for example doi, scopus-eid, or an institution-defined local scheme).
+  // IdentifierType remains a broad interoperability hint; Scheme is the
+  // authoritative discriminator for schemes that are not represented by the
+  // closed enum.
+  string scheme = 5;
+  // Namespace URI scopes the value to its issuing authority or repository.
+  // Repository-local values must have a namespace before reconciliation can
+  // treat them as exact identity evidence.
+  string namespace_uri = 6;
+  // Identity level distinguishes identifiers for a work, one version or
+  // manifestation, a concept spanning versions, or a source-system record.
+  IdentifierIdentityLevel identity_level = 7;
+}
+
+// IdentifierIdentityLevel describes what an identifier identifies. Matching
+// policy can then decide whether equality proves identity at the desired
+// repository granularity.
+enum IdentifierIdentityLevel {
+  IDENTIFIER_IDENTITY_LEVEL_UNSPECIFIED = 0;
+  IDENTIFIER_IDENTITY_LEVEL_WORK = 1;
+  IDENTIFIER_IDENTITY_LEVEL_VERSION = 2;
+  IDENTIFIER_IDENTITY_LEVEL_MANIFESTATION = 3;
+  IDENTIFIER_IDENTITY_LEVEL_CONCEPT = 4;
+  IDENTIFIER_IDENTITY_LEVEL_SOURCE_RECORD = 5;
 }
 
 // IdentifierType represents the type of identifier.
@@ -320,6 +356,7 @@ enum IdentifierType {
   IDENTIFIER_TYPE_ISNI = 14;
   IDENTIFIER_TYPE_REPORT_NUMBER = 15;
   IDENTIFIER_TYPE_CALL_NUMBER = 16;
+  IDENTIFIER_TYPE_WOS = 17; // Web of Science accession number (UT)
 }
 
 // Subject represents a subject, keyword, or topic classification.
@@ -527,6 +564,10 @@ message File {
     int64 size_bytes = 4;
     string description = 5;
     string role = 6; // e.g. "supplemental", "service", "thumbnail"
+    string uri = 7; // Canonical remote resource URI, when no local path exists.
+    string checksum = 8;
+    string checksum_algorithm = 9;
+    string access_url = 10; // Download URL when distinct from the resource URI.
 }
 
 // ArchivalLocation represents physical archival location.

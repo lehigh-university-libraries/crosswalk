@@ -90,6 +90,9 @@ func TestParseJournalArticle(t *testing.T) {
 	for _, id := range r.Identifiers {
 		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_DOI && id.Value == "10.1234/test.2025.001" {
 			foundDOI = true
+			if id.IdentityLevel != hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK {
+				t.Errorf("DOI identity level: got %s, want WORK", id.IdentityLevel)
+			}
 		}
 	}
 	if !foundDOI {

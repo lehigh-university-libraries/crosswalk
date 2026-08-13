@@ -2,13 +2,22 @@ package islandora_workbench
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
+	"math"
+	"sort"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
+	drupalformat "github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	"github.com/lehigh-university-libraries/crosswalk/hub"
+	"github.com/lehigh-university-libraries/crosswalk/profile"
+	"github.com/lehigh-university-libraries/crosswalk/spec"
+	"google.golang.org/protobuf/proto"
 )
 
 const sep = "|"
@@ -17,6 +26,248 @@ const sep = "|"
 type workbenchRow struct {
 	cols   map[string]string
 	agents [][]string
+}
+
+// SerializeDataset writes a dataset as Workbench CSV while retaining an
+// internal hierarchy through Workbench upload IDs, parent IDs, and weights.
+// Flat datasets deliberately use Serialize unchanged so ordinary conversions
+// retain their existing output contract.
+func (f *Format) SerializeDataset(w io.Writer, dataset *format.Dataset, opts *format.SerializeOptions) error {
+	if dataset == nil {
+		return fmt.Errorf("dataset is required")
+	}
+	if err := dataset.Validate(); err != nil {
+		return fmt.Errorf("invalid dataset: %w", err)
+	}
+
+	records := datasetRecords(dataset)
+	if !datasetHasRelationships(dataset) {
+		return f.Serialize(w, records, opts)
+	}
+	if err := validateHierarchySerializationOptions(opts); err != nil {
+		return err
+	}
+
+	prepared, err := prepareHierarchyRecords(dataset, targetMultiValueSeparator(opts))
+	if err != nil {
+		return err
+	}
+	return f.Serialize(w, prepared, opts)
+}
+
+func validateHierarchySerializationOptions(opts *format.SerializeOptions) error {
+	if opts == nil {
+		return nil
+	}
+	required := []struct {
+		hubPath string
+		column  string
+	}{
+		{hubPath: "Extra.id", column: "id"},
+		{hubPath: "Extra.parent_id", column: "parent_id"},
+		{hubPath: "Extra.field_weight", column: "field_weight"},
+	}
+	selected := make(map[string]struct{}, len(opts.Columns))
+	for _, column := range opts.Columns {
+		selected[column] = struct{}{}
+	}
+	if opts.Spec == nil {
+		if len(selected) == 0 {
+			return nil
+		}
+		for _, field := range required {
+			if _, exists := selected[field.column]; !exists {
+				return fmt.Errorf("hierarchical Workbench serialization requires column %q", field.column)
+			}
+		}
+		return nil
+	}
+
+	for _, requiredField := range required {
+		found := false
+		for _, field := range opts.Spec.Target.Fields {
+			if field.Hub != requiredField.hubPath || field.Codec == "ignore" || !field.AppliesTo(opts.Operation) {
+				continue
+			}
+			if len(selected) > 0 {
+				if _, exists := selected[field.Name]; !exists {
+					continue
+				}
+			}
+			found = true
+			break
+		}
+		if !found {
+			return fmt.Errorf("hierarchical Workbench serialization requires an active target field for %q", requiredField.hubPath)
+		}
+	}
+	return nil
+}
+
+func datasetRecords(dataset *format.Dataset) []*hubv1.Record {
+	records := make([]*hubv1.Record, len(dataset.Records))
+	for index, entry := range dataset.Records {
+		records[index] = entry.Record
+	}
+	return records
+}
+
+func datasetHasRelationships(dataset *format.Dataset) bool {
+	for _, node := range dataset.Hierarchy.Nodes {
+		if node.ParentKey != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func prepareHierarchyRecords(dataset *format.Dataset, delimiter string) ([]*hubv1.Record, error) {
+	reserved := make(map[string]string, len(dataset.Records))
+	idByKey := make(map[string]string, len(dataset.Records))
+	for _, entry := range dataset.Records {
+		id, present, err := operationalExtra(entry.Record, "id")
+		if err != nil {
+			return nil, fmt.Errorf("record %q upload ID: %w", entry.Key, err)
+		}
+		if !present || id == "" {
+			continue
+		}
+		if err := validateUploadID(id, delimiter); err != nil {
+			return nil, fmt.Errorf("record %q upload ID %q: %w", entry.Key, id, err)
+		}
+		if previousKey, conflict := reserved[id]; conflict {
+			return nil, fmt.Errorf("records %q and %q use the same upload ID %q", previousKey, entry.Key, id)
+		}
+		reserved[id] = entry.Key
+		idByKey[entry.Key] = id
+	}
+
+	nextID := 1
+	for _, entry := range dataset.Records {
+		if idByKey[entry.Key] != "" {
+			continue
+		}
+		for {
+			candidate := strconv.Itoa(nextID)
+			nextID++
+			if _, exists := reserved[candidate]; exists {
+				continue
+			}
+			reserved[candidate] = entry.Key
+			idByKey[entry.Key] = candidate
+			break
+		}
+	}
+
+	nodeByKey := make(map[string]format.HierarchyNode, len(dataset.Hierarchy.Nodes))
+	for _, node := range dataset.Hierarchy.Nodes {
+		nodeByKey[node.RecordKey] = node
+	}
+
+	prepared := make([]*hubv1.Record, len(dataset.Records))
+	for index, entry := range dataset.Records {
+		node := nodeByKey[entry.Key]
+		parentID := ""
+		if node.ParentKey != "" {
+			parentID = idByKey[node.ParentKey]
+		}
+		if err := verifyHierarchyExtra(entry.Record, entry.Key, "parent_id", parentID); err != nil {
+			return nil, err
+		}
+		weight := strconv.Itoa(node.Position)
+		if err := verifyHierarchyWeight(entry.Record, entry.Key, node.Position); err != nil {
+			return nil, err
+		}
+
+		clone, ok := proto.Clone(entry.Record).(*hubv1.Record)
+		if !ok {
+			return nil, fmt.Errorf("record %q: copying Hub record", entry.Key)
+		}
+		hub.SetExtra(clone, "id", idByKey[entry.Key])
+		if parentID != "" {
+			hub.SetExtra(clone, "parent_id", parentID)
+		}
+		hub.SetExtra(clone, "field_weight", weight)
+		prepared[index] = clone
+	}
+	return prepared, nil
+}
+
+func operationalExtra(record *hubv1.Record, key string) (string, bool, error) {
+	value, present := hub.GetExtra(record, key)
+	if !present {
+		return "", false, nil
+	}
+	switch typed := value.(type) {
+	case string:
+		return typed, true, nil
+	case float64:
+		if math.IsNaN(typed) || math.IsInf(typed, 0) || typed != math.Trunc(typed) {
+			return "", true, fmt.Errorf("must be a string or integer")
+		}
+		return strconv.FormatFloat(typed, 'f', -1, 64), true, nil
+	default:
+		return "", true, fmt.Errorf("must be a string or integer, got %T", value)
+	}
+}
+
+func validateUploadID(id, delimiter string) error {
+	if id == "" {
+		return fmt.Errorf("must not be empty")
+	}
+	if id != strings.TrimSpace(id) {
+		return fmt.Errorf("must not contain surrounding whitespace")
+	}
+	if strings.IndexFunc(id, func(character rune) bool {
+		return unicode.IsSpace(character) || unicode.IsControl(character)
+	}) >= 0 {
+		return fmt.Errorf("must not contain whitespace or control characters")
+	}
+	for index, character := range id {
+		if asciiAlphaNumeric(character) || (index > 0 && strings.ContainsRune("-_.:", character)) {
+			continue
+		}
+		return fmt.Errorf("must start with an ASCII letter or digit and contain only ASCII letters, digits, hyphens, underscores, periods, or colons")
+	}
+	if delimiter != "" && strings.Contains(id, delimiter) {
+		return fmt.Errorf("must not contain the multi-value separator %q", delimiter)
+	}
+	return nil
+}
+
+func asciiAlphaNumeric(character rune) bool {
+	return character >= 'a' && character <= 'z' ||
+		character >= 'A' && character <= 'Z' ||
+		character >= '0' && character <= '9'
+}
+
+func verifyHierarchyExtra(record *hubv1.Record, key, field, expected string) error {
+	actual, present, err := operationalExtra(record, field)
+	if err != nil {
+		return fmt.Errorf("record %q %s: %w", key, field, err)
+	}
+	if !present || actual == "" {
+		return nil
+	}
+	if actual != expected {
+		return fmt.Errorf("record %q %s %q conflicts with dataset hierarchy value %q", key, field, actual, expected)
+	}
+	return nil
+}
+
+func verifyHierarchyWeight(record *hubv1.Record, key string, expected int) error {
+	actual, present, err := operationalExtra(record, "field_weight")
+	if err != nil {
+		return fmt.Errorf("record %q field_weight: %w", key, err)
+	}
+	if !present || actual == "" {
+		return nil
+	}
+	parsed, err := strconv.Atoi(actual)
+	if err != nil || parsed != expected {
+		return fmt.Errorf("record %q field_weight %q conflicts with dataset hierarchy position %d", key, actual, expected)
+	}
+	return nil
 }
 
 // columnOrder defines the canonical column order for Workbench CSV output.
@@ -57,20 +308,93 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 		opts = format.NewSerializeOptions()
 	}
 
+	if opts.Spec == nil {
+		return fmt.Errorf("serializing Islandora Workbench requires a transformation specification")
+	}
+	if err := opts.Spec.Validate(); err != nil {
+		return fmt.Errorf("invalid transformation specification: %w", err)
+	}
+	if err := opts.Spec.ValidateSealed(); err != nil {
+		return fmt.Errorf("unsealed transformation specification: %w", err)
+	}
+	if err := validateArtifactProfileBinding(opts.Spec, opts.SystemProfile); err != nil {
+		return err
+	}
+	if opts.Spec.Target.Format != "islandora-workbench" {
+		return fmt.Errorf("transformation target format %q is not Islandora Workbench", opts.Spec.Target.Format)
+	}
+
+	delimiter := targetMultiValueSeparator(opts)
 	allRows := make([]workbenchRow, 0, len(records))
 	colSeen := make(map[string]bool)
 
-	for _, record := range records {
-		cols, agents := recordToColumns(record)
-		for col, val := range cols {
-			if val != "" {
-				colSeen[col] = true
+	for index, record := range records {
+		if record == nil {
+			return fmt.Errorf("record %d is nil", index+1)
+		}
+		cols, agents, err := recordToColumns(record, delimiter)
+		if err != nil {
+			return fmt.Errorf("record %d: %w", index+1, err)
+		}
+		var profileColumns map[string]string
+		if opts.SystemProfile != nil {
+			var err error
+			profileColumns, err = recordToProfileColumns(record, opts.SystemProfile, opts.Spec, delimiter)
+			if err != nil {
+				return fmt.Errorf("record %d: %w", index+1, err)
+			}
+		}
+		if opts.Spec != nil {
+			if err := normalizeFileColumns(cols, record, opts.Spec, delimiter); err != nil {
+				return fmt.Errorf("record %d: %w", index+1, err)
+			}
+			target := make(map[string]string)
+			for _, field := range opts.Spec.Target.Fields {
+				if field.Codec == "ignore" {
+					continue
+				}
+				if !field.AppliesTo(opts.Operation) {
+					continue
+				}
+				value := ""
+				if profileColumns != nil {
+					value = profileColumns[field.Name]
+				}
+				if profileColumns == nil || profileTransportColumn(field.Name) {
+					var valueErr error
+					value, valueErr = targetFieldValue(record, field.Hub, cols, delimiter)
+					if valueErr != nil {
+						return fmt.Errorf("record %d target field %q: %w", index+1, field.Name, valueErr)
+					}
+				}
+				if value == "" {
+					value = field.Default
+				}
+				if value == "" && isTargetFieldRequired(field, opts.Operation, record.ObjectModel) {
+					operation := opts.Operation
+					if operation == "" {
+						operation = spec.OperationCreate
+					}
+					return fmt.Errorf("record %d target field %q is required for %s serialization", index+1, field.Name, operation)
+				}
+				target[field.Name] = value
+				colSeen[field.Name] = true
+			}
+			cols = target
+		} else {
+			for col, val := range cols {
+				if val != "" {
+					colSeen[col] = true
+				}
 			}
 		}
 		allRows = append(allRows, workbenchRow{cols: cols, agents: agents})
 	}
 
-	columns := orderedColumns(colSeen)
+	columns, err := serializationColumns(opts, colSeen)
+	if err != nil {
+		return err
+	}
 
 	mainWriter := csv.NewWriter(w)
 
@@ -104,9 +428,436 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 	return nil
 }
 
+func normalizeFileColumns(cols map[string]string, record *hubv1.Record, transformation *spec.Transformation, delimiter string) error {
+	delete(cols, "file")
+	delete(cols, "supplemental_file")
+	primary := make([]string, 0)
+	supplemental := make([]string, 0)
+	for index, file := range record.Files {
+		if file == nil || file.Path == "" || file.Role == "unpublished_supplemental" {
+			continue
+		}
+		normalized, err := transformation.NormalizeFilePath(file.Path)
+		if err != nil {
+			return fmt.Errorf("normalizing media file %d: %w", index+1, err)
+		}
+		if file.Role == "supplemental" {
+			supplemental = append(supplemental, normalized)
+			continue
+		}
+		primary = append(primary, normalized)
+	}
+	if len(primary) > 0 {
+		cols["file"] = strings.Join(primary, delimiter)
+	}
+	if len(supplemental) > 1 {
+		return fmt.Errorf("multiple supplemental files require artifact planning so each file receives its own Workbench media row")
+	}
+	if len(supplemental) > 0 {
+		cols["supplemental_file"] = strings.Join(supplemental, delimiter)
+	}
+	return nil
+}
+
+func isTargetFieldRequired(field spec.Field, operation spec.Operation, objectModel string) bool {
+	if field.IsOptionalForObjectModel(objectModel) {
+		return false
+	}
+	if field.Required && (operation == "" || operation == spec.OperationCreate) {
+		return true
+	}
+	for _, candidate := range field.RequiredFor {
+		if candidate == operation {
+			return true
+		}
+	}
+	return false
+}
+
+func targetMultiValueSeparator(opts *format.SerializeOptions) string {
+	if opts != nil && opts.Spec != nil && opts.Spec.Target.MultiValueSeparator != "" {
+		return opts.Spec.Target.MultiValueSeparator
+	}
+	if opts != nil && opts.MultiValueSeparator != "" {
+		return opts.MultiValueSeparator
+	}
+	return sep
+}
+
+func targetFieldValue(record *hubv1.Record, hubPath string, canonical map[string]string, delimiter string) (string, error) {
+	switch hubPath {
+	case "Title":
+		return canonical["title"], nil
+	case "FullTitle":
+		return canonical["field_full_title"], nil
+	case "ObjectModel":
+		return canonical["field_model"], nil
+	case "ResourceType":
+		return canonical["field_resource_type"], nil
+	case "AddCoverpage":
+		return canonical["field_add_coverpage"], nil
+	case "IsPublic":
+		return canonical["published"], nil
+	case "Contributors":
+		return canonical["field_linked_agent"], nil
+	case "Departments":
+		return canonical["field_department_name"], nil
+	case "Genre":
+		return canonical["field_genre"], nil
+	case "Dates.issued":
+		return canonical["field_edtf_date_issued"], nil
+	case "Dates.created":
+		return canonical["field_edtf_date_created"], nil
+	case "Dates.captured":
+		return canonical["field_edtf_date_captured"], nil
+	case "Dates.available":
+		return canonical["field_edtf_date_embargo"], nil
+	case "Publisher":
+		return canonical["field_publisher"], nil
+	case "Edition":
+		return canonical["field_edition"], nil
+	case "Language":
+		return canonical["field_language"], nil
+	case "PhysicalForm":
+		return canonical["field_physical_form"], nil
+	case "Files.mime_type":
+		return canonical["field_media_type"], nil
+	case "Extent":
+		return canonical["field_extent"], nil
+	case "DigitalOrigin":
+		return canonical["field_digital_origin"], nil
+	case "Descriptions":
+		return canonical["field_abstract"], nil
+	case "Notes":
+		return canonical["field_note"], nil
+	case "LocalRestriction":
+		return canonical["field_local_restriction"], nil
+	case "Subjects.lcsh":
+		return canonical["field_subject_lcsh"], nil
+	case "Subjects.keywords":
+		return canonical["field_keywords"], nil
+	case "Subjects.lcnaf":
+		return canonical["field_subjects_name"], nil
+	case "Subjects.geographic":
+		return canonical["field_geographic_subject"], nil
+	case "Subjects.getty_tgn":
+		return canonical["field_subject_hierarchical_geo"], nil
+	case "Publication.RelatedItem":
+		return canonical["field_related_item"], nil
+	case "Publication.Part":
+		return canonical["field_part_detail"], nil
+	case "Identifiers":
+		return canonical["field_identifier"], nil
+	case "Rights":
+		return canonical["field_rights"], nil
+	case "AccessCondition":
+		return canonical["field_access"], nil
+	case "Relations.member_of":
+		return canonical["field_member_of"], nil
+	case "Files.primary":
+		return canonical["file"], nil
+	case "Files.supplemental":
+		return canonical["supplemental_file"], nil
+	}
+	if strings.HasPrefix(hubPath, "Extra.") {
+		return extraString(record, strings.TrimPrefix(hubPath, "Extra."), delimiter)
+	}
+	return "", nil
+}
+
+func profileTransportColumn(name string) bool {
+	switch drupalFieldBase(name) {
+	case "id", "parent_id", "field_weight", "node_id", "file", "supplemental_file",
+		"unpublished_supplemental_file", "published", "title", "url_alias":
+		return true
+	default:
+		return false
+	}
+}
+
+func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, transformation *spec.Transformation, delimiter string) (map[string]string, error) {
+	if transformation == nil {
+		return nil, fmt.Errorf("Drupal system profile requires a profile-bound transformation specification")
+	}
+	if compiled.System() != "drupal" {
+		return nil, fmt.Errorf("system profile %q targets %q, not drupal", compiled.Name(), compiled.System())
+	}
+	if transformation.Fingerprint.Profile == "" {
+		return nil, fmt.Errorf("transformation is not bound to a Drupal profile fingerprint")
+	}
+	if transformation.Fingerprint.Profile != compiled.Fingerprint() {
+		return nil, fmt.Errorf("transformation profile fingerprint does not match target profile")
+	}
+	if transformation.Fingerprint.Model != compiled.ModelFingerprint() {
+		return nil, fmt.Errorf("transformation model fingerprint does not match target profile model")
+	}
+	entity, err := drupalformat.EncodeEntityWithProfile(record, compiled)
+	if err != nil {
+		return nil, fmt.Errorf("applying Drupal profile %q: %w", compiled.Name(), err)
+	}
+	fields := make(map[string][]spec.Field)
+	for _, field := range transformation.Target.Fields {
+		base := drupalFieldBase(field.Name)
+		fields[base] = append(fields[base], field)
+	}
+	profileFields := make(map[string]profile.ResolvedField)
+	for _, mapping := range compiled.Mappings() {
+		if mapping.Encode == "none" {
+			continue
+		}
+		profileFields[mapping.Field.Selector.Path] = mapping.Field
+	}
+	result := make(map[string]string, len(entity))
+	for fieldName, raw := range entity {
+		declared := fields[fieldName]
+		if len(declared) == 0 {
+			return nil, fmt.Errorf("Drupal profile emitted undeclared Workbench field %q", fieldName)
+		}
+		resolvedField, exists := profileFields[fieldName]
+		if !exists {
+			return nil, fmt.Errorf("Drupal profile emitted field %q without an encodable mapping", fieldName)
+		}
+		for _, field := range declared {
+			cell, err := profileWorkbenchCell(field, resolvedField, raw, delimiter)
+			if err != nil {
+				return nil, fmt.Errorf("encoding Drupal field %q for Workbench column %q: %w", fieldName, field.Name, err)
+			}
+			if cell != "" {
+				result[field.Name] = cell
+			}
+		}
+	}
+	return result, nil
+}
+
+func profileWorkbenchCell(field spec.Field, resolved profile.ResolvedField, raw any, delimiter string) (string, error) {
+	values, ok := raw.([]any)
+	if !ok {
+		return "", fmt.Errorf("profile encoder returned %T, want []any", raw)
+	}
+	encoded := make([]string, 0, len(values))
+	for index, value := range values {
+		object, ok := value.(map[string]any)
+		if !ok {
+			return "", fmt.Errorf("value %d has type %T, want a Drupal field object", index+1, value)
+		}
+		cell, err := profileWorkbenchValue(field, resolved, object)
+		if err != nil {
+			return "", fmt.Errorf("value %d: %w", index+1, err)
+		}
+		if cell != "" {
+			encoded = append(encoded, cell)
+		}
+	}
+	return strings.Join(encoded, delimiter), nil
+}
+
+func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, value map[string]any) (string, error) {
+	if len(value) == 0 {
+		return "", nil
+	}
+	sourceType := strings.ToLower(strings.TrimSpace(resolved.SourceType))
+	if sourceType == "typed_relation" {
+		if _, hasValue := value["value"]; hasValue {
+			return profileAttributeJSON(value, "value", "attr0")
+		}
+	}
+	switch sourceType {
+	case "string", "string_long", "string_textfield", "text", "text_long", "text_with_summary",
+		"email", "telephone", "boolean", "integer", "list_integer", "decimal", "float",
+		"datetime", "daterange", "edtf":
+		return profileScalarAttribute(value, "value")
+	case "link":
+		return profileSelectedAttribute(value, "uri", "title")
+	case "entity_reference":
+		return profileSelectedAttribute(value, "target_id", "target_type", "target_uuid", "url")
+	case "typed_relation":
+		return profileTypedRelation(value, resolved)
+	case "textfield_attr", "textarea_attr":
+		return profileAttributeJSON(value, "value", "attr0")
+	case "part_detail":
+		return profileStructuredJSON(value, "part detail", "type", "caption", "number", "title")
+	case "related_item":
+		return profileStructuredJSON(value, "related item", "identifier", "identifier_type", "number", "title")
+	default:
+		return "", fmt.Errorf("Drupal source type %q has no explicit Workbench cell encoding", resolved.SourceType)
+	}
+}
+
+func profileSelectedAttribute(value map[string]any, selected string, allowed ...string) (string, error) {
+	permitted := map[string]struct{}{selected: {}}
+	for _, key := range allowed {
+		permitted[key] = struct{}{}
+	}
+	for key := range value {
+		if _, exists := permitted[key]; !exists {
+			return "", fmt.Errorf("%q value has unsupported attribute %q", selected, key)
+		}
+	}
+	raw, exists := value[selected]
+	if !exists {
+		return "", fmt.Errorf("value has no %q attribute", selected)
+	}
+	return profileScalarString(raw)
+}
+
+func profileScalarAttribute(value map[string]any, attribute string) (string, error) {
+	if len(value) != 1 {
+		return "", fmt.Errorf("scalar %q value has unexpected attributes %s", attribute, sortedMapKeys(value))
+	}
+	raw, exists := value[attribute]
+	if !exists {
+		return "", fmt.Errorf("scalar value has no %q attribute", attribute)
+	}
+	return profileScalarString(raw)
+}
+
+func profileTypedRelation(value map[string]any, resolved profile.ResolvedField) (string, error) {
+	allowed := map[string]struct{}{"target_id": {}, "target_type": {}, "rel_type": {}}
+	for key := range value {
+		if _, exists := allowed[key]; !exists {
+			return "", fmt.Errorf("typed relation has unsupported attribute %q", key)
+		}
+	}
+	targetID, err := requiredProfileString(value, "target_id")
+	if err != nil {
+		return "", err
+	}
+	_, err = requiredProfileString(value, "target_type")
+	if err != nil {
+		return "", err
+	}
+	if resolved.Reference == nil || len(resolved.Reference.Bundles) != 1 {
+		return "", fmt.Errorf("typed relation requires exactly one profile reference bundle for deterministic Workbench encoding")
+	}
+	targetBundle := resolved.Reference.Bundles[0]
+	if strings.TrimSpace(targetBundle) == "" {
+		return "", fmt.Errorf("typed relation profile reference bundle is empty")
+	}
+	role, err := optionalProfileString(value, "rel_type")
+	if err != nil {
+		return "", err
+	}
+	parts := make([]string, 0, 3)
+	if role != "" {
+		parts = append(parts, role)
+	}
+	parts = append(parts, targetBundle, targetID)
+	return strings.Join(parts, ":"), nil
+}
+
+func profileAttributeJSON(value map[string]any, valueAttribute, discriminatorAttribute string) (string, error) {
+	allowed := map[string]struct{}{valueAttribute: {}, discriminatorAttribute: {}}
+	for key := range value {
+		if _, exists := allowed[key]; !exists {
+			return "", fmt.Errorf("attribute value has unsupported attribute %q", key)
+		}
+	}
+	text, err := requiredProfileString(value, valueAttribute)
+	if err != nil {
+		return "", err
+	}
+	discriminator, err := requiredProfileString(value, discriminatorAttribute)
+	if err != nil {
+		return "", err
+	}
+	data, err := json.Marshal(map[string]string{valueAttribute: text, discriminatorAttribute: discriminator})
+	if err != nil {
+		return "", fmt.Errorf("encoding attribute JSON: %w", err)
+	}
+	return string(data), nil
+}
+
+func profileStructuredJSON(value map[string]any, label string, allowed ...string) (string, error) {
+	permitted := make(map[string]struct{}, len(allowed))
+	for _, key := range allowed {
+		permitted[key] = struct{}{}
+	}
+	result := make(map[string]string, len(value))
+	for key := range value {
+		if _, exists := permitted[key]; !exists {
+			return "", fmt.Errorf("%s has unsupported attribute %q", label, key)
+		}
+	}
+	for _, key := range allowed {
+		text, err := optionalProfileString(value, key)
+		if err != nil {
+			return "", err
+		}
+		if text != "" {
+			result[key] = text
+		}
+	}
+	if len(result) == 0 {
+		return "", fmt.Errorf("%s has no supported attributes", label)
+	}
+	data, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("encoding %s JSON: %w", label, err)
+	}
+	return string(data), nil
+}
+
+func requiredProfileString(value map[string]any, key string) (string, error) {
+	text, err := optionalProfileString(value, key)
+	if err != nil {
+		return "", err
+	}
+	if text == "" {
+		return "", fmt.Errorf("value has no %q attribute", key)
+	}
+	return text, nil
+}
+
+func optionalProfileString(value map[string]any, key string) (string, error) {
+	raw, exists := value[key]
+	if !exists || raw == nil {
+		return "", nil
+	}
+	return profileScalarString(raw)
+}
+
+func profileScalarString(value any) (string, error) {
+	switch typed := value.(type) {
+	case string:
+		return typed, nil
+	case bool:
+		return boolString(typed), nil
+	case int:
+		return strconv.Itoa(typed), nil
+	case int32:
+		return strconv.FormatInt(int64(typed), 10), nil
+	case int64:
+		return strconv.FormatInt(typed, 10), nil
+	case float64:
+		if math.IsNaN(typed) || math.IsInf(typed, 0) {
+			return "", fmt.Errorf("numeric value is not finite")
+		}
+		return strconv.FormatFloat(typed, 'f', -1, 64), nil
+	default:
+		return "", fmt.Errorf("attribute has unsupported scalar type %T", value)
+	}
+}
+
+func sortedMapKeys(value map[string]any) string {
+	keys := make([]string, 0, len(value))
+	for key := range value {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
+}
+
+func drupalFieldBase(name string) string {
+	if index := strings.IndexByte(name, '.'); index >= 0 {
+		return name[:index]
+	}
+	return name
+}
+
 // recordToColumns converts a hub record to a map of workbench column values
 // and a slice of agent rows (one per contributor with extended metadata).
-func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
+func recordToColumns(record *hubv1.Record, delimiter string) (map[string]string, [][]string, error) {
 	cols := make(map[string]string)
 	var agents [][]string
 
@@ -120,11 +871,62 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 	if parentID := hub.GetExtraString(record, "parent_id"); parentID != "" {
 		cols["parent_id"] = parentID
 	}
+	weight, err := extraString(record, "field_weight", delimiter)
+	if err != nil {
+		return nil, nil, fmt.Errorf("encoding Extra.field_weight: %w", err)
+	}
+	if weight != "" {
+		cols["field_weight"] = weight
+	}
+	if alias := hub.GetExtraString(record, "url_alias"); alias != "" {
+		cols["url_alias"] = alias
+	}
 
-	cols["title"] = record.Title
+	var primaryFiles, supplementalFiles []string
+	for _, file := range record.Files {
+		if file == nil || file.Path == "" {
+			continue
+		}
+		switch file.Role {
+		case "supplemental":
+			supplementalFiles = append(supplementalFiles, file.Path)
+		case "unpublished_supplemental":
+			// Planned as its own artifact; never leak it into a published task.
+		default:
+			primaryFiles = append(primaryFiles, file.Path)
+		}
+	}
+	if len(primaryFiles) > 0 {
+		cols["file"] = strings.Join(primaryFiles, delimiter)
+	}
+	if len(supplementalFiles) > 0 {
+		cols["supplemental_file"] = strings.Join(supplementalFiles, delimiter)
+	}
 
-	if model := islandoraModel(record.ResourceType); model != "" {
+	title := record.Title
+	fullTitle := record.FullTitle
+	if titleRunes := []rune(title); len(titleRunes) > 255 {
+		if fullTitle == "" {
+			fullTitle = title
+		}
+		title = string(titleRunes[:255])
+	}
+	cols["title"] = title
+	cols["field_full_title"] = fullTitle
+	if _, present := hub.GetExtra(record, "_present_is_public"); present || record.IsPublic {
+		cols["published"] = boolString(record.IsPublic)
+	}
+	if _, present := hub.GetExtra(record, "_present_add_coverpage"); present || record.AddCoverpage {
+		cols["field_add_coverpage"] = boolString(record.AddCoverpage)
+	}
+
+	if record.ObjectModel != "" {
+		cols["field_model"] = record.ObjectModel
+	} else if model := islandoraModel(record.ResourceType); model != "" {
 		cols["field_model"] = model
+	}
+	if record.ResourceType != nil {
+		cols["field_resource_type"] = hub.ResourceTypeString(record.ResourceType)
 	}
 
 	cols["field_language"] = record.Language
@@ -138,11 +940,14 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 				agents = append(agents, toAgentRow(c))
 			}
 		}
-		cols["field_linked_agent"] = strings.Join(linkedAgents, sep)
+		cols["field_linked_agent"] = strings.Join(linkedAgents, delimiter)
+	}
+	if len(record.Departments) > 0 {
+		cols["field_department_name"] = strings.Join(nonempty(record.Departments), delimiter)
 	}
 
 	// Dates (EDTF format)
-	var issuedDates, createdDates []string
+	var issuedDates, createdDates, capturedDates, availableDates []string
 	for _, d := range record.Dates {
 		edtf := hub.FormatEDTF(d)
 		if edtf == "" {
@@ -153,15 +958,31 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			issuedDates = append(issuedDates, edtf)
 		case hubv1.DateType_DATE_TYPE_CREATED:
 			createdDates = append(createdDates, edtf)
+		case hubv1.DateType_DATE_TYPE_CAPTURED:
+			capturedDates = append(capturedDates, edtf)
+		case hubv1.DateType_DATE_TYPE_AVAILABLE:
+			availableDates = append(availableDates, edtf)
+		case hubv1.DateType_DATE_TYPE_ACCEPTED:
+			// Workbench has no accepted-date destination. In particular, an ETD
+			// acceptance date must not be emitted as its issued/completion date.
 		default:
 			issuedDates = append(issuedDates, edtf)
 		}
 	}
 	if len(issuedDates) > 0 {
-		cols["field_edtf_date_issued"] = strings.Join(issuedDates, sep)
+		cols["field_edtf_date_issued"] = strings.Join(issuedDates, delimiter)
 	}
 	if len(createdDates) > 0 {
-		cols["field_edtf_date_created"] = strings.Join(createdDates, sep)
+		cols["field_edtf_date_created"] = strings.Join(createdDates, delimiter)
+	}
+	if len(capturedDates) > 0 {
+		cols["field_edtf_date_captured"] = strings.Join(capturedDates, delimiter)
+	}
+	if len(availableDates) > 0 {
+		cols["field_edtf_date_embargo"] = strings.Join(availableDates, delimiter)
+	}
+	if season := hub.GetExtraString(record, "date_season"); season != "" {
+		cols["field_date_season"] = season
 	}
 
 	// Abstract and description both go to field_abstract with an attr0 attribute
@@ -173,8 +994,11 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 		abstracts = append(abstracts, attrValue(record.Description, "description"))
 	}
 	if len(abstracts) > 0 {
-		cols["field_abstract"] = strings.Join(abstracts, sep)
+		cols["field_abstract"] = strings.Join(abstracts, delimiter)
 	}
+	cols["field_publisher"] = record.Publisher
+	cols["field_edition"] = record.Edition
+	cols["field_digital_origin"] = record.DigitalOrigin
 
 	// Rights → field_rights (URI form preferred)
 	if len(record.Rights) > 0 {
@@ -186,7 +1010,7 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(rights) > 0 {
-			cols["field_rights"] = strings.Join(rights, sep)
+			cols["field_rights"] = strings.Join(rights, delimiter)
 		}
 	}
 
@@ -199,8 +1023,9 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(subjects) > 0 {
-			cols["field_subject"] = strings.Join(subjects, sep)
+			cols["field_subject"] = strings.Join(subjects, delimiter)
 		}
+		assignSubjectColumns(cols, record.Subjects, delimiter)
 	}
 
 	// Genres → field_genre
@@ -212,8 +1037,17 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(genres) > 0 {
-			cols["field_genre"] = strings.Join(genres, sep)
+			cols["field_genre"] = strings.Join(genres, delimiter)
 		}
+	}
+	if len(record.PhysicalForm) > 0 {
+		values := make([]string, 0, len(record.PhysicalForm))
+		for _, physicalForm := range record.PhysicalForm {
+			if physicalForm != nil && physicalForm.Value != "" {
+				values = append(values, physicalForm.Value)
+			}
+		}
+		cols["field_physical_form"] = strings.Join(values, delimiter)
 	}
 
 	// Identifiers → field_identifier (attr0 notation)
@@ -225,7 +1059,7 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(ids) > 0 {
-			cols["field_identifier"] = strings.Join(ids, sep)
+			cols["field_identifier"] = strings.Join(ids, delimiter)
 		}
 	}
 
@@ -243,8 +1077,14 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 	if record.PageCount > 0 {
 		extents = append(extents, attrValue(fmt.Sprintf("%d", record.PageCount), "page"))
 	}
+	if file := firstPrimaryFile(record); file != nil {
+		cols["field_media_type"] = file.MimeType
+		if file.SizeBytes > 0 {
+			extents = append(extents, attrValue(strconv.FormatInt(file.SizeBytes, 10), "bytes"))
+		}
+	}
 	if len(extents) > 0 {
-		cols["field_extent"] = strings.Join(extents, sep)
+		cols["field_extent"] = strings.Join(extents, delimiter)
 	}
 
 	// Notes → field_note
@@ -256,9 +1096,40 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(notes) > 0 {
-			cols["field_note"] = strings.Join(notes, sep)
+			cols["field_note"] = strings.Join(notes, delimiter)
 		}
 	}
+	noteValues := splitJoined(cols["field_note"], delimiter)
+	if record.PreferredCitation != "" {
+		noteValues = append(noteValues, attrValue(record.PreferredCitation, "preferred-citation"))
+	}
+	if record.CaptureDevice != "" {
+		noteValues = append(noteValues, attrValue(record.CaptureDevice, "capture-device"))
+	}
+	if record.Ppi > 0 {
+		noteValues = append(noteValues, attrValue(strconv.FormatInt(int64(record.Ppi), 10), "ppi"))
+	}
+	if record.ArchivalLocation != nil {
+		if record.ArchivalLocation.Collection != "" {
+			noteValues = append(noteValues, attrValue(record.ArchivalLocation.Collection, "collection"))
+		}
+		if record.ArchivalLocation.Box != "" {
+			noteValues = append(noteValues, attrValue(record.ArchivalLocation.Box, "box"))
+		}
+		if record.ArchivalLocation.Series != "" {
+			noteValues = append(noteValues, attrValue(record.ArchivalLocation.Series, "series"))
+		}
+		if record.ArchivalLocation.Folder != "" {
+			noteValues = append(noteValues, attrValue(record.ArchivalLocation.Folder, "folder"))
+		}
+	}
+	if len(noteValues) > 0 {
+		cols["field_note"] = strings.Join(noteValues, delimiter)
+	}
+	if record.LocalRestriction != "" {
+		cols["field_local_restriction"] = restrictionString(record.LocalRestriction)
+	}
+	cols["field_access"] = record.AccessCondition
 
 	// Relations → field_member_of
 	memberOf := hub.GetMemberOf(record)
@@ -272,7 +1143,7 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			}
 		}
 		if len(vals) > 0 {
-			cols["field_member_of"] = strings.Join(vals, sep)
+			cols["field_member_of"] = strings.Join(vals, delimiter)
 		}
 	}
 
@@ -289,18 +1160,215 @@ func recordToColumns(record *hubv1.Record) (map[string]string, [][]string) {
 			parts = append(parts, partDetail(record.Publication.Pages, "page"))
 		}
 		if len(parts) > 0 {
-			cols["field_part_detail"] = strings.Join(parts, sep)
+			cols["field_part_detail"] = strings.Join(parts, delimiter)
 		}
 
 		// Journal title → field_related_item
+		var relatedItems []string
 		if record.Publication.Title != "" {
-			cols["field_related_item"] = fmt.Sprintf(`{"title":"%s"}`, escapeJSON(record.Publication.Title))
-		} else if record.Publication.LIssn != "" {
-			cols["field_related_item"] = fmt.Sprintf(`{"type":"issn","identifier":"%s"}`, escapeJSON(record.Publication.LIssn))
+			relatedItems = append(relatedItems, fmt.Sprintf(`{"title":"%s"}`, escapeJSON(record.Publication.Title)))
+		}
+		issn := record.Publication.LIssn
+		if issn == "" {
+			issn = record.Publication.Issn
+		}
+		if issn != "" {
+			relatedItems = append(relatedItems, fmt.Sprintf(`{"type":"issn","identifier":"%s"}`, escapeJSON(issn)))
+		}
+		if len(relatedItems) > 0 {
+			cols["field_related_item"] = strings.Join(relatedItems, delimiter)
 		}
 	}
 
-	return cols, agents
+	return cols, agents, nil
+}
+
+func serializationColumns(opts *format.SerializeOptions, seen map[string]bool) ([]string, error) {
+	if len(opts.Columns) > 0 {
+		columns := make([]string, 0, len(opts.Columns))
+		used := make(map[string]struct{}, len(opts.Columns))
+		for _, raw := range opts.Columns {
+			column := strings.TrimSpace(raw)
+			if column == "" {
+				return nil, fmt.Errorf("serialization column cannot be empty")
+			}
+			if _, exists := used[column]; exists {
+				return nil, fmt.Errorf("serialization column %q is duplicated", column)
+			}
+			if opts.Spec != nil {
+				field, ok := opts.Spec.TargetField(column)
+				if !ok {
+					return nil, fmt.Errorf("serialization column %q is not declared for operation %q", column, opts.Operation)
+				}
+				if field.Codec == "ignore" {
+					continue
+				}
+				if !field.AppliesTo(opts.Operation) {
+					return nil, fmt.Errorf("serialization column %q is not declared for operation %q", column, opts.Operation)
+				}
+			}
+			used[column] = struct{}{}
+			columns = append(columns, column)
+		}
+		return columns, nil
+	}
+	if opts.Spec != nil {
+		columns := make([]string, 0, len(opts.Spec.Target.Fields))
+		for _, field := range opts.Spec.Target.Fields {
+			if field.Codec != "ignore" && field.AppliesTo(opts.Operation) {
+				columns = append(columns, field.Name)
+			}
+		}
+		return columns, nil
+	}
+	return orderedColumns(seen), nil
+}
+
+func extraString(record *hubv1.Record, key, delimiter string) (string, error) {
+	value, ok := hub.GetExtra(record, key)
+	if !ok {
+		return "", nil
+	}
+	return extraWorkbenchValue(value, delimiter)
+}
+
+func extraWorkbenchValue(value any, delimiter string) (string, error) {
+	switch typed := value.(type) {
+	case string:
+		return typed, nil
+	case float64:
+		if math.IsNaN(typed) || math.IsInf(typed, 0) {
+			return "", fmt.Errorf("numeric value is not finite")
+		}
+		return strconv.FormatFloat(typed, 'f', -1, 64), nil
+	case bool:
+		return boolString(typed), nil
+	case nil:
+		return "", nil
+	case []any:
+		values := make([]string, 0, len(typed))
+		for index, item := range typed {
+			value, err := extraWorkbenchListValue(item)
+			if err != nil {
+				return "", fmt.Errorf("list value %d: %w", index+1, err)
+			}
+			values = append(values, value)
+		}
+		return strings.Join(values, delimiter), nil
+	default:
+		return canonicalExtraJSON(typed)
+	}
+}
+
+func extraWorkbenchListValue(value any) (string, error) {
+	switch typed := value.(type) {
+	case string:
+		return typed, nil
+	case float64:
+		if math.IsNaN(typed) || math.IsInf(typed, 0) {
+			return "", fmt.Errorf("numeric value is not finite")
+		}
+		return strconv.FormatFloat(typed, 'f', -1, 64), nil
+	case bool:
+		return boolString(typed), nil
+	default:
+		return canonicalExtraJSON(typed)
+	}
+}
+
+func canonicalExtraJSON(value any) (string, error) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return "", fmt.Errorf("encoding structured value as canonical JSON: %w", err)
+	}
+	return string(data), nil
+}
+
+func boolString(value bool) string {
+	if value {
+		return "1"
+	}
+	return "0"
+}
+
+func restrictionString(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "yes", "true", "local restriction", "restricted":
+		return "1"
+	default:
+		return "0"
+	}
+}
+
+func firstPrimaryFile(record *hubv1.Record) *hubv1.File {
+	for _, file := range record.Files {
+		if file != nil && (file.Role == "" || file.Role == "primary") {
+			return file
+		}
+	}
+	return nil
+}
+
+func nonempty(values []string) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value = strings.TrimSpace(value); value != "" {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func splitJoined(value, delimiter string) []string {
+	if value == "" {
+		return nil
+	}
+	return strings.Split(value, delimiter)
+}
+
+func assignSubjectColumns(cols map[string]string, subjects []*hubv1.Subject, delimiter string) {
+	var lcsh, keywords, names, geographic, hierarchical []string
+	for _, subject := range subjects {
+		if subject == nil || (subject.Value == "" && subject.Uri == "") {
+			continue
+		}
+		value := subject.Value
+		if value == "" {
+			value = subject.Uri
+		}
+		switch {
+		case subject.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_GETTY_TGN:
+			if subject.Uri != "" {
+				value = subject.Uri
+			}
+			hierarchical = append(hierarchical, value)
+		case subject.Type == hubv1.SubjectType_SUBJECT_TYPE_GEOGRAPHIC && subject.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LCNAF:
+			geographic = append(geographic, "geographic_naf:"+value)
+		case subject.Type == hubv1.SubjectType_SUBJECT_TYPE_GEOGRAPHIC:
+			geographic = append(geographic, "geographic_local:"+value)
+		case subject.Type == hubv1.SubjectType_SUBJECT_TYPE_NAME || subject.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LCNAF:
+			names = append(names, value)
+		case subject.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LCSH:
+			lcsh = append(lcsh, value)
+		case subject.Vocabulary == hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_KEYWORDS:
+			keywords = append(keywords, value)
+		}
+	}
+	if len(lcsh) > 0 {
+		cols["field_subject_lcsh"] = strings.Join(lcsh, delimiter)
+	}
+	if len(keywords) > 0 {
+		cols["field_keywords"] = strings.Join(keywords, delimiter)
+	}
+	if len(names) > 0 {
+		cols["field_subjects_name"] = strings.Join(names, delimiter)
+	}
+	if len(geographic) > 0 {
+		cols["field_geographic_subject"] = strings.Join(geographic, delimiter)
+	}
+	if len(hierarchical) > 0 {
+		cols["field_subject_hierarchical_geo"] = strings.Join(hierarchical, delimiter)
+	}
 }
 
 // orderedColumns returns the columns that have data, in canonical order,
@@ -497,6 +1565,20 @@ func identifierValue(id *hubv1.Identifier) string {
 		return attrValue(id.Value, "issn")
 	case hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL:
 		return attrValue(id.Value, "local")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_CALL_NUMBER:
+		return attrValue(id.Value, "call-number")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_REPORT_NUMBER:
+		return attrValue(id.Value, "report-number")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV:
+		return attrValue(id.Value, "arxiv")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_WOS:
+		return attrValue(id.Value, "wos")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_PMID:
+		return attrValue(id.Value, "pmid")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_PMCID:
+		return attrValue(id.Value, "pmcid")
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_UUID:
+		return attrValue(id.Value, "uuid")
 	case hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID:
 		// ORCIDs belong on the contributor taxonomy term, not on the node
 		return ""

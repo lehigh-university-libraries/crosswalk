@@ -1,0 +1,9 @@
+id: node.islandora_object.field_identifier
+field_name: field_identifier
+entity_type: node
+bundle: islandora_object
+label: Identifier
+description: 'At least one aggregate identifier is required.'
+required: true
+settings: { }
+field_type: typed_relation

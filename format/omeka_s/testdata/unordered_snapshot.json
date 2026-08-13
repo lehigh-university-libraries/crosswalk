@@ -1,0 +1,46 @@
+{
+  "crosswalk_format": "omeka-s-jsonld",
+  "version": 1,
+  "items": [
+    {
+      "@id": "https://example.org/api/items/20",
+      "@type": "o:Item",
+      "o:id": 20,
+      "o:is_public": true,
+      "o:title": "Twenty",
+      "o:created": null,
+      "o:modified": null,
+      "o:resource_class": null,
+      "o:resource_template": null,
+      "o:item_set": [],
+      "o:media": []
+    },
+    {
+      "@id": "https://example.org/api/items/10",
+      "@type": "o:Item",
+      "o:id": 10,
+      "o:is_public": true,
+      "o:title": "Ten",
+      "o:created": null,
+      "o:modified": null,
+      "o:resource_class": null,
+      "o:resource_template": null,
+      "o:item_set": [],
+      "o:media": []
+    }
+  ],
+  "item_sets": [
+    {
+      "@id": "https://example.org/api/item_sets/2",
+      "@type": "o:ItemSet",
+      "o:id": 2,
+      "o:is_public": true,
+      "o:title": "Set",
+      "o:created": null,
+      "o:modified": null,
+      "o:resource_class": null,
+      "o:resource_template": null,
+      "o:is_open": true
+    }
+  ]
+}

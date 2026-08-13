@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -11,14 +12,13 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	"github.com/lehigh-university-libraries/crosswalk/hub"
-	"github.com/lehigh-university-libraries/crosswalk/mapping"
 )
 
 var (
-	validateInput       string
-	validateProfileName string
-	validateTaxonomy    string
-	validateVerbose     bool
+	validateInput             string
+	validateSourceProfileName string
+	validateTaxonomy          string
+	validateVerbose           bool
 )
 
 var validateCmd = &cobra.Command{
@@ -44,7 +44,7 @@ Examples:
 
 func init() {
 	validateCmd.Flags().StringVarP(&validateInput, "input", "i", "", "Input file (default: stdin)")
-	validateCmd.Flags().StringVarP(&validateProfileName, "profile", "p", "", "Mapping profile name")
+	validateCmd.Flags().StringVar(&validateSourceProfileName, "source-profile", "", "Canonical model-bound profile for the source system")
 	validateCmd.Flags().StringVar(&validateTaxonomy, "taxonomy-file", "", "Taxonomy term resolution file")
 	validateCmd.Flags().BoolVarP(&validateVerbose, "verbose", "v", false, "Show detailed information")
 }
@@ -79,18 +79,13 @@ func runValidate(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unknown format %q: %w", fromFormat, err)
 	}
 
-	// Load profile
-	var profile *mapping.Profile
-	if validateProfileName != "" {
-		registry, err := mapping.NewProfileRegistry()
-		if err != nil {
-			return err
-		}
-		p, ok := registry.Get(validateProfileName)
-		if !ok {
-			return fmt.Errorf("unknown profile: %s", validateProfileName)
-		}
-		profile = p
+	sourceMapping := defaultStaticProfile(fromFormat)
+	systemProfile, err := loadSystemProfile(validateSourceProfileName, fromFormat, "source")
+	if err != nil {
+		return err
+	}
+	if systemProfile != nil {
+		sourceMapping = nil
 	}
 
 	// Load taxonomy resolver
@@ -105,7 +100,8 @@ func runValidate(cmd *cobra.Command, args []string) (err error) {
 
 	// Parse input
 	parseOpts := &format.ParseOptions{
-		Profile:          profile,
+		Profile:          sourceMapping,
+		SystemProfile:    systemProfile,
 		TaxonomyResolver: resolver,
 		StripHTML:        true,
 		SourceName:       inputName,
@@ -116,22 +112,43 @@ func runValidate(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	fmt.Printf("✓ Valid: parsed %d records from %s\n", len(records), inputName)
+	validationOptions := hub.DefaultValidationOptions()
+	if systemProfile != nil {
+		validationOptions.IdentifierRegistry = systemProfile.IdentifierRegistry()
+	}
+	validationErrors := make([]string, 0)
+	for index, record := range records {
+		result := hub.Validate(record, validationOptions)
+		for _, validationError := range result.Errors {
+			validationErrors = append(validationErrors, fmt.Sprintf("record %d %s", index+1, validationError.Error()))
+		}
+	}
+	if len(validationErrors) != 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(validationErrors, "; "))
+	}
+
+	writer := cmd.OutOrStdout()
+	if _, err := fmt.Fprintf(writer, "Valid: parsed %d records from %s\n", len(records), inputName); err != nil {
+		return fmt.Errorf("writing validation result: %w", err)
+	}
 
 	if validateVerbose {
-		fmt.Println("\nRecord summary:")
+		if _, err := fmt.Fprintln(writer, "\nRecord summary:"); err != nil {
+			return fmt.Errorf("writing validation summary: %w", err)
+		}
 		for i, r := range records {
-			fmt.Printf("\n  Record %d:\n", i+1)
-			fmt.Printf("    Title: %s\n", truncate(r.Title, 60))
-			fmt.Printf("    Contributors: %d\n", len(r.Contributors))
-			fmt.Printf("    Dates: %d\n", len(r.Dates))
-			fmt.Printf("    Subjects: %d\n", len(r.Subjects))
-			fmt.Printf("    Identifiers: %d\n", len(r.Identifiers))
+			if _, err := fmt.Fprintf(writer, "\n  Record %d:\n    Title: %s\n    Contributors: %d\n    Dates: %d\n    Subjects: %d\n    Identifiers: %d\n", i+1, truncate(r.Title, 60), len(r.Contributors), len(r.Dates), len(r.Subjects), len(r.Identifiers)); err != nil {
+				return fmt.Errorf("writing validation summary: %w", err)
+			}
 			if r.ResourceType != nil && r.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED {
-				fmt.Printf("    Resource Type: %s\n", hub.ResourceTypeString(r.ResourceType))
+				if _, err := fmt.Fprintf(writer, "    Resource Type: %s\n", hub.ResourceTypeString(r.ResourceType)); err != nil {
+					return fmt.Errorf("writing validation summary: %w", err)
+				}
 			}
 			if nid := hub.GetExtraString(r, "nid"); nid != "" {
-				fmt.Printf("    NID: %s\n", nid)
+				if _, err := fmt.Fprintf(writer, "    NID: %s\n", nid); err != nil {
+					return fmt.Errorf("writing validation summary: %w", err)
+				}
 			}
 		}
 	}

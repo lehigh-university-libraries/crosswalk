@@ -1,0 +1,9 @@
+id: node.islandora_object.field_rating
+field_name: field_rating
+entity_type: node
+bundle: islandora_object
+label: Rating
+description: 'One or more ratings.'
+required: false
+settings: { }
+field_type: integer

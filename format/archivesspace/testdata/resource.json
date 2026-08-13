@@ -1,0 +1,98 @@
+{
+  "jsonmodel_type": "resource",
+  "uri": "/repositories/2/resources/1",
+  "title": "The Example Family Papers",
+  "publish": true,
+  "id_0": "SC",
+  "id_1": "001",
+  "ead_id": "example-family-papers",
+  "ead_location": "https://archives.example.edu/repositories/2/resources/1",
+  "level": "collection",
+  "resource_type": "papers",
+  "finding_aid_title": "Guide to the Example Family Papers",
+  "finding_aid_author": "Example University Archives",
+  "finding_aid_language": "eng",
+  "dates": [
+    {
+      "jsonmodel_type": "date",
+      "date_type": "inclusive",
+      "label": "creation",
+      "expression": "1901-1950",
+      "begin": "1901",
+      "end": "1950"
+    }
+  ],
+  "extents": [
+    {
+      "jsonmodel_type": "extent",
+      "portion": "whole",
+      "number": "12",
+      "extent_type": "linear_feet",
+      "container_summary": "24 boxes",
+      "dimensions": "30 cm"
+    }
+  ],
+  "lang_materials": [
+    {
+      "jsonmodel_type": "lang_material",
+      "language_and_script": {
+        "jsonmodel_type": "language_and_script",
+        "language": "eng",
+        "script": "Latn"
+      }
+    }
+  ],
+  "linked_agents": [
+    {
+      "role": "creator",
+      "relator": "cre",
+      "ref": "/agents/people/3",
+      "is_primary": true,
+      "_resolved": {
+        "jsonmodel_type": "agent_person",
+        "uri": "/agents/people/3",
+        "title": "Example, Ada, 1870-1955",
+        "display_name": {
+          "jsonmodel_type": "name_person",
+          "primary_name": "Example",
+          "rest_of_name": "Ada",
+          "suffix": "1870-1955",
+          "name_order": "inverted"
+        },
+        "external_ids": [
+          {"source": "lcnaf", "external_id": "n12345678"}
+        ]
+      }
+    }
+  ],
+  "subjects": [
+    {
+      "ref": "/subjects/5",
+      "_resolved": {
+        "jsonmodel_type": "subject",
+        "uri": "/subjects/5",
+        "title": "Women engineers -- History",
+        "source": "lcsh",
+        "authority_id": "https://id.loc.gov/authorities/subjects/sh85147540",
+        "terms": [
+          {"term": "Women engineers", "term_type": "topical", "vocabulary": "/vocabularies/1"},
+          {"term": "History", "term_type": "topical", "vocabulary": "/vocabularies/1"}
+        ]
+      }
+    }
+  ],
+  "notes": [
+    {
+      "jsonmodel_type": "note_multipart",
+      "type": "scopecontent",
+      "subnotes": [
+        {"jsonmodel_type": "note_text", "content": "<p>Correspondence and research files.</p>"}
+      ]
+    },
+    {
+      "jsonmodel_type": "note_singlepart",
+      "type": "prefercite",
+      "content": ["Example Family Papers, Example University Archives."]
+    }
+  ]
+}

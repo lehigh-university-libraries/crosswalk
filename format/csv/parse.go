@@ -3,6 +3,7 @@ package csv
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -19,24 +20,62 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 	if opts == nil {
 		opts = format.NewParseOptions()
 	}
+	// Validate executable specification/profile binding before reading input so
+	// an empty document cannot bypass the same trust boundary as a populated one.
+	if opts.Spec != nil {
+		if err := validateSpecParseOptions(opts); err != nil {
+			return nil, err
+		}
+	}
 
-	reader := csv.NewReader(r)
+	limited := &io.LimitedReader{R: r, N: maxCSVInputBytes + 1}
+	reader := csv.NewReader(limited)
 	reader.FieldsPerRecord = -1 // Allow variable number of fields
-	reader.LazyQuotes = true
+	reader.LazyQuotes = false
 
-	// Read all rows
-	rows, err := reader.ReadAll()
+	rows, err := readBoundedCSVRows(reader)
 	if err != nil {
+		var parseError *csv.ParseError
+		if errors.As(err, &parseError) {
+			return nil, &format.DiagnosticsError{Diagnostics: []format.Diagnostic{{
+				Source:  opts.SourceName,
+				Row:     parseError.Line,
+				Column:  parseError.Column,
+				Code:    "invalid_csv",
+				Message: parseError.Err.Error(),
+			}}}
+		}
 		return nil, fmt.Errorf("parsing CSV: %w", err)
+	}
+	if limited.N == 0 {
+		return nil, fmt.Errorf("CSV input exceeds %d bytes", maxCSVInputBytes)
 	}
 
 	if len(rows) == 0 {
 		return nil, nil
 	}
+	if opts.Spec != nil {
+		return parseRowsWithSpec(rows, opts)
+	}
 
 	// First row is header
 	header := rows[0]
 	columnMap := buildColumnMap(header, opts.Profile)
+	diagnostics := make([]format.Diagnostic, 0)
+	if opts.Strict {
+		for index, name := range header {
+			if _, ok := columnMap[index]; !ok && strings.TrimSpace(name) != "" {
+				diagnostics = append(diagnostics, format.Diagnostic{
+					Source:  opts.SourceName,
+					Row:     1,
+					Column:  index + 1,
+					Header:  strings.TrimSpace(name),
+					Code:    "unknown_column",
+					Message: "column has no CSV-to-Hub mapping",
+				})
+			}
+		}
+	}
 
 	// Get multi-value separator
 	sep := "|"
@@ -47,14 +86,80 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 	// Parse data rows
 	records := make([]*hubv1.Record, 0, len(rows)-1)
 	for i := 1; i < len(rows); i++ {
+		if emptyRow(rows[i]) {
+			continue
+		}
+		if len(rows[i]) != len(header) {
+			diagnostics = append(diagnostics, format.Diagnostic{
+				Source:  opts.SourceName,
+				Row:     i + 1,
+				Code:    "column_count",
+				Message: fmt.Sprintf("got %d columns; header defines %d", len(rows[i]), len(header)),
+			})
+			continue
+		}
 		record, err := rowToRecord(rows[i], header, columnMap, sep, opts)
 		if err != nil {
-			continue // Skip invalid rows
+			diagnostic := format.Diagnostic{
+				Source:  opts.SourceName,
+				Row:     i + 1,
+				Code:    "invalid_row",
+				Message: err.Error(),
+			}
+			if cell, ok := err.(*cellError); ok {
+				diagnostic.Column = cell.column + 1
+				diagnostic.Header = header[cell.column]
+				diagnostic.Code = cell.code
+				diagnostic.Message = cell.message
+			}
+			diagnostics = append(diagnostics, diagnostic)
+			continue
 		}
 		records = append(records, record)
 	}
+	if len(diagnostics) > 0 {
+		return nil, &format.DiagnosticsError{Diagnostics: diagnostics}
+	}
 
 	return records, nil
+}
+
+const (
+	maxCSVInputBytes = int64(64 << 20)
+	maxCSVRows       = 100_002
+	maxCSVCells      = int64(1_000_000)
+)
+
+func readBoundedCSVRows(reader *csv.Reader) ([][]string, error) {
+	rows := make([][]string, 0)
+	var cells int64
+	for {
+		row, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			return rows, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(rows) >= maxCSVRows {
+			return nil, fmt.Errorf("CSV row count exceeds %d", maxCSVRows)
+		}
+		if int64(len(row)) > maxCSVCells-cells {
+			return nil, fmt.Errorf("CSV cell count exceeds %d", maxCSVCells)
+		}
+		cells += int64(len(row))
+		rows = append(rows, row)
+	}
+}
+
+type cellError struct {
+	column  int
+	code    string
+	message string
+}
+
+func (e *cellError) Error() string {
+	return e.message
 }
 
 func buildColumnMap(header []string, profile *mapping.Profile) map[int]string {
@@ -165,6 +270,9 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			// Contributors always use " ; " as multi-value separator to match serialization
 			entries := splitMultiValue(value, " ; ")
 			for _, entry := range entries {
+				if strings.HasPrefix(strings.TrimSpace(entry), "{") && !json.Valid([]byte(entry)) {
+					return nil, &cellError{column: i, code: "invalid_contributor", message: "contributor JSON is invalid"}
+				}
 				if c := parseContributor(entry); c != nil {
 					record.Contributors = append(record.Contributors, c)
 				}
@@ -173,9 +281,15 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 		case "Dates":
 			dateType := dateTypeFromString(subtype)
 			for _, v := range splitMultiValue(value, sep) {
-				date, _ := helpers.ParseEDTF(v, dateType)
+				date, err := helpers.ParseEDTF(v, dateType)
 				if date.Year > 0 {
 					record.Dates = append(record.Dates, date)
+				} else {
+					message := fmt.Sprintf("must be a valid EDTF date: %q", v)
+					if err != nil {
+						message = err.Error()
+					}
+					return nil, &cellError{column: i, code: "invalid_date", message: message}
 				}
 			}
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DISS_submission embargo_code="3">
+  <DISS_authorship>
+    <DISS_author>
+      <DISS_name><DISS_surname>Example</DISS_surname><DISS_fname>Ada</DISS_fname></DISS_name>
+    </DISS_author>
+  </DISS_authorship>
+  <DISS_description>
+    <DISS_title>Safe ProQuest package</DISS_title>
+    <DISS_dates><DISS_comp_date>2025</DISS_comp_date><DISS_accept_date>01/15/2025</DISS_accept_date></DISS_dates>
+    <DISS_categorization><DISS_language>en</DISS_language></DISS_categorization>
+  </DISS_description>
+  <DISS_content>
+    <DISS_abstract><DISS_para>Example abstract.</DISS_para></DISS_abstract>
+    <DISS_binary type="PDF">item.pdf</DISS_binary>
+  </DISS_content>
+</DISS_submission>

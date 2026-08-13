@@ -75,6 +75,14 @@ func TestParseNamePrefix(t *testing.T) {
 	}
 }
 
+func TestParseRejectsExcessiveCSVRows(t *testing.T) {
+	input := "title\n" + strings.Repeat("x\n", maxCSVRows)
+	_, err := (&Format{}).Parse(strings.NewReader(input), nil)
+	if err == nil || !strings.Contains(err.Error(), "row count exceeds") {
+		t.Fatalf("Parse() row-limit error = %v", err)
+	}
+}
+
 func TestParseContributor(t *testing.T) {
 	tests := []struct {
 		name            string

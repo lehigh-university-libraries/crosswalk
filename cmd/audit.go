@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
@@ -32,7 +33,7 @@ var auditExtrasCmd = &cobra.Command{
 
 Example:
   crosswalk audit extras drupal export.json
-  crosswalk audit extras csv records.csv --profile my-profile`,
+	  crosswalk audit extras drupal export.json --source-profile my-profile`,
 	Args: cobra.ExactArgs(2),
 	RunE: runAuditExtras,
 }
@@ -67,7 +68,7 @@ func init() {
 	rootCmd.AddCommand(auditCmd)
 	auditCmd.AddCommand(auditExtrasCmd)
 
-	auditExtrasCmd.Flags().StringP("profile", "p", "", "Profile name to use for parsing")
+	auditExtrasCmd.Flags().String("source-profile", "", "stored system profile used to parse the source")
 	auditExtrasCmd.Flags().Float64("threshold", 50.0, "Percentage threshold for promotion candidates")
 	auditExtrasCmd.Flags().IntP("examples", "e", 3, "Number of example values to include")
 	auditExtrasCmd.Flags().StringP("output", "o", "", "Output file (default: stdout)")
@@ -78,16 +79,17 @@ func runAuditExtras(cmd *cobra.Command, args []string) error {
 	formatName := args[0]
 	inputFile := args[1]
 
-	profileName, _ := cmd.Flags().GetString("profile")
+	profileName, _ := cmd.Flags().GetString("source-profile")
 	threshold, _ := cmd.Flags().GetFloat64("threshold")
 	maxExamples, _ := cmd.Flags().GetInt("examples")
 	outputFile, _ := cmd.Flags().GetString("output")
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 
-	// Read input file
-	data, err := os.ReadFile(inputFile)
-	if err != nil {
-		return fmt.Errorf("reading input file: %w", err)
+	if threshold < 0 || threshold > 100 {
+		return fmt.Errorf("--threshold must be between 0 and 100")
+	}
+	if maxExamples < 0 {
+		return fmt.Errorf("--examples must be non-negative")
 	}
 
 	// Get parser
@@ -96,14 +98,21 @@ func runAuditExtras(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unknown format: %s: %w", formatName, err)
 	}
 
-	// Parse records
-	parseOpts := &format.ParseOptions{}
-	// TODO: Load profile by name if provided
-	_ = profileName // Profile loading not yet implemented
-
-	records, err := parser.Parse(bytes.NewReader(data), parseOpts)
+	systemProfile, err := loadSystemProfile(profileName, formatName, "source")
 	if err != nil {
-		return fmt.Errorf("parsing input: %w", err)
+		return err
+	}
+	input, err := os.Open(inputFile)
+	if err != nil {
+		return fmt.Errorf("opening input file: %w", err)
+	}
+	records, parseErr := parser.Parse(input, &format.ParseOptions{SystemProfile: systemProfile, SourceName: inputFile})
+	closeErr := input.Close()
+	if parseErr != nil {
+		return errors.Join(fmt.Errorf("parsing input: %w", parseErr), closeErr)
+	}
+	if closeErr != nil {
+		return fmt.Errorf("closing input file: %w", closeErr)
 	}
 
 	// Run audit
@@ -116,15 +125,22 @@ func runAuditExtras(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("marshaling report: %w", err)
 		}
+		output = append(output, '\n')
 	} else {
 		output = []byte(formatExtrasReport(report))
 	}
 
 	if outputFile != "" {
-		return os.WriteFile(outputFile, output, 0644)
+		return writeOutputFile(outputFile, func(writer io.Writer) error {
+			if _, err := writer.Write(output); err != nil {
+				return fmt.Errorf("writing audit report: %w", err)
+			}
+			return nil
+		})
 	}
-
-	fmt.Println(string(output))
+	if _, err := cmd.OutOrStdout().Write(output); err != nil {
+		return fmt.Errorf("writing audit report: %w", err)
+	}
 	return nil
 }
 
@@ -172,7 +188,9 @@ func auditExtras(records []*hubv1.Record, threshold float64, maxExamples int) *E
 
 	// Calculate percentages and find promotion candidates
 	for key, stats := range report.FieldFrequency {
-		stats.Percentage = float64(stats.Count) / float64(report.TotalRecords) * 100
+		if report.TotalRecords != 0 {
+			stats.Percentage = float64(stats.Count) / float64(report.TotalRecords) * 100
+		}
 		report.FieldFrequency[key] = stats
 
 		// Check for promotion candidates
@@ -193,8 +211,12 @@ func auditExtras(records []*hubv1.Record, threshold float64, maxExamples int) *E
 
 	// Sort promotion candidates by percentage
 	sort.Slice(report.PromotionCandidates, func(i, j int) bool {
-		return report.PromotionCandidates[i].Percentage > report.PromotionCandidates[j].Percentage
+		if report.PromotionCandidates[i].Percentage != report.PromotionCandidates[j].Percentage {
+			return report.PromotionCandidates[i].Percentage > report.PromotionCandidates[j].Percentage
+		}
+		return report.PromotionCandidates[i].Field < report.PromotionCandidates[j].Field
 	})
+	sort.Strings(report.InvalidKeys)
 
 	// Check type consistency
 	report.TypeInconsistency = hub.ValidateExtrasTypes(records)
@@ -242,9 +264,11 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 
 	sb.WriteString("=== Extras Field Audit Report ===\n\n")
 	fmt.Fprintf(&sb, "Total records: %d\n", report.TotalRecords)
-	fmt.Fprintf(&sb, "Records with extras: %d (%.1f%%)\n\n",
-		report.RecordsWithExtras,
-		float64(report.RecordsWithExtras)/float64(report.TotalRecords)*100)
+	percentage := float64(0)
+	if report.TotalRecords != 0 {
+		percentage = float64(report.RecordsWithExtras) / float64(report.TotalRecords) * 100
+	}
+	fmt.Fprintf(&sb, "Records with extras: %d (%.1f%%)\n\n", report.RecordsWithExtras, percentage)
 
 	// Promotion candidates
 	if len(report.PromotionCandidates) > 0 {
@@ -258,7 +282,13 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 	// Type inconsistencies
 	if len(report.TypeInconsistency) > 0 {
 		sb.WriteString("⚠️  TYPE INCONSISTENCIES (mixed types for same field):\n")
-		for field, types := range report.TypeInconsistency {
+		fields := make([]string, 0, len(report.TypeInconsistency))
+		for field := range report.TypeInconsistency {
+			fields = append(fields, field)
+		}
+		sort.Strings(fields)
+		for _, field := range fields {
+			types := report.TypeInconsistency[field]
 			fmt.Fprintf(&sb, "  • %s: %s\n", field, strings.Join(types, ", "))
 		}
 		sb.WriteString("\n")
@@ -286,7 +316,10 @@ func formatExtrasReport(report *ExtrasAuditReport) string {
 		sorted = append(sorted, kv{k, v})
 	}
 	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].stats.Count > sorted[j].stats.Count
+		if sorted[i].stats.Count != sorted[j].stats.Count {
+			return sorted[i].stats.Count > sorted[j].stats.Count
+		}
+		return sorted[i].key < sorted[j].key
 	})
 
 	for _, item := range sorted {

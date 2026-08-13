@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"sort"
 	"strings"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
@@ -15,15 +16,23 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/value"
 )
 
+const maxDrupalInputBytes = int64(64 << 20)
+
 // Parse reads Drupal JSON and returns hub records.
 func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record, error) {
 	if opts == nil {
 		opts = format.NewParseOptions()
 	}
 
-	data, err := io.ReadAll(r)
+	if opts.Profile != nil && opts.SystemProfile != nil {
+		return nil, fmt.Errorf("Drupal parsing accepts either a static mapping or a compiled system profile, not both")
+	}
+	data, err := io.ReadAll(io.LimitReader(r, maxDrupalInputBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading input: %w", err)
+	}
+	if int64(len(data)) > maxDrupalInputBytes {
+		return nil, fmt.Errorf("reading input: Drupal JSON exceeds %d bytes", maxDrupalInputBytes)
 	}
 
 	data = trimBOM(data)
@@ -67,6 +76,9 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 }
 
 func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Record, error) {
+	if opts.SystemProfile != nil {
+		return convertEntityWithCompiledProfile(entity, opts, opts.SystemProfile)
+	}
 	record := &hubv1.Record{}
 	// Always start from the built-in default so that field types like
 	// part_detail, related_item, etc. are mapped even when a spoke-generated
@@ -77,8 +89,15 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 	// Track which hub fields have been set with their priorities
 	priorities := make(map[string]int)
 
-	// Process each field in the entity
-	for fieldName, rawValue := range entity {
+	// Process each field in deterministic source-name order. Priority remains
+	// authoritative when several source fields target the same Hub value.
+	fieldNames := make([]string, 0, len(entity))
+	for fieldName := range entity {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	for _, fieldName := range fieldNames {
+		rawValue := entity[fieldName]
 		fieldMapping, ok := profile.Fields[fieldName]
 		if !ok {
 			// Unknown field - might store in Extra later
@@ -102,7 +121,9 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 		// processField returns true if a value was actually set
 		valueSet, err := processField(record, fieldName, rawValue, fieldMapping, opts)
 		if err != nil {
-			// Log error but continue processing
+			if opts.Strict {
+				return nil, fmt.Errorf("field %q: %w", fieldName, err)
+			}
 			continue
 		}
 
@@ -129,13 +150,24 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		}
 		return false, nil
 
-	case "AltTitle":
+	case "FullTitle":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
-			record.AltTitle = append(record.AltTitle, cleanText(val, opts))
+			record.FullTitle = cleanText(val, opts)
 			return true, nil
 		}
 		return false, nil
+
+	case "AltTitle":
+		values, _ := ExtractStrings(rawValue)
+		added := false
+		for _, value := range values {
+			if cleaned := cleanText(value, opts); cleaned != "" {
+				record.AltTitle = append(record.AltTitle, cleaned)
+				added = true
+			}
+		}
+		return added, nil
 
 	case "Abstract":
 		val, _ := ExtractFormattedText(rawValue, true)
@@ -337,6 +369,12 @@ func dateTypeFromString(s string) hubv1.DateType {
 		return hubv1.DateType_DATE_TYPE_ACCEPTED
 	case "published":
 		return hubv1.DateType_DATE_TYPE_PUBLISHED
+	case "valid":
+		return hubv1.DateType_DATE_TYPE_VALID
+	case "updated":
+		return hubv1.DateType_DATE_TYPE_UPDATED
+	case "collected":
+		return hubv1.DateType_DATE_TYPE_COLLECTED
 	default:
 		return hubv1.DateType_DATE_TYPE_OTHER
 	}
@@ -1160,6 +1198,8 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_PMCID
 	case "arxiv":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV
+	case "wos", "web-of-science", "web of science":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_WOS
 	case "local", "islandora", "item-number", "file-name", "barcode":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL
 	case "pid":

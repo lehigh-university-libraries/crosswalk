@@ -1,6 +1,7 @@
 package protoxml_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/lehigh-university-libraries/crosswalk/format/protoxml"
@@ -9,6 +10,25 @@ import (
 	pqv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/proquest/v1"
 	"google.golang.org/protobuf/proto"
 )
+
+func TestUnmarshalAllISO88591(t *testing.T) {
+	t.Parallel()
+	input := append([]byte("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><submissions><DISS_submission><DISS_description><DISS_title>Caf"), 0xe9)
+	input = append(input, []byte("</DISS_title></DISS_description></DISS_submission></submissions>")...)
+
+	records, err := protoxml.UnmarshalAll(bytes.NewReader(input), func() proto.Message {
+		return &pqv1.Submission{}
+	})
+	if err != nil {
+		t.Fatalf("UnmarshalAll() error = %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("len(records) = %d", len(records))
+	}
+	if got := records[0].(*pqv1.Submission).Description.Title; got != "Café" {
+		t.Fatalf("Title = %q", got)
+	}
+}
 
 func TestUnmarshalArXiv(t *testing.T) {
 	input := []byte(`<arXivRecord xmlns="http://arXiv.org/arXivRecord" version="1.0">

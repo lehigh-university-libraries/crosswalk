@@ -3,6 +3,7 @@ package proquestv1
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -72,8 +73,20 @@ func computeEmbargoDateFromSubmission(submission *proquestv1.Submission) string 
 // extractEmbargoDate extracts a date from the repository embargo field.
 // The embargo field may contain a date string in various formats.
 func extractEmbargoDate(embargoField string) string {
+	embargoField = strings.TrimSpace(embargoField)
 	if embargoField == "" {
 		return ""
+	}
+	if strings.EqualFold(embargoField, "never deliver") {
+		return "2999-12-31"
+	}
+
+	// ProQuest may append explanatory text to an ISO delayed-release date.
+	// Preserve the legacy go-islandora behavior by accepting the leading date.
+	if fields := strings.Fields(embargoField); len(fields) > 1 {
+		if parsed, err := time.Parse("2006-01-02", fields[0]); err == nil {
+			return parsed.Format("2006-01-02")
+		}
 	}
 
 	// Try common date formats
@@ -91,9 +104,8 @@ func extractEmbargoDate(embargoField string) string {
 		}
 	}
 
-	// If no format matches, return the original value
-	// (it may be a date string we don't recognize but is still valid)
-	return embargoField
+	// An invalid explicit value must not suppress a valid embargo code.
+	return ""
 }
 
 // computeEmbargoFromCode computes the embargo end date from embargo code and accept date.
@@ -133,22 +145,23 @@ func computeEmbargoFromCode(embargoCode int, acceptDate string) string {
 		}
 	}
 
-	// Compute embargo duration based on code
-	// Using 30-day months for consistency with original implementation
-	var embargoDuration time.Duration
+	// ProQuest codes are calendar-month policies, not fixed day counts. AddDate
+	// preserves the acceptance day where possible and applies Go's documented
+	// normalization for month-end dates.
+	var embargoMonths int
 	switch embargoCode {
 	case 1:
-		embargoDuration = 6 * 30 * 24 * time.Hour // 6 months
+		embargoMonths = 6
 	case 2:
-		embargoDuration = 12 * 30 * 24 * time.Hour // 12 months
+		embargoMonths = 12
 	case 3:
-		embargoDuration = 24 * 30 * 24 * time.Hour // 24 months
+		embargoMonths = 24
 	default:
 		slog.Warn("Unknown embargo code", "embargo_code", embargoCode)
 		return ""
 	}
 
-	embargoEndDate := acceptTime.Add(embargoDuration)
+	embargoEndDate := acceptTime.AddDate(0, embargoMonths, 0)
 	return embargoEndDate.Format("2006-01-02")
 }
 

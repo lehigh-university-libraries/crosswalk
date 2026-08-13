@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
@@ -18,16 +19,29 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 		opts = format.NewSerializeOptions()
 	}
 
-	profile := opts.Profile
-	if profile == nil {
-		profile = defaultProfile()
+	if opts.Profile != nil && opts.SystemProfile != nil {
+		return fmt.Errorf("Drupal serialization accepts either a static mapping or a compiled system profile, not both")
 	}
-
 	entities := make([]map[string]any, 0, len(records))
-	for _, record := range records {
-		entity, err := recordToEntity(record, profile, opts)
+	for index, record := range records {
+		if record == nil {
+			return fmt.Errorf("converting record %d: record is nil", index+1)
+		}
+		var (
+			entity map[string]any
+			err    error
+		)
+		if opts.SystemProfile != nil {
+			entity, err = recordToEntityWithCompiledProfile(record, opts.SystemProfile)
+		} else {
+			staticProfile := opts.Profile
+			if staticProfile == nil {
+				staticProfile = defaultProfile()
+			}
+			entity, err = recordToEntityWithStaticProfile(record, staticProfile, opts)
+		}
 		if err != nil {
-			return fmt.Errorf("converting record: %w", err)
+			return fmt.Errorf("converting record %d: %w", index+1, err)
 		}
 		entities = append(entities, entity)
 	}
@@ -44,8 +58,11 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 	return encoder.Encode(entities)
 }
 
-func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format.SerializeOptions) (map[string]any, error) {
+// recordToEntityWithStaticProfile isolates the legacy map-based profile API.
+// Instance-specific Drupal targets use recordToEntityWithCompiledProfile.
+func recordToEntityWithStaticProfile(record *hubv1.Record, profile *mapping.Profile, opts *format.SerializeOptions) (map[string]any, error) {
 	entity := make(map[string]any)
+	orderedFields := orderedDrupalProfileFields(profile)
 
 	// Build reverse mapping: hub field -> source fields
 	irToSource := make(map[string][]struct {
@@ -53,7 +70,8 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 		Mapping     mapping.FieldMapping
 	})
 
-	for source, fieldMapping := range profile.Fields {
+	for _, configured := range orderedFields {
+		source, fieldMapping := configured.name, configured.mapping
 		base, _ := mapping.IRFieldName(fieldMapping.IR)
 		irToSource[base] = append(irToSource[base], struct {
 			SourceField string
@@ -258,9 +276,11 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 	// DegreeInfo
 	if record.DegreeInfo != nil {
 		if record.DegreeInfo.DegreeName != "" {
-			for _, s := range profile.Fields {
+			for _, configured := range orderedFields {
+				s := configured.mapping
 				if s.IR == "DegreeInfo.DegreeName" {
-					for name, m := range profile.Fields {
+					for _, candidate := range orderedFields {
+						name, m := candidate.name, candidate.mapping
 						if m.IR == s.IR {
 							entity[name] = []map[string]any{{"value": record.DegreeInfo.DegreeName}}
 							break
@@ -271,7 +291,8 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 			}
 		}
 		if record.DegreeInfo.DegreeLevel != "" {
-			for name, m := range profile.Fields {
+			for _, configured := range orderedFields {
+				name, m := configured.name, configured.mapping
 				if m.IR == "DegreeInfo.DegreeLevel" {
 					entity[name] = []map[string]any{{"value": record.DegreeInfo.DegreeLevel}}
 					break
@@ -279,7 +300,8 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 			}
 		}
 		if record.DegreeInfo.Department != "" {
-			for name, m := range profile.Fields {
+			for _, configured := range orderedFields {
+				name, m := configured.name, configured.mapping
 				if m.IR == "DegreeInfo.Department" {
 					entity[name] = []map[string]any{{"target_id": record.DegreeInfo.Department}}
 					break
@@ -291,7 +313,8 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 	// Extra fields
 	extraFields := hub.GetExtraFields(record)
 	for key, value := range extraFields {
-		for name, m := range profile.Fields {
+		for _, configured := range orderedFields {
+			name, m := configured.name, configured.mapping
 			_, subfield := mapping.IRFieldName(m.IR)
 			if subfield == key {
 				switch v := value.(type) {
@@ -310,4 +333,26 @@ func recordToEntity(record *hubv1.Record, profile *mapping.Profile, opts *format
 	}
 
 	return entity, nil
+}
+
+type namedDrupalMapping struct {
+	name    string
+	mapping mapping.FieldMapping
+}
+
+func orderedDrupalProfileFields(staticProfile *mapping.Profile) []namedDrupalMapping {
+	if staticProfile == nil {
+		return nil
+	}
+	result := make([]namedDrupalMapping, 0, len(staticProfile.Fields))
+	for name, fieldMapping := range staticProfile.Fields {
+		result = append(result, namedDrupalMapping{name: name, mapping: fieldMapping})
+	}
+	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].mapping.Priority != result[j].mapping.Priority {
+			return result[i].mapping.Priority > result[j].mapping.Priority
+		}
+		return result[i].name < result[j].name
+	})
+	return result
 }

@@ -1,0 +1,7 @@
+id: node.field_rating
+field_name: field_rating
+entity_type: node
+type: integer
+settings:
+  unsigned: true
+cardinality: 3

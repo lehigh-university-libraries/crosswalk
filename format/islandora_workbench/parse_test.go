@@ -1,12 +1,51 @@
 package islandora_workbench
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/spec"
 )
+
+func TestParseStrictDiagnostics(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		code   string
+		row    int
+		column int
+	}{
+		{name: "unknown column", input: "title,mystery\nExample,value\n", code: "unknown_column", row: 1, column: 2},
+		{name: "ragged row", input: "title,node_id\nExample\n", code: "column_count", row: 2},
+		{name: "invalid date", input: "title,field_edtf_date_issued\nExample,never\n", code: "invalid_date", row: 2, column: 2},
+		{name: "invalid CSV", input: "title\n\"unterminated\n", code: "invalid_csv", row: 2, column: 15},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := (&Format{}).Parse(strings.NewReader(test.input), &format.ParseOptions{Strict: true, SourceName: "input.csv"})
+			var diagnostics *format.DiagnosticsError
+			if !errors.As(err, &diagnostics) || len(diagnostics.Diagnostics) == 0 {
+				t.Fatalf("error = %T %v, want diagnostics", err, err)
+			}
+			got := diagnostics.Diagnostics[0]
+			if got.Code != test.code || got.Row != test.row || got.Column != test.column {
+				t.Errorf("diagnostic = %+v, want code=%s row=%d column=%d", got, test.code, test.row, test.column)
+			}
+		})
+	}
+}
+
+func TestParseRejectsExcessiveWorkbenchRows(t *testing.T) {
+	input := "title\n" + strings.Repeat("x\n", maxWorkbenchRows)
+	_, err := (&Format{}).Parse(strings.NewReader(input), nil)
+	if err == nil || !strings.Contains(err.Error(), "row count exceeds") {
+		t.Fatalf("Parse() row-limit error = %v", err)
+	}
+}
 
 func TestParseWorkbenchLinkedAgent(t *testing.T) {
 	tests := []struct {
@@ -224,6 +263,7 @@ func TestParse_RoundTrip(t *testing.T) {
 	f := &Format{}
 	serOpts := format.NewSerializeOptions()
 	serOpts.IncludeHeader = true
+	serOpts.Spec = spec.FabricatorWorkbench()
 	if err := f.Serialize(&buf, []*hubv1.Record{record}, serOpts); err != nil {
 		t.Fatalf("Serialize error: %v", err)
 	}
@@ -258,5 +298,32 @@ func TestParse_RoundTrip(t *testing.T) {
 	}
 	if len(p.Rights) != 1 || p.Rights[0].Uri != "http://rightsstatements.org/vocab/InC/1.0/" {
 		t.Errorf("Rights = %v", p.Rights)
+	}
+}
+
+func TestParseHeaderOrderDoesNotChangeResourceType(t *testing.T) {
+	input := "field_resource_type,field_model,title\nImage,Paged Content,Example\n"
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{Strict: true})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	record := records[0]
+	if record.ObjectModel != "Paged Content" {
+		t.Errorf("object model = %q", record.ObjectModel)
+	}
+	if record.ResourceType == nil || record.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_IMAGE {
+		t.Errorf("resource type = %+v, want image", record.ResourceType)
+	}
+}
+
+func TestParseHeaderOrderKeepsFileMetadataTogether(t *testing.T) {
+	input := "field_media_type,file,title\nimage/tiff,item.tif,Example\n"
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{Strict: true})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	files := records[0].Files
+	if len(files) != 1 || files[0].Path != "item.tif" || files[0].MimeType != "image/tiff" {
+		t.Fatalf("files = %+v", files)
 	}
 }

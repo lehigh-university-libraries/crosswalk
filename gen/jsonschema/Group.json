@@ -376,6 +376,20 @@
                 "role": {
                     "type": "string",
                     "description": "e.g. \"supplemental\", \"service\", \"thumbnail\""
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "Canonical remote resource URI, when no local path exists."
+                },
+                "checksum": {
+                    "type": "string"
+                },
+                "checksum_algorithm": {
+                    "type": "string"
+                },
+                "access_url": {
+                    "type": "string",
+                    "description": "Download URL when distinct from the resource URI."
                 }
             },
             "additionalProperties": true,
@@ -480,7 +494,9 @@
                         "IDENTIFIER_TYPE_REPORT_NUMBER",
                         15,
                         "IDENTIFIER_TYPE_CALL_NUMBER",
-                        16
+                        16,
+                        "IDENTIFIER_TYPE_WOS",
+                        17
                     ],
                     "oneOf": [
                         {
@@ -503,6 +519,40 @@
                 "is_preferred": {
                     "type": "boolean",
                     "description": "Is this the preferred identifier of its type?"
+                },
+                "scheme": {
+                    "type": "string",
+                    "description": "Scheme is the open, canonical machine name for the identifier namespace (for example doi, scopus-eid, or an institution-defined local scheme). IdentifierType remains a broad interoperability hint; Scheme is the authoritative discriminator for schemes that are not represented by the closed enum."
+                },
+                "namespace_uri": {
+                    "type": "string",
+                    "description": "Namespace URI scopes the value to its issuing authority or repository. Repository-local values must have a namespace before reconciliation can treat them as exact identity evidence."
+                },
+                "identity_level": {
+                    "enum": [
+                        "IDENTIFIER_IDENTITY_LEVEL_UNSPECIFIED",
+                        0,
+                        "IDENTIFIER_IDENTITY_LEVEL_WORK",
+                        1,
+                        "IDENTIFIER_IDENTITY_LEVEL_VERSION",
+                        2,
+                        "IDENTIFIER_IDENTITY_LEVEL_MANIFESTATION",
+                        3,
+                        "IDENTIFIER_IDENTITY_LEVEL_CONCEPT",
+                        4,
+                        "IDENTIFIER_IDENTITY_LEVEL_SOURCE_RECORD",
+                        5
+                    ],
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ],
+                    "title": "Identifier Identity Level",
+                    "description": "IdentifierIdentityLevel describes what an identifier identifies. Matching policy can then decide whether equality proves identity at the desired repository granularity."
                 }
             },
             "additionalProperties": true,
@@ -907,7 +957,9 @@
                         "IDENTIFIER_TYPE_REPORT_NUMBER",
                         15,
                         "IDENTIFIER_TYPE_CALL_NUMBER",
-                        16
+                        16,
+                        "IDENTIFIER_TYPE_WOS",
+                        17
                     ],
                     "oneOf": [
                         {
@@ -1178,6 +1230,22 @@
                     },
                     "type": "array",
                     "description": "Fields that were placed in 'extra' (for audit purposes)"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Origin identifies the source system or installation that supplied the record, independent of the serialization format."
+                },
+                "source_uri": {
+                    "type": "string",
+                    "description": "Source URI is the canonical API or public locator for the source record."
+                },
+                "profile_fingerprint": {
+                    "type": "string",
+                    "description": "Profile fingerprint identifies the exact immutable mapping contract used to parse this record. It is populated together with model_fingerprint."
+                },
+                "model_fingerprint": {
+                    "type": "string",
+                    "description": "Model fingerprint identifies the exact source-system schema snapshot to which the profile was bound."
                 }
             },
             "additionalProperties": true,

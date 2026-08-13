@@ -127,7 +127,9 @@
                         "IDENTIFIER_TYPE_REPORT_NUMBER",
                         15,
                         "IDENTIFIER_TYPE_CALL_NUMBER",
-                        16
+                        16,
+                        "IDENTIFIER_TYPE_WOS",
+                        17
                     ],
                     "oneOf": [
                         {

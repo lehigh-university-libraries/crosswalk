@@ -68,12 +68,19 @@ func init() {
 	setupLogger()
 	rootCmd.PersistentFlags().String("config-dir", "", "path to crosswalk configuration directory (default $HOME/.crosswalk)")
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if dir, _ := cmd.Flags().GetString("config-dir"); dir != "" {
-			profile.SetConfigDir(dir)
+		// Always apply the current invocation's value. This matters to callers
+		// embedding and reusing the Cobra tree: an earlier explicit directory
+		// must not leak into a later invocation that selected the default.
+		dir, err := cmd.Flags().GetString("config-dir")
+		if err != nil {
+			return fmt.Errorf("reading --config-dir: %w", err)
 		}
+		profile.SetConfigDir(dir)
 		return nil
 	}
 	rootCmd.AddCommand(convertCmd)
 	rootCmd.AddCommand(validateCmd)
-	rootCmd.AddCommand(profilesCmd)
+	rootCmd.AddCommand(newServeCmd())
+	rootCmd.AddCommand(newFetchCmd())
+	rootCmd.AddCommand(newSpecCmd())
 }
