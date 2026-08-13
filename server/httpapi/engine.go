@@ -68,7 +68,7 @@ func (e *CrosswalkEngine) WithFinder(finder reconcile.Finder) *CrosswalkEngine {
 // before the engine begins serving concurrent requests.
 func (e *CrosswalkEngine) ConfigureReconciliation(config ReconciliationConfig) error {
 	if e == nil {
-		return errors.New("Crosswalk engine is nil")
+		return errors.New("crosswalk engine is nil")
 	}
 	if err := config.Policy.Validate(); err != nil {
 		return fmt.Errorf("invalid reconciliation policy: %w", err)

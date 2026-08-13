@@ -407,10 +407,11 @@ func parseDate(value string, dateType hubv1.DateType) *hubv1.DateValue {
 			continue
 		}
 		result := hub.NewDateFromYear(int32(parsed.Year()), dateType)
-		if layout == "2006-01" {
+		switch layout {
+		case "2006-01":
 			result.Month = int32(parsed.Month())
 			result.Precision = hubv1.DatePrecision_DATE_PRECISION_MONTH
-		} else if layout == "2006-01-02" {
+		case "2006-01-02":
 			result.Month = int32(parsed.Month())
 			result.Day = int32(parsed.Day())
 			result.Precision = hubv1.DatePrecision_DATE_PRECISION_DAY

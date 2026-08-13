@@ -141,18 +141,18 @@ type scopusAuth struct {
 func (auth scopusAuth) Apply(request *http.Request) error {
 	apiKey := strings.TrimSpace(auth.apiKey)
 	if apiKey == "" || strings.ContainsAny(apiKey, "\r\n") {
-		return fmt.Errorf("Scopus API key is empty or invalid")
+		return fmt.Errorf("scopus API key is empty or invalid")
 	}
 	request.Header.Set("X-ELS-APIKey", apiKey)
 	if token := strings.TrimSpace(auth.institutionToken); token != "" {
 		if strings.ContainsAny(token, "\r\n") {
-			return fmt.Errorf("Scopus institution credential is invalid")
+			return fmt.Errorf("scopus institution credential is invalid")
 		}
 		request.Header.Set("X-ELS-Insttoken", token)
 	}
 	if token := strings.TrimSpace(auth.accessToken); token != "" {
 		if strings.ContainsAny(token, "\r\n") {
-			return fmt.Errorf("Scopus access credential is invalid")
+			return fmt.Errorf("scopus access credential is invalid")
 		}
 		request.Header.Set("Authorization", "Bearer "+token)
 	}

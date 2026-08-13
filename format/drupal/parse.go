@@ -25,7 +25,7 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 	}
 
 	if opts.Profile != nil && opts.SystemProfile != nil {
-		return nil, fmt.Errorf("Drupal parsing accepts either a static mapping or a compiled system profile, not both")
+		return nil, fmt.Errorf("drupal parsing accepts either a static mapping or a compiled system profile, not both")
 	}
 	data, err := io.ReadAll(io.LimitReader(r, maxDrupalInputBytes+1))
 	if err != nil {

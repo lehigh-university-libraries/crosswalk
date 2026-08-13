@@ -61,10 +61,10 @@ func CompileDirectory(dir string, options CompileOptions) (*model.Snapshot, erro
 			continue
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
-			return nil, fmt.Errorf("Drupal config %q is not a regular file", entry.Name())
+			return nil, fmt.Errorf("drupal config %q is not a regular file", entry.Name())
 		}
 		if len(files) >= options.MaxFiles {
-			return nil, fmt.Errorf("Drupal config exceeds %d files", options.MaxFiles)
+			return nil, fmt.Errorf("drupal config exceeds %d files", options.MaxFiles)
 		}
 		file, err := root.Open(entry.Name())
 		if err != nil {
@@ -73,7 +73,7 @@ func CompileDirectory(dir string, options CompileOptions) (*model.Snapshot, erro
 		info, statErr := file.Stat()
 		if statErr != nil || !info.Mode().IsRegular() {
 			_ = file.Close()
-			return nil, fmt.Errorf("Drupal config %q is not a regular file", entry.Name())
+			return nil, fmt.Errorf("drupal config %q is not a regular file", entry.Name())
 		}
 		data, readErr := readBounded(file, options.MaxFileBytes)
 		closeErr := file.Close()
@@ -85,7 +85,7 @@ func CompileDirectory(dir string, options CompileOptions) (*model.Snapshot, erro
 		}
 		total += int64(len(data))
 		if total > options.MaxBytes {
-			return nil, fmt.Errorf("Drupal config exceeds %d total bytes", options.MaxBytes)
+			return nil, fmt.Errorf("drupal config exceeds %d total bytes", options.MaxBytes)
 		}
 		files = append(files, ConfigFile{Name: entry.Name(), Data: data})
 	}
@@ -120,7 +120,7 @@ func CompileArchive(r io.Reader, options CompileOptions) (*model.Snapshot, error
 		}
 		memberCount++
 		if memberCount > options.MaxFiles {
-			return nil, fmt.Errorf("Drupal config archive exceeds %d members", options.MaxFiles)
+			return nil, fmt.Errorf("drupal config archive exceeds %d members", options.MaxFiles)
 		}
 		cleanName, err := safeArchiveName(header.Name)
 		if err != nil {
@@ -129,14 +129,14 @@ func CompileArchive(r io.Reader, options CompileOptions) (*model.Snapshot, error
 		if header.Typeflag == tar.TypeDir {
 			continue
 		}
-		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
-			return nil, fmt.Errorf("Drupal config archive member %q is not a regular file", header.Name)
+		if header.Typeflag != tar.TypeReg {
+			return nil, fmt.Errorf("drupal config archive member %q is not a regular file", header.Name)
 		}
 		if header.Size < 0 || header.Size > options.MaxFileBytes {
-			return nil, fmt.Errorf("Drupal config archive member %q exceeds %d bytes", header.Name, options.MaxFileBytes)
+			return nil, fmt.Errorf("drupal config archive member %q exceeds %d bytes", header.Name, options.MaxFileBytes)
 		}
 		if header.Size > options.MaxBytes-total {
-			return nil, fmt.Errorf("Drupal config archive exceeds %d uncompressed bytes", options.MaxBytes)
+			return nil, fmt.Errorf("drupal config archive exceeds %d uncompressed bytes", options.MaxBytes)
 		}
 		total += header.Size
 		name := path.Base(cleanName)
@@ -144,7 +144,7 @@ func CompileArchive(r io.Reader, options CompileOptions) (*model.Snapshot, error
 			continue
 		}
 		if _, exists := seen[name]; exists {
-			return nil, fmt.Errorf("Drupal config archive contains duplicate config %q", name)
+			return nil, fmt.Errorf("drupal config archive contains duplicate config %q", name)
 		}
 		data, err := readBounded(reader, options.MaxFileBytes)
 		if err != nil {
@@ -154,7 +154,7 @@ func CompileArchive(r io.Reader, options CompileOptions) (*model.Snapshot, error
 		files = append(files, ConfigFile{Name: name, Data: data})
 	}
 	if limitedStream.N == 0 {
-		return nil, fmt.Errorf("Drupal config archive exceeds %d expanded bytes", streamLimit)
+		return nil, fmt.Errorf("drupal config archive exceeds %d expanded bytes", streamLimit)
 	}
 	return Compile(files, options)
 }
@@ -165,10 +165,10 @@ func CompileArchive(r io.Reader, options CompileOptions) (*model.Snapshot, error
 func Compile(configs []ConfigFile, options CompileOptions) (*model.Snapshot, error) {
 	options = normalizeOptions(options)
 	if len(configs) == 0 {
-		return nil, fmt.Errorf("Drupal config snapshot is empty")
+		return nil, fmt.Errorf("drupal config snapshot is empty")
 	}
 	if len(configs) > options.MaxFiles {
-		return nil, fmt.Errorf("Drupal config exceeds %d files", options.MaxFiles)
+		return nil, fmt.Errorf("drupal config exceeds %d files", options.MaxFiles)
 	}
 
 	files := make(map[string][]byte, len(configs))
@@ -178,17 +178,17 @@ func Compile(configs []ConfigFile, options CompileOptions) (*model.Snapshot, err
 			return nil, fmt.Errorf("unsafe Drupal config name %q", config.Name)
 		}
 		if int64(len(config.Data)) > options.MaxFileBytes {
-			return nil, fmt.Errorf("Drupal config %q exceeds %d bytes", config.Name, options.MaxFileBytes)
+			return nil, fmt.Errorf("drupal config %q exceeds %d bytes", config.Name, options.MaxFileBytes)
 		}
 		total += int64(len(config.Data))
 		if total > options.MaxBytes {
-			return nil, fmt.Errorf("Drupal config exceeds %d total bytes", options.MaxBytes)
+			return nil, fmt.Errorf("drupal config exceeds %d total bytes", options.MaxBytes)
 		}
 		if !isSupportedConfigName(config.Name) {
 			continue
 		}
 		if _, exists := files[config.Name]; exists {
-			return nil, fmt.Errorf("Drupal config snapshot repeats %q", config.Name)
+			return nil, fmt.Errorf("drupal config snapshot repeats %q", config.Name)
 		}
 		files[config.Name] = append([]byte(nil), config.Data...)
 	}
@@ -266,14 +266,14 @@ func compileFiles(files map[string][]byte) (*model.Snapshot, error) {
 				return nil, err
 			}
 			if storage.Type == "" {
-				return nil, fmt.Errorf("Drupal field storage %q has no type", name)
+				return nil, fmt.Errorf("drupal field storage %q has no type", name)
 			}
 			if storage.Cardinality == 0 || storage.Cardinality < -1 {
-				return nil, fmt.Errorf("Drupal field storage %q has invalid cardinality %d", name, storage.Cardinality)
+				return nil, fmt.Errorf("drupal field storage %q has invalid cardinality %d", name, storage.Cardinality)
 			}
 			key := fieldKey{entityType: storage.EntityType, field: storage.FieldName}
 			if _, exists := storages[key]; exists {
-				return nil, fmt.Errorf("Drupal config repeats storage for %s.%s", storage.EntityType, storage.FieldName)
+				return nil, fmt.Errorf("drupal config repeats storage for %s.%s", storage.EntityType, storage.FieldName)
 			}
 			storages[key] = storage
 		case strings.HasPrefix(name, "field.field."):
@@ -289,7 +289,7 @@ func compileFiles(files map[string][]byte) (*model.Snapshot, error) {
 				fields[key] = make(map[string]fieldConfig)
 			}
 			if _, exists := fields[key][field.FieldName]; exists {
-				return nil, fmt.Errorf("Drupal config repeats field %s.%s.%s", field.EntityType, field.Bundle, field.FieldName)
+				return nil, fmt.Errorf("drupal config repeats field %s.%s.%s", field.EntityType, field.Bundle, field.FieldName)
 			}
 			fields[key][field.FieldName] = field
 		case strings.HasPrefix(name, "rdf.mapping."):
@@ -302,7 +302,7 @@ func compileFiles(files map[string][]byte) (*model.Snapshot, error) {
 			}
 			key := entityKey{entityType: mapping.TargetEntityType, bundle: mapping.Bundle}
 			if _, exists := rdfMappings[key]; exists {
-				return nil, fmt.Errorf("Drupal config repeats RDF mapping for %s.%s", mapping.TargetEntityType, mapping.Bundle)
+				return nil, fmt.Errorf("drupal config repeats RDF mapping for %s.%s", mapping.TargetEntityType, mapping.Bundle)
 			}
 			rdfMappings[key] = mapping
 		}
@@ -316,7 +316,7 @@ func compileFiles(files map[string][]byte) (*model.Snapshot, error) {
 		keys[key] = struct{}{}
 	}
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("Drupal config contains no bundle fields or RDF mappings")
+		return nil, fmt.Errorf("drupal config contains no bundle fields or RDF mappings")
 	}
 
 	entities := make([]model.Entity, 0, len(keys))
@@ -381,10 +381,10 @@ func compileEntity(key entityKey, configured map[string]fieldConfig, rdf rdfConf
 		}
 		storage, exists := storages[fieldKey{entityType: key.entityType, field: name}]
 		if !exists {
-			return model.Entity{}, fmt.Errorf("Drupal field %s.%s.%s has no field.storage config", key.entityType, key.bundle, name)
+			return model.Entity{}, fmt.Errorf("drupal field %s.%s.%s has no field.storage config", key.entityType, key.bundle, name)
 		}
 		if instance.FieldType != "" && instance.FieldType != storage.Type {
-			return model.Entity{}, fmt.Errorf("Drupal field %s.%s.%s type %q does not match storage type %q", key.entityType, key.bundle, name, instance.FieldType, storage.Type)
+			return model.Entity{}, fmt.Errorf("drupal field %s.%s.%s type %q does not match storage type %q", key.entityType, key.bundle, name, instance.FieldType, storage.Type)
 		}
 		field := model.Field{
 			Path:               name,
@@ -516,10 +516,10 @@ func valueKind(sourceType string) model.ValueKind {
 func validateStorageName(name string, config storageConfig) error {
 	want := "field.storage." + config.EntityType + "." + config.FieldName + ".yml"
 	if !validMachineName(config.EntityType) || !validMachineName(config.FieldName) || name != want {
-		return fmt.Errorf("Drupal field storage %q has invalid identity", name)
+		return fmt.Errorf("drupal field storage %q has invalid identity", name)
 	}
 	if config.ID != "" && config.ID != config.EntityType+"."+config.FieldName {
-		return fmt.Errorf("Drupal field storage %q has mismatched id %q", name, config.ID)
+		return fmt.Errorf("drupal field storage %q has mismatched id %q", name, config.ID)
 	}
 	return nil
 }
@@ -527,10 +527,10 @@ func validateStorageName(name string, config storageConfig) error {
 func validateFieldName(name string, config fieldConfig) error {
 	want := "field.field." + config.EntityType + "." + config.Bundle + "." + config.FieldName + ".yml"
 	if !validMachineName(config.EntityType) || !validMachineName(config.Bundle) || !validMachineName(config.FieldName) || name != want {
-		return fmt.Errorf("Drupal field config %q has invalid identity", name)
+		return fmt.Errorf("drupal field config %q has invalid identity", name)
 	}
 	if config.ID != "" && config.ID != config.EntityType+"."+config.Bundle+"."+config.FieldName {
-		return fmt.Errorf("Drupal field config %q has mismatched id %q", name, config.ID)
+		return fmt.Errorf("drupal field config %q has mismatched id %q", name, config.ID)
 	}
 	return nil
 }
@@ -538,14 +538,14 @@ func validateFieldName(name string, config fieldConfig) error {
 func validateRDFName(name string, config rdfConfig) error {
 	want := "rdf.mapping." + config.TargetEntityType + "." + config.Bundle + ".yml"
 	if !validMachineName(config.TargetEntityType) || !validMachineName(config.Bundle) || name != want {
-		return fmt.Errorf("Drupal RDF mapping %q has invalid identity", name)
+		return fmt.Errorf("drupal RDF mapping %q has invalid identity", name)
 	}
 	if config.ID != "" && config.ID != config.TargetEntityType+"."+config.Bundle {
-		return fmt.Errorf("Drupal RDF mapping %q has mismatched id %q", name, config.ID)
+		return fmt.Errorf("drupal RDF mapping %q has mismatched id %q", name, config.ID)
 	}
 	for fieldName := range config.FieldMappings {
 		if !validMachineName(fieldName) {
-			return fmt.Errorf("Drupal RDF mapping %q contains invalid field %q", name, fieldName)
+			return fmt.Errorf("drupal RDF mapping %q contains invalid field %q", name, fieldName)
 		}
 	}
 	return nil

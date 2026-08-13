@@ -577,7 +577,7 @@ func profileTransportColumn(name string) bool {
 
 func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, transformation *spec.Transformation, delimiter string) (map[string]string, error) {
 	if transformation == nil {
-		return nil, fmt.Errorf("Drupal system profile requires a profile-bound transformation specification")
+		return nil, fmt.Errorf("drupal system profile requires a profile-bound transformation specification")
 	}
 	if compiled.System() != "drupal" {
 		return nil, fmt.Errorf("system profile %q targets %q, not drupal", compiled.Name(), compiled.System())
@@ -611,11 +611,11 @@ func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, tr
 	for fieldName, raw := range entity {
 		declared := fields[fieldName]
 		if len(declared) == 0 {
-			return nil, fmt.Errorf("Drupal profile emitted undeclared Workbench field %q", fieldName)
+			return nil, fmt.Errorf("drupal profile emitted undeclared Workbench field %q", fieldName)
 		}
 		resolvedField, exists := profileFields[fieldName]
 		if !exists {
-			return nil, fmt.Errorf("Drupal profile emitted field %q without an encodable mapping", fieldName)
+			return nil, fmt.Errorf("drupal profile emitted field %q without an encodable mapping", fieldName)
 		}
 		for _, field := range declared {
 			cell, err := profileWorkbenchCell(field, resolvedField, raw, delimiter)
@@ -680,7 +680,7 @@ func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, val
 	case "related_item":
 		return profileStructuredJSON(value, "related item", "identifier", "identifier_type", "number", "title")
 	default:
-		return "", fmt.Errorf("Drupal source type %q has no explicit Workbench cell encoding", resolved.SourceType)
+		return "", fmt.Errorf("drupal source type %q has no explicit Workbench cell encoding", resolved.SourceType)
 	}
 }
 

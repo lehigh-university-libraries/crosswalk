@@ -352,7 +352,7 @@ func toHub(value *record, options *format.ParseOptions) (*hubv1.Record, error) {
 	for _, item := range value.Files {
 		file, err := zenodoFile(item)
 		if err != nil {
-			return nil, fmt.Errorf("Zenodo file %q: %w", firstNonempty(item.Key, item.Filename), err)
+			return nil, fmt.Errorf("zenodo file %q: %w", firstNonempty(item.Key, item.Filename), err)
 		}
 		record.Files = append(record.Files, file)
 	}
@@ -470,9 +470,10 @@ func zenodoRelation(value related) *hubv1.Relation {
 		Type: zenodoRelationType(machineValue(value.Relation)), TargetId: normalized, TargetIdType: identifierType,
 		TargetResourceType: zenodoStructuredResourceType(value.ResourceType),
 	}
-	if identifierType == hubv1.IdentifierType_IDENTIFIER_TYPE_URL {
+	switch identifierType {
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_URL:
 		relation.TargetUri = identifier
-	} else if identifierType == hubv1.IdentifierType_IDENTIFIER_TYPE_DOI {
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_DOI:
 		relation.TargetUri = "https://doi.org/" + normalized
 	}
 	return relation
@@ -527,10 +528,11 @@ func parseDate(value string, dateType hubv1.DateType) *hubv1.DateValue {
 			continue
 		}
 		result := hub.NewDateFromYear(int32(parsed.Year()), dateType)
-		if layout == "2006-01" {
+		switch layout {
+		case "2006-01":
 			result.Month = int32(parsed.Month())
 			result.Precision = hubv1.DatePrecision_DATE_PRECISION_MONTH
-		} else if layout == "2006-01-02" {
+		case "2006-01-02":
 			result.Month = int32(parsed.Month())
 			result.Day = int32(parsed.Day())
 			result.Precision = hubv1.DatePrecision_DATE_PRECISION_DAY

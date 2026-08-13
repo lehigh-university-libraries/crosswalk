@@ -45,7 +45,7 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 		return nil, fmt.Errorf("parsing workbench CSV: %w", err)
 	}
 	if limited.N == 0 {
-		return nil, fmt.Errorf("Workbench input exceeds %d bytes", maxWorkbenchInputBytes)
+		return nil, fmt.Errorf("workbench input exceeds %d bytes", maxWorkbenchInputBytes)
 	}
 
 	if len(rows) == 0 {
@@ -113,10 +113,10 @@ func readBoundedWorkbenchRows(reader *csv.Reader) ([][]string, error) {
 			return nil, err
 		}
 		if len(rows) >= maxWorkbenchRows {
-			return nil, fmt.Errorf("Workbench row count exceeds %d", maxWorkbenchRows)
+			return nil, fmt.Errorf("workbench row count exceeds %d", maxWorkbenchRows)
 		}
 		if int64(len(row)) > maxWorkbenchCells-cells {
-			return nil, fmt.Errorf("Workbench cell count exceeds %d", maxWorkbenchCells)
+			return nil, fmt.Errorf("workbench cell count exceeds %d", maxWorkbenchCells)
 		}
 		cells += int64(len(row))
 		rows = append(rows, row)

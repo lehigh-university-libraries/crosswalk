@@ -22,17 +22,17 @@ func (snapshot Snapshot) CanonicalJSON() ([]byte, error) {
 	totalModel := len(snapshot.Vocabularies) + len(snapshot.Properties) + len(snapshot.ResourceClasses) + len(snapshot.ResourceTemplates)
 	totalResources := len(snapshot.ItemSets) + len(snapshot.Items) + len(snapshot.Media)
 	if totalModel > maxModelValues {
-		return nil, fmt.Errorf("Omeka S snapshot model count exceeds %d", maxModelValues)
+		return nil, fmt.Errorf("omeka S snapshot model count exceeds %d", maxModelValues)
 	}
 	if totalResources > maxResources {
-		return nil, fmt.Errorf("Omeka S snapshot resource count exceeds %d", maxResources)
+		return nil, fmt.Errorf("omeka S snapshot resource count exceeds %d", maxResources)
 	}
 	raw, err := json.Marshal(snapshot)
 	if err != nil {
 		return nil, fmt.Errorf("encode Omeka S snapshot: %w", err)
 	}
 	if int64(len(raw)) > maxInputBytes {
-		return nil, fmt.Errorf("Omeka S snapshot exceeds %d bytes", maxInputBytes)
+		return nil, fmt.Errorf("omeka S snapshot exceeds %d bytes", maxInputBytes)
 	}
 	if err := validateJSONShape(raw); err != nil {
 		return nil, fmt.Errorf("validate Omeka S snapshot JSON: %w", err)

@@ -22,7 +22,7 @@ type drupalReconciliationProfile struct {
 func loadDrupalReconciliationProfile(name string, requireLookup bool) (*drupalReconciliationProfile, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, fmt.Errorf("Drupal profile name is required")
+		return nil, fmt.Errorf("drupal profile name is required")
 	}
 	stored, err := profile.LoadStored(name)
 	if err != nil {
@@ -36,7 +36,7 @@ func loadDrupalReconciliationProfile(name string, requireLookup bool) (*drupalRe
 		return nil, fmt.Errorf("profile %q uses system %q, not drupal", name, compiled.System())
 	}
 	if requireLookup && !compiled.LookupPlan().Enabled {
-		return nil, fmt.Errorf("Drupal profile %q has no enabled existing-item lookup policy", name)
+		return nil, fmt.Errorf("drupal profile %q has no enabled existing-item lookup policy", name)
 	}
 	policy, err := reconcile.NewPolicy(compiled.IdentifierRegistryConfig())
 	if err != nil {

@@ -81,7 +81,7 @@ type drupalAttachedField struct {
 // or YAML parsing.
 func CompileDrupalModel(snapshot *model.Snapshot, options DrupalCompileOptions) (*Transformation, error) {
 	if snapshot == nil {
-		return nil, fmt.Errorf("Drupal model snapshot is required")
+		return nil, fmt.Errorf("drupal model snapshot is required")
 	}
 	if err := snapshot.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid Drupal model snapshot: %w", err)
@@ -91,14 +91,14 @@ func CompileDrupalModel(snapshot *model.Snapshot, options DrupalCompileOptions) 
 	}
 	bundle := strings.TrimSpace(options.Bundle)
 	if bundle == "" {
-		return nil, fmt.Errorf("Drupal node bundle is required")
+		return nil, fmt.Errorf("drupal node bundle is required")
 	}
 	if !validDrupalBundle(bundle) {
-		return nil, fmt.Errorf("Drupal node bundle %q is not a valid machine name", bundle)
+		return nil, fmt.Errorf("drupal node bundle %q is not a valid machine name", bundle)
 	}
 	entity, ok := snapshot.Entity("node", bundle)
 	if !ok {
-		return nil, fmt.Errorf("Drupal node bundle %q was not found in model snapshot", bundle)
+		return nil, fmt.Errorf("drupal node bundle %q was not found in model snapshot", bundle)
 	}
 	attached := make(map[string]drupalAttachedField)
 	for _, field := range entity.Fields {

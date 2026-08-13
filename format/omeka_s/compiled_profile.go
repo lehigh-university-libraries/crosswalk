@@ -82,16 +82,16 @@ func compiledOmekaProfile(compiled *profile.Compiled) ([]profile.CompiledMapping
 	}
 	mappings := compiled.Mappings()
 	if len(mappings) == 0 {
-		return nil, profile.FieldSelector{}, fmt.Errorf("Omeka S profile has no mappings")
+		return nil, profile.FieldSelector{}, fmt.Errorf("omeka S profile has no mappings")
 	}
 	selector := mappings[0].Field.Selector
 	if selector.EntityType != ModelResourceEntity {
-		return nil, profile.FieldSelector{}, fmt.Errorf("Omeka S profile entity type %q must be %q", selector.EntityType, ModelResourceEntity)
+		return nil, profile.FieldSelector{}, fmt.Errorf("omeka S profile entity type %q must be %q", selector.EntityType, ModelResourceEntity)
 	}
 	for _, mapping := range mappings[1:] {
 		candidate := mapping.Field.Selector
 		if candidate.EntityType != selector.EntityType || candidate.Bundle != selector.Bundle {
-			return nil, profile.FieldSelector{}, fmt.Errorf("Omeka S profile spans more than one model entity")
+			return nil, profile.FieldSelector{}, fmt.Errorf("omeka S profile spans more than one model entity")
 		}
 	}
 	return mappings, selector, nil
@@ -135,7 +135,7 @@ func requireResourceTemplate(source *resource, bundle string) error {
 	}
 	wanted, err := strconv.ParseInt(bundle, 10, 64)
 	if err != nil || wanted <= 0 {
-		return fmt.Errorf("Omeka S profile has invalid resource-template bundle %q", bundle)
+		return fmt.Errorf("omeka S profile has invalid resource-template bundle %q", bundle)
 	}
 	if source.resourceTemplate == nil {
 		return fmt.Errorf("resource has no template; profile requires resource template %d", wanted)
@@ -645,7 +645,7 @@ func relationTypeForProfile(qualifier string) hubv1.RelationType {
 
 func setOmekaExtra(record *hubv1.Record, key string, converted []any, merge profile.MergePolicy) (bool, error) {
 	if key == "" {
-		return false, fmt.Errorf("Extra mapping requires a key")
+		return false, fmt.Errorf("extra mapping requires a key")
 	}
 	if len(converted) == 0 {
 		return false, nil

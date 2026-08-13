@@ -188,9 +188,10 @@ func newDrupalIdentity(entity model.Entity, institutional *InstitutionalIdentifi
 			lookupOperator = LookupContains
 		}
 		variants := []string{"canonical"}
-		if descriptor.scheme == "doi" {
+		switch descriptor.scheme {
+		case "doi":
 			variants = append(variants, "doi-url")
-		} else if descriptor.scheme == "wos" {
+		case "wos":
 			variants = append(variants, "wos-bare")
 		}
 		identity.Identifiers = append(identity.Identifiers, IdentifierRule{

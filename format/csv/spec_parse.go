@@ -613,7 +613,7 @@ func appendExtraValue(record *hubv1.Record, key string, value any) error {
 	}
 	values, ok := existing.([]any)
 	if !ok {
-		return fmt.Errorf("Extra mapping %q already contains a scalar value", key)
+		return fmt.Errorf("extra mapping %q already contains a scalar value", key)
 	}
 	hub.SetExtra(record, key, append(values, value))
 	return nil
@@ -758,9 +758,7 @@ func (parts contributorParts) apply(record *hubv1.Record) error {
 		contributor.Status = contributorValue(parts.values["Status"], index)
 		contributor.Email = contributorValue(parts.values["Email"], index)
 		if affiliation := contributorValue(parts.values["Affiliation"], index); affiliation != "" {
-			if strings.HasPrefix(affiliation, "schema:worksFor:corporate_body:") {
-				affiliation = strings.TrimPrefix(affiliation, "schema:worksFor:corporate_body:")
-			}
+			affiliation = strings.TrimPrefix(affiliation, "schema:worksFor:corporate_body:")
 			contributor.Affiliations = append(contributor.Affiliations, &hubv1.Affiliation{Name: affiliation})
 		}
 		record.Contributors = append(record.Contributors, contributor)

@@ -266,7 +266,7 @@ func readSealedProfile(command *cobra.Command, inputPath string) (*profile.Defin
 }
 
 func readAuthoringInput(command *cobra.Command, inputPath, kind string) (_ []byte, returnErr error) {
-	var reader io.Reader = command.InOrStdin()
+	reader := command.InOrStdin()
 	var file *os.File
 	path := strings.TrimSpace(inputPath)
 	if path != "" && path != "-" {
@@ -417,13 +417,13 @@ func compileDrupalModelPath(configPath string) (_ *model.Snapshot, returnErr err
 		return nil, fmt.Errorf("accessing Drupal config %q: %w", configPath, err)
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
-		return nil, fmt.Errorf("Drupal config %q must not be a symbolic link", configPath)
+		return nil, fmt.Errorf("drupal config %q must not be a symbolic link", configPath)
 	}
 	if info.IsDir() {
 		return modeldrupal.CompileDirectory(configPath, modeldrupal.CompileOptions{})
 	}
 	if !info.Mode().IsRegular() {
-		return nil, fmt.Errorf("Drupal config %q is not a directory or regular archive", configPath)
+		return nil, fmt.Errorf("drupal config %q is not a directory or regular archive", configPath)
 	}
 	file, err := os.Open(configPath)
 	if err != nil {
@@ -443,7 +443,7 @@ func compileOmekaModelPath(snapshotPath string) (_ *model.Snapshot, returnErr er
 		return nil, fmt.Errorf("accessing Omeka S snapshot %q: %w", snapshotPath, err)
 	}
 	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
-		return nil, fmt.Errorf("Omeka S snapshot %q must be a regular file, not a symbolic link", snapshotPath)
+		return nil, fmt.Errorf("omeka S snapshot %q must be a regular file, not a symbolic link", snapshotPath)
 	}
 	file, err := os.Open(snapshotPath)
 	if err != nil {

@@ -480,7 +480,7 @@ func newFetchWOSCmd() *cobra.Command {
 			}
 			apiKey := strings.TrimSpace(os.Getenv(apiKeyEnvironment))
 			if apiKey == "" {
-				return fmt.Errorf("Web of Science API key is required in %s", apiKeyEnvironment)
+				return fmt.Errorf("web of Science API key is required in %s", apiKeyEnvironment)
 			}
 			client := wossource.NewClient(apiKey)
 			client.BaseURL = endpoint
@@ -577,7 +577,7 @@ func newFetchScopusCmd() *cobra.Command {
 			}
 			apiKey := strings.TrimSpace(os.Getenv(apiKeyEnvironment))
 			if apiKey == "" {
-				return fmt.Errorf("Scopus API key is required in %s", apiKeyEnvironment)
+				return fmt.Errorf("scopus API key is required in %s", apiKeyEnvironment)
 			}
 			client := scopussource.NewClient(apiKey)
 			client.BaseURL = endpoint
@@ -625,7 +625,7 @@ func newFetchScopusCmd() *cobra.Command {
 						break
 					}
 					if next == cursorValue {
-						return fmt.Errorf("Scopus returned the same pagination cursor twice")
+						return fmt.Errorf("scopus returned the same pagination cursor twice")
 					}
 					cursorValue = next
 				} else if page.TotalResults > 0 && start+(pageIndex+1)*pageSize >= page.TotalResults {
@@ -958,7 +958,7 @@ func reconcileFetchedRecords(cmd *cobra.Command, records []*hubv1.Record, option
 		case username != "":
 			client.Auth = drupalsource.BasicAuth{Username: username, Password: password}
 		case password != "":
-			return nil, fmt.Errorf("Drupal password is configured without a username")
+			return nil, fmt.Errorf("drupal password is configured without a username")
 		}
 		finder = client
 	}

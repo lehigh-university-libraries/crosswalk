@@ -338,47 +338,47 @@ func validateProfileWorkbenchEncoding(mapping profile.CompiledMapping) error {
 	}
 	if !supported {
 		return fmt.Errorf(
-			"Drupal field %q source type %q has no explicit Workbench cell encoding",
+			"drupal field %q source type %q has no explicit Workbench cell encoding",
 			mapping.Field.Selector.Path, mapping.Field.SourceType,
 		)
 	}
 	if sourceType == "typed_relation" && mapping.Encode != "typed-identifier" {
 		if mapping.Field.Reference == nil || len(mapping.Field.Reference.Bundles) != 1 || strings.TrimSpace(mapping.Field.Reference.Bundles[0]) == "" {
-			return fmt.Errorf("Drupal field %q typed relation requires exactly one reference bundle for deterministic Workbench encoding", mapping.Field.Selector.Path)
+			return fmt.Errorf("drupal field %q typed relation requires exactly one reference bundle for deterministic Workbench encoding", mapping.Field.Selector.Path)
 		}
 	}
 	selector := mapping.Field.Selector
 	switch sourceType {
 	case "textfield_attr", "textarea_attr":
 		if selector.Attribute != "value" || selector.Where == nil || selector.Where.Attribute != "attr0" {
-			return fmt.Errorf("Drupal field %q attribute mapping must explicitly select value where attr0 equals a discriminator", selector.Path)
+			return fmt.Errorf("drupal field %q attribute mapping must explicitly select value where attr0 equals a discriminator", selector.Path)
 		}
 	case "part_detail":
 		if selector.Attribute == "" || selector.Where == nil || selector.Where.Attribute != "type" {
-			return fmt.Errorf("Drupal field %q part-detail mapping must explicitly select an attribute where type equals a discriminator", selector.Path)
+			return fmt.Errorf("drupal field %q part-detail mapping must explicitly select an attribute where type equals a discriminator", selector.Path)
 		}
 		switch selector.Attribute {
 		case "number", "title", "caption":
 		default:
-			return fmt.Errorf("Drupal field %q part-detail attribute %q is unsupported by Workbench", selector.Path, selector.Attribute)
+			return fmt.Errorf("drupal field %q part-detail attribute %q is unsupported by Workbench", selector.Path, selector.Attribute)
 		}
 		if !profilePartDetailHubSupported(mapping.Hub, selector.Attribute) {
-			return fmt.Errorf("Drupal field %q part-detail attribute %q cannot encode Hub path %q for Workbench", selector.Path, selector.Attribute, mapping.Hub)
+			return fmt.Errorf("drupal field %q part-detail attribute %q cannot encode Hub path %q for Workbench", selector.Path, selector.Attribute, mapping.Hub)
 		}
 	case "related_item":
 		if selector.Attribute == "" {
-			return fmt.Errorf("Drupal field %q related-item mapping must explicitly select title, identifier, or number", selector.Path)
+			return fmt.Errorf("drupal field %q related-item mapping must explicitly select title, identifier, or number", selector.Path)
 		}
 		switch selector.Attribute {
 		case "title", "identifier", "number":
 		default:
-			return fmt.Errorf("Drupal field %q related-item attribute %q is unsupported by Workbench", selector.Path, selector.Attribute)
+			return fmt.Errorf("drupal field %q related-item attribute %q is unsupported by Workbench", selector.Path, selector.Attribute)
 		}
 		if selector.Where != nil && selector.Where.Attribute != "identifier_type" {
-			return fmt.Errorf("Drupal field %q related-item predicate must select identifier_type", selector.Path)
+			return fmt.Errorf("drupal field %q related-item predicate must select identifier_type", selector.Path)
 		}
 		if !profileRelatedItemHubSupported(mapping.Hub, selector.Attribute) {
-			return fmt.Errorf("Drupal field %q related-item attribute %q cannot encode Hub path %q for Workbench", selector.Path, selector.Attribute, mapping.Hub)
+			return fmt.Errorf("drupal field %q related-item attribute %q cannot encode Hub path %q for Workbench", selector.Path, selector.Attribute, mapping.Hub)
 		}
 	}
 	return nil

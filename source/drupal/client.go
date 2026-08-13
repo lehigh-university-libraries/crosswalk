@@ -37,7 +37,7 @@ type BearerTokenAuth string
 // Apply adds bearer authentication without placing credentials in the URL.
 func (token BearerTokenAuth) Apply(request *http.Request) error {
 	if strings.TrimSpace(string(token)) == "" {
-		return fmt.Errorf("Drupal JSON:API bearer token is empty")
+		return fmt.Errorf("drupal JSON:API bearer token is empty")
 	}
 	request.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(token)))
 	return nil
@@ -52,7 +52,7 @@ type BasicAuth struct {
 // Apply adds HTTP Basic authentication.
 func (auth BasicAuth) Apply(request *http.Request) error {
 	if strings.TrimSpace(auth.Username) == "" {
-		return fmt.Errorf("Drupal JSON:API username is empty")
+		return fmt.Errorf("drupal JSON:API username is empty")
 	}
 	request.SetBasicAuth(auth.Username, auth.Password)
 	return nil

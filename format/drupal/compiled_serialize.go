@@ -139,7 +139,7 @@ func encodeCompiledDrupalMapping(record *hubv1.Record, entry compiledDrupalMappi
 	for valueIndex, value := range values {
 		encoded, err := encodeCompiledDrupalValue(value, entry)
 		if err != nil {
-			return nil, fmt.Errorf("Hub value %d: %w", valueIndex+1, err)
+			return nil, fmt.Errorf("hub value %d: %w", valueIndex+1, err)
 		}
 		if encoded != nil {
 			result = append(result, encoded)
@@ -751,7 +751,7 @@ func drupalDateValue(value any) (string, error) {
 			formatted = hub.FormatEDTF(parsed)
 		}
 		if formatted == "" {
-			return "", fmt.Errorf("Hub date has no serializable EDTF value")
+			return "", fmt.Errorf("hub date has no serializable EDTF value")
 		}
 		return formatted, nil
 	case string:
@@ -891,7 +891,7 @@ func fileDrupalValue(value any, selector profile.FieldSelector) (map[string]any,
 		result["filesize"] = file.GetSizeBytes()
 	}
 	if len(result) == 0 {
-		return nil, fmt.Errorf("Hub file has no path, name, URI, URL, or metadata")
+		return nil, fmt.Errorf("hub file has no path, name, URI, URL, or metadata")
 	}
 	if err := applyDrupalPredicate(result, selector); err != nil {
 		return nil, err
@@ -938,7 +938,7 @@ func encodeCompiledIdentifiers(record *hubv1.Record, entry compiledDrupalMapping
 		for _, rule := range rules {
 			canonical, matches, err := canonicalIdentifierMatchingRule(identifier, rule, compiled)
 			if err != nil {
-				return nil, fmt.Errorf("Hub identifier %d for rule %q: %w", identifierIndex+1, rule.Name, err)
+				return nil, fmt.Errorf("hub identifier %d for rule %q: %w", identifierIndex+1, rule.Name, err)
 			}
 			if !matches {
 				continue

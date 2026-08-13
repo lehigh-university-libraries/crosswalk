@@ -186,7 +186,7 @@ func (o *serveOptions) run(command *cobra.Command) error {
 		case username != "":
 			finder.Auth = drupalsource.BasicAuth{Username: username, Password: password}
 		case password != "":
-			return fmt.Errorf("Drupal password is configured without a username")
+			return fmt.Errorf("drupal password is configured without a username")
 		}
 	}
 	if systemProfile != nil {
@@ -267,7 +267,7 @@ func (o *serveOptions) authentication(ctx context.Context, factory googleVerifie
 	var verifier httpapi.BearerVerifier
 	if googleConfigured {
 		if factory == nil {
-			return "", nil, errors.New("Google verifier factory is required")
+			return "", nil, errors.New("google verifier factory is required")
 		}
 		var err error
 		verifier, err = factory(ctx, googleauth.Config{

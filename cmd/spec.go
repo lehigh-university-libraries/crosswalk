@@ -181,7 +181,7 @@ func compileDrupalPath(configPath string, options transformationspec.DrupalCompi
 		return transformationspec.CompileDrupalDirectory(configPath, options)
 	}
 	if !info.Mode().IsRegular() {
-		return nil, fmt.Errorf("Drupal config %q is not a directory or regular archive", configPath)
+		return nil, fmt.Errorf("drupal config %q is not a directory or regular archive", configPath)
 	}
 	file, err := os.Open(configPath)
 	if err != nil {

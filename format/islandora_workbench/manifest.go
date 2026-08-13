@@ -208,7 +208,7 @@ func appendArtifactManifest(plan *ArtifactPlan, opts *format.SerializeOptions) e
 
 func validateArtifactProfileBinding(transformation *spec.Transformation, systemProfile *profile.Compiled) error {
 	if transformation == nil {
-		return fmt.Errorf("Workbench profile binding requires a transformation specification")
+		return fmt.Errorf("workbench profile binding requires a transformation specification")
 	}
 	profileFingerprint := strings.TrimSpace(transformation.Fingerprint.Profile)
 	if profileFingerprint != "" && systemProfile == nil {
@@ -218,7 +218,7 @@ func validateArtifactProfileBinding(transformation *spec.Transformation, systemP
 		return fmt.Errorf("unbound transformation cannot use a target system profile")
 	}
 	if systemProfile != nil && systemProfile.System() != "drupal" {
-		return fmt.Errorf("Islandora Workbench target profile system %q is not drupal", systemProfile.System())
+		return fmt.Errorf("islandora Workbench target profile system %q is not drupal", systemProfile.System())
 	}
 	if systemProfile != nil && transformation.Fingerprint.Profile != systemProfile.Fingerprint() {
 		return fmt.Errorf("transformation profile fingerprint does not match target profile")
@@ -289,10 +289,10 @@ func validateManifestArtifact(artifact Artifact, seen map[string]struct{}) error
 	}
 	seen[artifact.Name] = struct{}{}
 	if strings.TrimSpace(artifact.MediaType) == "" {
-		return fmt.Errorf("Workbench artifact %q has no media type", artifact.Name)
+		return fmt.Errorf("workbench artifact %q has no media type", artifact.Name)
 	}
 	if artifact.Records < 0 {
-		return fmt.Errorf("Workbench artifact %q has a negative CSV row count", artifact.Name)
+		return fmt.Errorf("workbench artifact %q has a negative CSV row count", artifact.Name)
 	}
 	return nil
 }
@@ -310,11 +310,11 @@ func artifactCSVRows(artifact Artifact) (int, error) {
 		return 0, fmt.Errorf("reading Workbench artifact %q for manifest: %w", artifact.Name, err)
 	}
 	if len(rows) == 0 {
-		return 0, fmt.Errorf("Workbench CSV artifact %q has no header row", artifact.Name)
+		return 0, fmt.Errorf("workbench CSV artifact %q has no header row", artifact.Name)
 	}
 	dataRows := len(rows) - 1
 	if artifact.Records != dataRows {
-		return 0, fmt.Errorf("Workbench artifact %q declares %d CSV rows but contains %d", artifact.Name, artifact.Records, dataRows)
+		return 0, fmt.Errorf("workbench artifact %q declares %d CSV rows but contains %d", artifact.Name, artifact.Records, dataRows)
 	}
 	return dataRows, nil
 }

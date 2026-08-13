@@ -244,10 +244,10 @@ func validateExecutableMapping(system string, field ResolvedField, mapping Mappi
 	base, qualifier, _ := strings.Cut(mapping.Hub, ".")
 	shape, exists := canonicalHubPathShapes[base]
 	if !exists {
-		return fmt.Errorf("Hub path %q has no canonical Record target", mapping.Hub)
+		return fmt.Errorf("hub path %q has no canonical Record target", mapping.Hub)
 	}
 	if base == "Extra" && strings.TrimSpace(qualifier) == "" {
-		return fmt.Errorf("Hub path Extra requires a machine-name key")
+		return fmt.Errorf("hub path Extra requires a machine-name key")
 	}
 	if mapping.Decode == "none" && mapping.Encode == "none" {
 		return fmt.Errorf("mapping disables both decode and encode")

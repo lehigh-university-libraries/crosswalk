@@ -33,7 +33,7 @@ func (t *Transformation) NormalizeFilePath(value string) (string, error) {
 
 	normalized := strings.ReplaceAll(value, `\`, "/")
 	if isWindowsDrivePath(normalized) {
-		return "", fmt.Errorf("Windows drive file paths are not supported: %q", value)
+		return "", fmt.Errorf("windows drive file paths are not supported: %q", value)
 	}
 	if hasURIScheme(normalized) {
 		return "", fmt.Errorf("file URLs are not supported: %q", value)

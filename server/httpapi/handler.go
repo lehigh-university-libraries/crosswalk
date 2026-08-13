@@ -563,7 +563,7 @@ func buildArchiveWithLimit(artifacts []Artifact, maxBytes int64) ([]byte, error)
 	zw := zip.NewWriter(output)
 	for _, item := range items {
 		header := &zip.FileHeader{Name: item.Name, Method: zip.Deflate}
-		header.SetModTime(time.Date(1980, time.January, 1, 0, 0, 0, 0, time.UTC))
+		header.Modified = time.Date(1980, time.January, 1, 0, 0, 0, 0, time.UTC)
 		header.SetMode(0o600)
 		entry, err := zw.CreateHeader(header)
 		if err != nil {

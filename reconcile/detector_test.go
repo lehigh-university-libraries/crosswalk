@@ -20,7 +20,8 @@ type recordingFinder struct {
 
 func TestDetectorRejectsNilContext(t *testing.T) {
 	t.Parallel()
-	_, err := (Detector{}).Detect(nil, nil, ModeAssumeNew)
+	var nilContext context.Context
+	_, err := (Detector{}).Detect(nilContext, nil, ModeAssumeNew)
 	if err == nil || !strings.Contains(err.Error(), "context is required") {
 		t.Fatalf("Detect(nil) error = %v", err)
 	}
@@ -417,7 +418,7 @@ func TestPartitionInputsRejectsMalformedReport(t *testing.T) {
 		},
 		Summary: Summary{Total: 2, New: 2},
 	})
-	if err == nil || !(strings.Contains(err.Error(), "duplicate input index") || strings.Contains(err.Error(), "repeats input index")) {
+	if err == nil || (!strings.Contains(err.Error(), "duplicate input index") && !strings.Contains(err.Error(), "repeats input index")) {
 		t.Fatalf("PartitionInputs() error = %v", err)
 	}
 }

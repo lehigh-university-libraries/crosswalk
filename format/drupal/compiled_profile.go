@@ -164,7 +164,7 @@ func compiledDrupalMappings(compiled *profile.Compiled, encode bool) ([]compiled
 			copy := candidate
 			entity = &copy
 		} else if *entity != candidate {
-			return nil, fmt.Errorf("Drupal format profile spans %s/%s and %s/%s; select one entity profile per conversion", entity.EntityType, entity.Bundle, candidate.EntityType, candidate.Bundle)
+			return nil, fmt.Errorf("drupal format profile spans %s/%s and %s/%s; select one entity profile per conversion", entity.EntityType, entity.Bundle, candidate.EntityType, candidate.Bundle)
 		}
 		decodeMapping := mapping.FieldMapping{}
 		if !encode {

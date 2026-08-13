@@ -354,10 +354,6 @@ func existingProfilePath(name string) (string, error) {
 	return path, nil
 }
 
-func validateProfilesDirectory(directory string) error {
-	return validateStorageDirectory(directory)
-}
-
 func validateProfilesStorage() error {
 	configDirectory, err := ConfigDir()
 	if err != nil {
@@ -433,10 +429,6 @@ func regularFileExists(path, label string) (bool, error) {
 		return false, fmt.Errorf("%s %q is not a regular file", label, path)
 	}
 	return true, nil
-}
-
-func writeFileAtomic(path string, data []byte, mode os.FileMode) error {
-	return writeFileAtomicMode(path, data, mode, true)
 }
 
 func writeFileAtomicMode(path string, data []byte, mode os.FileMode, replace bool) (returnErr error) {

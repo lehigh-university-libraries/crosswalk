@@ -20,7 +20,7 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 	}
 
 	if opts.Profile != nil && opts.SystemProfile != nil {
-		return fmt.Errorf("Drupal serialization accepts either a static mapping or a compiled system profile, not both")
+		return fmt.Errorf("drupal serialization accepts either a static mapping or a compiled system profile, not both")
 	}
 	entities := make([]map[string]any, 0, len(records))
 	for index, record := range records {
