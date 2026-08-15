@@ -3,6 +3,7 @@ package islandora_workbench
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -24,13 +25,27 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 		opts = format.NewParseOptions()
 	}
 
-	reader := csv.NewReader(r)
+	limited := &io.LimitedReader{R: r, N: maxWorkbenchInputBytes + 1}
+	reader := csv.NewReader(limited)
 	reader.FieldsPerRecord = -1
-	reader.LazyQuotes = true
+	reader.LazyQuotes = false
 
-	rows, err := reader.ReadAll()
+	rows, err := readBoundedWorkbenchRows(reader)
 	if err != nil {
+		var parseError *csv.ParseError
+		if errors.As(err, &parseError) {
+			return nil, &format.DiagnosticsError{Diagnostics: []format.Diagnostic{{
+				Source:  opts.SourceName,
+				Row:     parseError.Line,
+				Column:  parseError.Column,
+				Code:    "invalid_csv",
+				Message: parseError.Err.Error(),
+			}}}
+		}
 		return nil, fmt.Errorf("parsing workbench CSV: %w", err)
+	}
+	if limited.N == 0 {
+		return nil, fmt.Errorf("workbench input exceeds %d bytes", maxWorkbenchInputBytes)
 	}
 
 	if len(rows) == 0 {
@@ -39,15 +54,82 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 
 	header := rows[0]
 	colMap := buildWorkbenchColumnMap(header, opts.Profile)
-
-	records := make([]*hubv1.Record, 0, len(rows)-1)
-	for i := 1; i < len(rows); i++ {
-		if record := workbenchRowToRecord(rows[i], header, colMap, opts); record != nil {
-			records = append(records, record)
+	diagnostics := make([]format.Diagnostic, 0)
+	if opts.Strict {
+		for index, name := range header {
+			if _, ok := colMap[index]; !ok && strings.TrimSpace(name) != "" {
+				diagnostics = append(diagnostics, format.Diagnostic{
+					Source:  opts.SourceName,
+					Row:     1,
+					Column:  index + 1,
+					Header:  strings.TrimSpace(name),
+					Code:    "unknown_column",
+					Message: "column has no Workbench-to-Hub mapping",
+				})
+			}
 		}
 	}
 
+	records := make([]*hubv1.Record, 0, len(rows)-1)
+	for i := 1; i < len(rows); i++ {
+		if blankWorkbenchRow(rows[i]) {
+			continue
+		}
+		if len(rows[i]) != len(header) {
+			diagnostics = append(diagnostics, format.Diagnostic{
+				Source:  opts.SourceName,
+				Row:     i + 1,
+				Code:    "column_count",
+				Message: fmt.Sprintf("got %d columns; header defines %d", len(rows[i]), len(header)),
+			})
+			continue
+		}
+		record, rowDiagnostics := workbenchRowToRecord(rows[i], i+1, header, colMap, opts)
+		diagnostics = append(diagnostics, rowDiagnostics...)
+		records = append(records, record)
+	}
+	if len(diagnostics) > 0 {
+		return nil, &format.DiagnosticsError{Diagnostics: diagnostics}
+	}
+
 	return records, nil
+}
+
+const (
+	maxWorkbenchInputBytes = int64(64 << 20)
+	maxWorkbenchRows       = 100_001
+	maxWorkbenchCells      = int64(1_000_000)
+)
+
+func readBoundedWorkbenchRows(reader *csv.Reader) ([][]string, error) {
+	rows := make([][]string, 0)
+	var cells int64
+	for {
+		row, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			return rows, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(rows) >= maxWorkbenchRows {
+			return nil, fmt.Errorf("workbench row count exceeds %d", maxWorkbenchRows)
+		}
+		if int64(len(row)) > maxWorkbenchCells-cells {
+			return nil, fmt.Errorf("workbench cell count exceeds %d", maxWorkbenchCells)
+		}
+		cells += int64(len(row))
+		rows = append(rows, row)
+	}
+}
+
+func blankWorkbenchRow(row []string) bool {
+	for _, value := range row {
+		if strings.TrimSpace(value) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 // buildWorkbenchColumnMap maps each column index to an IR field name.
@@ -80,19 +162,23 @@ func buildWorkbenchColumnMap(header []string, p *mapping.Profile) map[int]string
 func defaultWorkbenchColumnMap() map[string]string {
 	return map[string]string{
 		// Reserved Workbench columns
-		"id":             "Extra.id",
-		"parent_id":      "Extra.parent_id",
-		"node_id":        "Extra.node_id",
-		"file":           "Extra.file",
-		"url_alias":      "Extra.url_alias",
-		"image_alt_text": "Extra.image_alt_text",
-		"checksum":       "Extra.checksum",
-		"media_use_tid":  "Extra.media_use_tid",
+		"id":                "Extra.id",
+		"parent_id":         "Extra.parent_id",
+		"node_id":           "Extra.node_id",
+		"field_weight":      "Extra.field_weight",
+		"file":              "Files.primary",
+		"supplemental_file": "Files.supplemental",
+		"url_alias":         "Extra.url_alias",
+		"image_alt_text":    "Extra.image_alt_text",
+		"checksum":          "Extra.checksum",
+		"media_use_tid":     "Extra.media_use_tid",
 
 		// Core
-		"title":            "Title",
-		"field_full_title": "Title",
-		"field_alt_title":  "AltTitle",
+		"title":               "Title",
+		"field_full_title":    "FullTitle",
+		"field_alt_title":     "AltTitle",
+		"field_add_coverpage": "AddCoverpage",
+		"published":           "IsPublic",
 
 		// Contributors
 		"field_linked_agent": "Contributors",
@@ -101,15 +187,18 @@ func defaultWorkbenchColumnMap() map[string]string {
 		"field_edtf_date_issued":   "Dates.issued",
 		"field_edtf_date_created":  "Dates.created",
 		"field_edtf_date_captured": "Dates.captured",
+		"field_edtf_date_embargo":  "Dates.available",
+		"field_date_season":        "Extra.date_season",
 		"field_copyright_date":     "Dates.copyright",
 		"field_date_modified":      "Dates.modified",
 
 		// Resource type and model
-		"field_model":         "ResourceType",
+		"field_model":         "ObjectModel",
 		"field_resource_type": "ResourceType",
 
 		// Language
-		"field_language": "Language",
+		"field_language":        "Language",
+		"field_department_name": "Departments",
 
 		// Rights
 		"field_rights": "Rights",
@@ -121,13 +210,19 @@ func defaultWorkbenchColumnMap() map[string]string {
 		"field_extent":               "PhysicalDesc",
 
 		// Subjects
-		"field_subject":         "Subjects",
-		"field_lcsh_topic":      "Subjects.lcsh",
-		"field_subject_general": "Subjects.local",
-		"field_keywords":        "Subjects.keywords",
+		"field_subject":                  "Subjects",
+		"field_lcsh_topic":               "Subjects.lcsh",
+		"field_subject_lcsh":             "Subjects.lcsh",
+		"field_subject_general":          "Subjects.local",
+		"field_keywords":                 "Subjects.keywords",
+		"field_subjects_name":            "Subjects.lcnaf",
+		"field_geographic_subject":       "Subjects.geographic",
+		"field_subject_hierarchical_geo": "Subjects.getty_tgn",
 
 		// Genre
-		"field_genre": "Genre",
+		"field_genre":         "Genre",
+		"field_physical_form": "PhysicalForm",
+		"field_media_type":    "FileMetadata.mime_type",
 
 		// Identifiers
 		"field_identifier": "Identifiers",
@@ -139,25 +234,28 @@ func defaultWorkbenchColumnMap() map[string]string {
 		"field_part_detail":  "Publication.part",
 
 		// Thesis
-		"field_degree_name":     "DegreeInfo.DegreeName",
-		"field_degree_level":    "DegreeInfo.DegreeLevel",
-		"field_department_name": "DegreeInfo.Department",
+		"field_degree_name":  "DegreeInfo.DegreeName",
+		"field_degree_level": "DegreeInfo.DegreeLevel",
 
 		// Publishing
 		"field_publisher":       "Publisher",
 		"field_place_published": "PlacePublished",
+		"field_edition":         "Edition",
 
 		// Miscellaneous
 		"field_note":              "Notes",
 		"field_table_of_contents": "TableOfContents",
 		"field_source":            "Source",
 		"field_digital_origin":    "DigitalOrigin",
+		"field_local_restriction": "LocalRestriction",
+		"field_access":            "AccessCondition",
 	}
 }
 
 // workbenchRowToRecord converts a single CSV row into a hub Record.
-func workbenchRowToRecord(row []string, header []string, colMap map[int]string, opts *format.ParseOptions) *hubv1.Record {
+func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap map[int]string, opts *format.ParseOptions) (*hubv1.Record, []format.Diagnostic) {
 	record := &hubv1.Record{}
+	diagnostics := make([]format.Diagnostic, 0)
 
 	for i, value := range row {
 		if i >= len(header) {
@@ -183,9 +281,30 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 
 		switch base {
 		case "Title":
-			// field_full_title takes priority over title if both present
-			if record.Title == "" || header[i] == "field_full_title" {
-				record.Title = value
+			record.Title = value
+
+		case "FullTitle":
+			record.FullTitle = value
+
+		case "AddCoverpage", "IsPublic":
+			parsed, ok := parseWorkbenchBoolean(value)
+			if !ok {
+				diagnostics = append(diagnostics, format.Diagnostic{
+					Source:  opts.SourceName,
+					Row:     rowNumber,
+					Column:  i + 1,
+					Header:  header[i],
+					Code:    "invalid_boolean",
+					Message: fmt.Sprintf("must be yes/no or 1/0: %q", value),
+				})
+				continue
+			}
+			if base == "AddCoverpage" {
+				record.AddCoverpage = parsed
+				hub.SetExtra(record, "_present_add_coverpage", true)
+			} else {
+				record.IsPublic = parsed
+				hub.SetExtra(record, "_present_is_public", true)
 			}
 
 		case "AltTitle":
@@ -216,17 +335,36 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 		case "Dates":
 			dateType := workbenchDateType(subtype)
 			for _, v := range splitPipe(value) {
-				date, _ := helpers.ParseEDTF(v, dateType)
+				date, err := helpers.ParseEDTF(v, dateType)
 				if date.Year > 0 {
 					record.Dates = append(record.Dates, date)
+				} else {
+					message := fmt.Sprintf("must be a valid EDTF date: %q", v)
+					if err != nil {
+						message = err.Error()
+					}
+					diagnostics = append(diagnostics, format.Diagnostic{
+						Source:  opts.SourceName,
+						Row:     rowNumber,
+						Column:  i + 1,
+						Header:  header[i],
+						Code:    "invalid_date",
+						Message: message,
+					})
 				}
 			}
 
 		case "ResourceType":
-			record.ResourceType = islandoraModelToResourceType(value)
+			record.ResourceType = hub.NewResourceType(value, "")
+
+		case "ObjectModel":
+			record.ObjectModel = value
 
 		case "Language":
 			record.Language = value
+
+		case "Departments":
+			record.Departments = append(record.Departments, splitPipe(value)...)
 
 		case "Rights":
 			for _, v := range splitPipe(value) {
@@ -236,10 +374,27 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 		case "Subjects":
 			vocab := workbenchSubjectVocab(subtype)
 			for _, v := range splitPipe(value) {
-				record.Subjects = append(record.Subjects, &hubv1.Subject{
-					Value:      v,
-					Vocabulary: vocab,
-				})
+				subjectType := hubv1.SubjectType_SUBJECT_TYPE_TOPIC
+				if subtype == "lcnaf" {
+					subjectType = hubv1.SubjectType_SUBJECT_TYPE_NAME
+				}
+				if subtype == "geographic" {
+					subjectType = hubv1.SubjectType_SUBJECT_TYPE_GEOGRAPHIC
+					switch {
+					case strings.HasPrefix(v, "geographic_naf:"):
+						v = strings.TrimPrefix(v, "geographic_naf:")
+						vocab = hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LCNAF
+					case strings.HasPrefix(v, "geographic_local:"):
+						v = strings.TrimPrefix(v, "geographic_local:")
+						vocab = hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LOCAL
+					}
+				}
+				subject := &hubv1.Subject{Value: v, Vocabulary: vocab, Type: subjectType}
+				if subtype == "getty_tgn" && (strings.HasPrefix(v, "http://") || strings.HasPrefix(v, "https://")) {
+					subject.Uri = v
+					subject.Type = hubv1.SubjectType_SUBJECT_TYPE_GEOGRAPHIC
+				}
+				record.Subjects = append(record.Subjects, subject)
 			}
 
 		case "Genre":
@@ -247,6 +402,14 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 				record.Genres = append(record.Genres, &hubv1.Subject{
 					Value:      v,
 					Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_GENRE,
+				})
+			}
+
+		case "PhysicalForm":
+			for _, v := range splitPipe(value) {
+				record.PhysicalForm = append(record.PhysicalForm, &hubv1.Subject{
+					Value:      v,
+					Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_AAT,
 				})
 			}
 
@@ -273,6 +436,27 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 
 		case "PlacePublished":
 			record.PlacePublished = value
+
+		case "Edition":
+			record.Edition = value
+
+		case "Files":
+			for _, path := range splitPipe(value) {
+				if subtype == "primary" {
+					file := parsedPrimaryFile(record)
+					if file.Path == "" {
+						file.Path = path
+						continue
+					}
+				}
+				record.Files = append(record.Files, &hubv1.File{Path: path, Role: subtype})
+			}
+
+		case "FileMetadata":
+			file := parsedPrimaryFile(record)
+			if subtype == "mime_type" {
+				file.MimeType = value
+			}
 
 		case "Relations":
 			relType := hub.NormalizeRelationType(subtype)
@@ -307,6 +491,12 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 		case "DigitalOrigin":
 			record.DigitalOrigin = value
 
+		case "LocalRestriction":
+			record.LocalRestriction = value
+
+		case "AccessCondition":
+			record.AccessCondition = value
+
 		case "DegreeInfo":
 			if record.DegreeInfo == nil {
 				record.DegreeInfo = &hubv1.DegreeInfo{}
@@ -327,7 +517,21 @@ func workbenchRowToRecord(row []string, header []string, colMap map[int]string, 
 		}
 	}
 
-	return record
+	if record.ResourceType == nil && record.ObjectModel != "" {
+		record.ResourceType = islandoraModelToResourceType(record.ObjectModel)
+	}
+	return record, diagnostics
+}
+
+func parsedPrimaryFile(record *hubv1.Record) *hubv1.File {
+	for _, file := range record.Files {
+		if file != nil && (file.Role == "" || file.Role == "primary") {
+			return file
+		}
+	}
+	file := &hubv1.File{Role: "primary"}
+	record.Files = append(record.Files, file)
+	return file
 }
 
 // parseWorkbenchLinkedAgent parses an Islandora Workbench typed_relation string.
@@ -453,17 +657,24 @@ func islandoraModelToResourceType(model string) *hubv1.ResourceType {
 func parseWorkbenchPublicationField(pub *hubv1.PublicationDetails, subtype, value string) {
 	switch subtype {
 	case "title":
-		// field_related_item: {"title":"..."} or plain title
-		if strings.HasPrefix(value, "{") {
+		// field_related_item can contain title and ISSN JSON values.
+		for _, item := range splitPipe(value) {
+			if !strings.HasPrefix(item, "{") {
+				if pub.Title == "" {
+					pub.Title = item
+				}
+				continue
+			}
 			var obj map[string]any
-			if err := json.Unmarshal([]byte(value), &obj); err == nil {
+			if err := json.Unmarshal([]byte(item), &obj); err == nil {
 				if title, ok := obj["title"].(string); ok {
 					pub.Title = title
-					return
+				}
+				if identifierType, _ := obj["type"].(string); identifierType == "issn" {
+					pub.LIssn, _ = obj["identifier"].(string)
 				}
 			}
 		}
-		pub.Title = value
 
 	case "part":
 		// field_part_detail: {"number":"...","type":"volume|issue|page"}
@@ -502,6 +713,17 @@ func splitPipe(value string) []string {
 	return result
 }
 
+func parseWorkbenchBoolean(value string) (bool, bool) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "yes", "y", "true":
+		return true, true
+	case "0", "no", "n", "false":
+		return false, true
+	default:
+		return false, false
+	}
+}
+
 func workbenchDateType(s string) hubv1.DateType {
 	switch strings.ToLower(s) {
 	case "issued":
@@ -514,6 +736,8 @@ func workbenchDateType(s string) hubv1.DateType {
 		return hubv1.DateType_DATE_TYPE_COPYRIGHT
 	case "modified":
 		return hubv1.DateType_DATE_TYPE_MODIFIED
+	case "available", "embargo":
+		return hubv1.DateType_DATE_TYPE_AVAILABLE
 	default:
 		return hubv1.DateType_DATE_TYPE_ISSUED
 	}
@@ -531,6 +755,10 @@ func workbenchSubjectVocab(s string) hubv1.SubjectVocabulary {
 		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_AAT
 	case "fast":
 		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_FAST
+	case "lcnaf", "geographic":
+		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_LCNAF
+	case "getty_tgn":
+		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_GETTY_TGN
 	default:
 		return hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_UNSPECIFIED
 	}
@@ -552,6 +780,20 @@ func workbenchIdentifierType(s string) hubv1.IdentifierType {
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL
 	case "pid":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_PID
+	case "call-number", "call_number":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_CALL_NUMBER
+	case "report-number", "report_number":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_REPORT_NUMBER
+	case "arxiv":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV
+	case "wos", "web-of-science", "web_of_science", "ut":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_WOS
+	case "pmid":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_PMID
+	case "pmcid":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_PMCID
+	case "uuid":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_UUID
 	default:
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_UNSPECIFIED
 	}

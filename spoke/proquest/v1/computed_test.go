@@ -36,7 +36,7 @@ func TestComputeEmbargoDate(t *testing.T) {
 					},
 				},
 			},
-			wantDate:     "2024-07-13", // 6 * 30 days = 180 days after 01/15/2024
+			wantDate:     "2024-07-15",
 			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
 		},
 		{
@@ -49,7 +49,7 @@ func TestComputeEmbargoDate(t *testing.T) {
 					},
 				},
 			},
-			wantDate:     "2025-01-09", // 12 * 30 days = 360 days after 01/15/2024
+			wantDate:     "2025-01-15",
 			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
 		},
 		{
@@ -62,7 +62,7 @@ func TestComputeEmbargoDate(t *testing.T) {
 					},
 				},
 			},
-			wantDate:     "2026-01-04", // 24 * 30 days = 720 days after 01/15/2024
+			wantDate:     "2026-01-15",
 			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
 		},
 		{
@@ -89,6 +89,34 @@ func TestComputeEmbargoDate(t *testing.T) {
 				},
 			},
 			wantDate:     "2025-12-31",
+			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
+		},
+		{
+			name: "repository embargo leading ISO date overrides code",
+			submission: &proquestv1.Submission{
+				EmbargoCode: 1,
+				Repository: &proquestv1.Repository{
+					Embargo: "2025-12-31 some additional text",
+				},
+				Description: &proquestv1.Description{
+					Dates: &proquestv1.Dates{AcceptDate: "01/15/2024"},
+				},
+			},
+			wantDate:     "2025-12-31",
+			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
+		},
+		{
+			name: "invalid repository embargo falls back to code 3",
+			submission: &proquestv1.Submission{
+				EmbargoCode: 3,
+				Repository: &proquestv1.Repository{
+					Embargo: "not-a-date some additional text",
+				},
+				Description: &proquestv1.Description{
+					Dates: &proquestv1.Dates{AcceptDate: "01/15/2024"},
+				},
+			},
+			wantDate:     "2026-01-15",
 			wantDateType: hubv1.DateType_DATE_TYPE_AVAILABLE,
 		},
 		{
@@ -161,13 +189,13 @@ func TestComputeEmbargoFromCode(t *testing.T) {
 		want       string
 	}{
 		{"code 0 - no embargo", 0, "01/15/2024", ""},
-		{"code 1 - 6 months", 1, "01/15/2024", "2024-07-13"},
-		{"code 2 - 12 months", 2, "01/15/2024", "2025-01-09"},
-		{"code 3 - 24 months", 3, "01/15/2024", "2026-01-04"},
+		{"code 1 - 6 months", 1, "01/15/2024", "2024-07-15"},
+		{"code 2 - 12 months", 2, "01/15/2024", "2025-01-15"},
+		{"code 3 - 24 months", 3, "01/15/2024", "2026-01-15"},
 		{"unknown code", 4, "01/15/2024", ""},
 		{"empty accept date", 1, "", ""},
 		{"invalid accept date", 1, "invalid", ""},
-		{"ISO format accept date", 1, "2024-01-15", "2024-07-13"},
+		{"ISO format accept date", 1, "2024-01-15", "2024-07-15"},
 	}
 
 	for _, tt := range tests {
@@ -191,8 +219,10 @@ func TestExtractEmbargoDate(t *testing.T) {
 		{"long format", "December 31, 2025", "2025-12-31"},
 		{"short format", "Dec 31, 2025", "2025-12-31"},
 		{"slash ISO", "2025/12/31", "2025-12-31"},
+		{"ISO with trailing text", "2025-12-31 some additional text", "2025-12-31"},
 		{"empty", "", ""},
-		{"unrecognized format", "31-Dec-2025", "31-Dec-2025"}, // Returns original if not parsed
+		{"never deliver", "NEVER DELIVER", "2999-12-31"},
+		{"unrecognized format", "31-Dec-2025", ""},
 	}
 
 	for _, tt := range tests {

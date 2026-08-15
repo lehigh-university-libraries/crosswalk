@@ -566,8 +566,9 @@ func appendDoiIdentifier(ids []*hubv1.Identifier, dd *crossrefv1.DoiData) []*hub
 		return ids
 	}
 	return append(ids, &hubv1.Identifier{
-		Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
-		Value: dd.GetDoi(),
+		Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
+		Value:         dd.GetDoi(),
+		IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 	})
 }
 

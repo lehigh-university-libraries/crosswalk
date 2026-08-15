@@ -1,0 +1,12 @@
+id: node.field_access_level
+field_name: field_access_level
+entity_type: node
+type: list_string
+settings:
+  allowed_values:
+    - value: staff
+      label: Staff only
+    - value: public
+      label: Public
+  allowed_values_function: ''
+cardinality: 1

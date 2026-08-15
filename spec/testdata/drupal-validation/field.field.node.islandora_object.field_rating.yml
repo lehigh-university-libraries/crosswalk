@@ -1,0 +1,11 @@
+id: node.islandora_object.field_rating
+field_name: field_rating
+entity_type: node
+bundle: islandora_object
+label: Rating
+description: 'A bounded rating.'
+required: false
+settings:
+  min: 1
+  max: 5
+field_type: integer

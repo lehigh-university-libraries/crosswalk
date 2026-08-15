@@ -1,0 +1,281 @@
+{
+  "crosswalk_format": "omeka-s-jsonld",
+  "version": 1,
+  "source_uri": "https://example.org/omeka/api/",
+  "source_id": "example-omeka",
+  "retrieved_at": "2026-08-13T12:00:00Z",
+  "vocabularies": [
+    {
+      "@context": "https://example.org/omeka/api-context",
+      "@id": "https://example.org/omeka/api/vocabularies/1",
+      "@type": "o:Vocabulary",
+      "o:id": 1,
+      "o:namespace_uri": "http://purl.org/dc/terms/",
+      "o:prefix": "dcterms",
+      "o:label": "Dublin Core Terms",
+      "o:comment": null,
+      "o:owner": null
+    },
+    {
+      "@context": "https://example.org/omeka/api-context",
+      "@id": "https://example.org/omeka/api/vocabularies/10",
+      "@type": "o:Vocabulary",
+      "o:id": 10,
+      "o:namespace_uri": "https://example.org/vocabulary/",
+      "o:prefix": "local",
+      "o:label": "Example Vocabulary",
+      "o:comment": "Installation-specific terms",
+      "o:owner": null
+    }
+  ],
+  "properties": [
+    {
+      "@id": "https://example.org/omeka/api/properties/1",
+      "@type": "o:Property",
+      "o:id": 1,
+      "o:local_name": "title",
+      "o:label": "Title",
+      "o:comment": null,
+      "o:term": "dcterms:title",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/1", "o:id": 1}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/2",
+      "@type": "o:Property",
+      "o:id": 2,
+      "o:local_name": "creator",
+      "o:label": "Creator",
+      "o:comment": null,
+      "o:term": "dcterms:creator",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/1", "o:id": 1}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/3",
+      "@type": "o:Property",
+      "o:id": 3,
+      "o:local_name": "identifier",
+      "o:label": "Identifier",
+      "o:comment": null,
+      "o:term": "dcterms:identifier",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/1", "o:id": 1}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/4",
+      "@type": "o:Property",
+      "o:id": 4,
+      "o:local_name": "subject",
+      "o:label": "Subject",
+      "o:comment": null,
+      "o:term": "dcterms:subject",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/1", "o:id": 1}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/5",
+      "@type": "o:Property",
+      "o:id": 5,
+      "o:local_name": "relation",
+      "o:label": "Relation",
+      "o:comment": null,
+      "o:term": "dcterms:relation",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/1", "o:id": 1}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/10",
+      "@type": "o:Property",
+      "o:id": 10,
+      "o:local_name": "department",
+      "o:label": "Department",
+      "o:comment": "Owning department",
+      "o:term": "local:department",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/10", "o:id": 10}
+    },
+    {
+      "@id": "https://example.org/omeka/api/properties/11",
+      "@type": "o:Property",
+      "o:id": 11,
+      "o:local_name": "rating",
+      "o:label": "Rating",
+      "o:comment": null,
+      "o:term": "local:rating",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/10", "o:id": 10}
+    }
+  ],
+  "resource_classes": [
+    {
+      "@id": "https://example.org/omeka/api/resource_classes/100",
+      "@type": "o:ResourceClass",
+      "o:id": 100,
+      "o:local_name": "Photograph",
+      "o:label": "Photograph",
+      "o:comment": "Local photograph class",
+      "o:term": "local:Photograph",
+      "o:vocabulary": {"@id": "https://example.org/omeka/api/vocabularies/10", "o:id": 10}
+    }
+  ],
+  "resource_templates": [
+    {
+      "@id": "https://example.org/omeka/api/resource_templates/200",
+      "@type": "o:ResourceTemplate",
+      "o:id": 200,
+      "o:label": "Photograph Template",
+      "o:owner": null,
+      "o:resource_class": {"@id": "https://example.org/omeka/api/resource_classes/100", "o:id": 100},
+      "o:title_property": {"@id": "https://example.org/omeka/api/properties/1", "o:id": 1},
+      "o:description_property": null,
+      "o:resource_template_property": [
+        {
+          "o:property": {"@id": "https://example.org/omeka/api/properties/1", "o:id": 1},
+          "o:alternate_label": "Photograph title",
+          "o:alternate_comment": null,
+          "o:data_type": ["literal"],
+          "o:is_required": true,
+          "o:is_private": false,
+          "o:default_lang": "en"
+        },
+        {
+          "o:property": {"@id": "https://example.org/omeka/api/properties/10", "o:id": 10},
+          "o:alternate_label": "Unit",
+          "o:alternate_comment": "Responsible unit",
+          "o:data_type": ["literal", "uri"],
+          "o:is_required": false,
+          "o:is_private": false,
+          "o:default_lang": null
+        }
+      ]
+    }
+  ],
+  "item_sets": [
+    {
+      "@context": "https://example.org/omeka/api-context",
+      "@id": "https://example.org/omeka/api/item_sets/3",
+      "@type": "o:ItemSet",
+      "o:id": 3,
+      "o:is_public": true,
+      "o:owner": null,
+      "o:resource_class": null,
+      "o:resource_template": null,
+      "o:thumbnail": null,
+      "o:title": "Photograph Collection",
+      "o:created": {"@value": "2026-08-01T10:00:00+00:00", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+      "o:modified": null,
+      "o:is_open": false,
+      "o:items": {"@id": "https://example.org/omeka/api/items?item_set_id=3"},
+      "dcterms:title": [
+        {"type": "literal", "property_id": 1, "property_label": "Title", "is_public": true, "@value": "Photograph Collection", "@language": "en"}
+      ]
+    }
+  ],
+  "items": [
+    {
+      "@context": "https://example.org/omeka/api-context",
+      "@id": "https://example.org/omeka/api/items/20",
+      "@type": ["o:Item", "local:Photograph"],
+      "o:id": 20,
+      "o:is_public": true,
+      "o:owner": null,
+      "o:resource_class": {"@id": "https://example.org/omeka/api/resource_classes/100", "o:id": 100},
+      "o:resource_template": {"@id": "https://example.org/omeka/api/resource_templates/200", "o:id": 200},
+      "o:thumbnail": null,
+      "o:title": "Fallback display title",
+      "o:created": {"@value": "2026-08-02T10:00:00+00:00", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+      "o:modified": {"@value": "2026-08-03T11:00:00+00:00", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+      "o:primary_media": {"@id": "https://example.org/omeka/api/media/30", "o:id": 30},
+      "o:media": [{"@id": "https://example.org/omeka/api/media/30", "o:id": 30}],
+      "o:item_set": [{"@id": "https://example.org/omeka/api/item_sets/3", "o:id": 3}],
+      "o:site": [],
+      "curation:state": {"reviewed": true, "score": 1.50},
+      "dcterms:title": [
+        {"type": "literal", "property_id": 1, "property_label": "Title", "is_public": true, "@value": "Campus in Winter", "@language": "en"}
+      ],
+      "dcterms:creator": [
+        {
+          "type": "resource:item",
+          "property_id": 2,
+          "property_label": "Creator",
+          "is_public": true,
+          "value_resource_id": 90,
+          "@id": "https://example.org/omeka/api/items/90",
+          "value_resource_name": "items",
+          "display_title": "Doe, Jane",
+          "thumbnail_url": null,
+          "url": null
+        }
+      ],
+      "dcterms:identifier": [
+        {"type": "literal", "property_id": 3, "property_label": "Identifier", "is_public": true, "@value": "https://doi.org/10.1234/EXAMPLE"}
+      ],
+      "dcterms:subject": [
+        {"type": "uri", "property_id": 4, "property_label": "Subject", "is_public": true, "@id": "https://id.loc.gov/authorities/subjects/sh85016677", "o:label": "Campuses"}
+      ],
+      "dcterms:relation": [
+        {
+          "type": "resource:itemset",
+          "property_id": 5,
+          "property_label": "Relation",
+          "is_public": true,
+          "value_resource_id": 3,
+          "@id": "https://example.org/omeka/api/item_sets/3",
+          "value_resource_name": "item_sets",
+          "display_title": "Photograph Collection"
+        }
+      ],
+      "local:department": [
+        {
+          "type": "literal",
+          "property_id": 10,
+          "property_label": "Unit",
+          "is_public": false,
+          "@value": "Special Collections",
+          "@language": "en-US",
+          "@annotation": {
+            "dcterms:provenance": [
+              {"type": "literal", "property_id": 99, "property_label": "Provenance", "is_public": true, "@value": "Cataloger supplied"}
+            ]
+          }
+        }
+      ],
+      "local:rating": [
+        {
+          "type": "numeric:integer",
+          "property_id": 11,
+          "property_label": "Rating",
+          "is_public": true,
+          "@value": 7,
+          "unit": "stars"
+        }
+      ]
+    }
+  ],
+  "media": [
+    {
+      "@context": "https://example.org/omeka/api-context",
+      "@id": "https://example.org/omeka/api/media/30",
+      "@type": "o:Media",
+      "o:id": 30,
+      "o:is_public": true,
+      "o:owner": null,
+      "o:resource_class": null,
+      "o:resource_template": null,
+      "o:thumbnail": null,
+      "o:title": "Winter campus scan",
+      "o:created": {"@value": "2026-08-02T10:00:00+00:00", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+      "o:modified": null,
+      "o:ingester": "upload",
+      "o:renderer": "file",
+      "o:item": {"@id": "https://example.org/omeka/api/items/20", "o:id": 20},
+      "o:source": "winter-campus.tif",
+      "o:media_type": "image/tiff",
+      "o:sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "o:size": 4096,
+      "o:filename": "abc123.tif",
+      "o:lang": null,
+      "o:alt_text": "Snow-covered campus buildings",
+      "o:original_url": "https://example.org/omeka/files/original/abc123.tif",
+      "o:thumbnail_urls": {"large": "https://example.org/omeka/files/large/abc123.jpg"},
+      "data": {"original_filename": "winter-campus.tif"},
+      "dcterms:title": [
+        {"type": "literal", "property_id": 1, "property_label": "Title", "is_public": true, "@value": "Winter campus scan"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+id: node.field_collection
+field_name: field_collection
+entity_type: node
+type: entity_reference
+settings:
+  target_type: taxonomy_term
+cardinality: -1

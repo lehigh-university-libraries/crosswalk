@@ -20,7 +20,7 @@ import (
 //   - OAI-PMH arXiv format (http://arxiv.org/OAI/arXiv/)
 //   - Atom API format (http://arxiv.org/schemas/atom)
 func (f *Format) Parse(r io.Reader, _ *format.ParseOptions) ([]*hubv1.Record, error) {
-	data, err := io.ReadAll(r)
+	data, err := format.ReadInput(r)
 	if err != nil {
 		return nil, fmt.Errorf("reading input: %w", err)
 	}
@@ -93,10 +93,6 @@ func parseAtom(data []byte) ([]*hubv1.Record, error) {
 		return nil, fmt.Errorf("parsing Atom XML: %w", err)
 	}
 
-	if len(feed.Entries) == 0 {
-		return nil, fmt.Errorf("no entry elements found in Atom feed")
-	}
-
 	var records []*hubv1.Record
 	for i, entry := range feed.Entries {
 		record, err := atomEntryToHub(&entry)
@@ -121,8 +117,9 @@ func atomEntryToHub(entry *XMLAtomEntry) (*hubv1.Record, error) {
 	arxivID := extractArxivID(entry.ID)
 	if arxivID != "" {
 		record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-			Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
-			Value: arxivID,
+			Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
+			Value:         arxivID,
+			IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 		})
 	}
 
@@ -153,6 +150,7 @@ func atomEntryToHub(entry *XMLAtomEntry) (*hubv1.Record, error) {
 		}
 		c := &hubv1.Contributor{
 			Role:       "author",
+			RoleCode:   "relators:aut",
 			Type:       hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			Name:       name,
 			ParsedName: parseFullName(name),
@@ -171,8 +169,9 @@ func atomEntryToHub(entry *XMLAtomEntry) (*hubv1.Record, error) {
 	// DOI
 	if entry.DOI != "" {
 		record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-			Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
-			Value: strings.TrimSpace(entry.DOI),
+			Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
+			Value:         strings.TrimSpace(entry.DOI),
+			IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 		})
 	}
 
@@ -330,8 +329,9 @@ func oaiToHub(oai *XMLOAIArXiv) (*hubv1.Record, error) {
 	// arXiv ID
 	if oai.ID != "" {
 		record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-			Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
-			Value: oai.ID,
+			Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
+			Value:         oai.ID,
+			IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 		})
 	}
 
@@ -362,8 +362,9 @@ func oaiToHub(oai *XMLOAIArXiv) (*hubv1.Record, error) {
 	// Authors
 	for _, author := range oai.Authors.Authors {
 		c := &hubv1.Contributor{
-			Role: "author",
-			Type: hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
+			Role:     "author",
+			RoleCode: "relators:aut",
+			Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			ParsedName: &hubv1.ParsedName{
 				Given:  strings.TrimSpace(author.Forenames),
 				Family: strings.TrimSpace(author.Keyname),
@@ -398,8 +399,9 @@ func oaiToHub(oai *XMLOAIArXiv) (*hubv1.Record, error) {
 	// DOI
 	if oai.DOI != "" {
 		record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-			Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
-			Value: strings.TrimSpace(oai.DOI),
+			Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
+			Value:         strings.TrimSpace(oai.DOI),
+			IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 		})
 	}
 
@@ -537,8 +539,9 @@ func xmlToHub(xmlRec *XMLRecord) (*hubv1.Record, error) {
 	// arXiv identifier
 	if xmlRec.Identifier != "" {
 		record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-			Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
-			Value: xmlRec.Identifier,
+			Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV,
+			Value:         xmlRec.Identifier,
+			IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 		})
 	}
 
@@ -595,8 +598,9 @@ func xmlToHub(xmlRec *XMLRecord) (*hubv1.Record, error) {
 	if xmlRec.Alternate != nil {
 		for _, doi := range xmlRec.Alternate.DOI {
 			record.Identifiers = append(record.Identifiers, &hubv1.Identifier{
-				Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
-				Value: doi,
+				Type:          hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
+				Value:         doi,
+				IdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK,
 			})
 		}
 		for _, rn := range xmlRec.Alternate.ReportNo {

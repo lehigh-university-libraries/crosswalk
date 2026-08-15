@@ -31,6 +31,22 @@
                     },
                     "type": "array",
                     "description": "Fields that were placed in 'extra' (for audit purposes)"
+                },
+                "origin": {
+                    "type": "string",
+                    "description": "Origin identifies the source system or installation that supplied the record, independent of the serialization format."
+                },
+                "source_uri": {
+                    "type": "string",
+                    "description": "Source URI is the canonical API or public locator for the source record."
+                },
+                "profile_fingerprint": {
+                    "type": "string",
+                    "description": "Profile fingerprint identifies the exact immutable mapping contract used to parse this record. It is populated together with model_fingerprint."
+                },
+                "model_fingerprint": {
+                    "type": "string",
+                    "description": "Model fingerprint identifies the exact source-system schema snapshot to which the profile was bound."
                 }
             },
             "additionalProperties": true,

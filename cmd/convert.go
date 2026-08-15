@@ -1,14 +1,13 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -18,43 +17,58 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
+	"github.com/lehigh-university-libraries/crosswalk/source"
+	transformationspec "github.com/lehigh-university-libraries/crosswalk/spec"
 	spokeregistry "github.com/lehigh-university-libraries/crosswalk/spoke/registry"
 
 	// Register all format plugins
+	_ "github.com/lehigh-university-libraries/crosswalk/format/archivesspace"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/arxiv"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/bibtex"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/crossrefrest"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/csl"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/datacite"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/dublincore"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/islandora_workbench"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/mods"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/omeka_s"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/proquest"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/schemaorg"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/scopus"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/wos"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/zenodo"
 
 	// Register spoke field registries for use as default profiles
 	_ "github.com/lehigh-university-libraries/crosswalk/spoke/islandora/v1"
 	_ "github.com/lehigh-university-libraries/crosswalk/spoke/islandora_workbench/v1"
 )
 
-var (
-	inputFile                  string
-	outputFile                 string
-	profileName                string
-	profileFile                string
-	taxonomyFile               string
+type convertOptions struct {
+	inputPath                  string
+	outputPath                 string
+	sourceProfileName          string
+	targetProfileName          string
+	taxonomyPath               string
 	columns                    []string
-	multiValueSep              string
+	multiValueSeparator        string
 	stripHTML                  bool
 	pretty                     bool
 	baseURL                    string
-	enrichDepth                int
 	referenceDOIs              []string
 	skipReferenceDOIValidation bool
-)
+	transformationSpecPath     string
+}
 
-var convertCmd = &cobra.Command{
-	Use:   "convert <from> <to>",
-	Short: "Convert metadata between formats",
-	Long: `Convert scholarly metadata from one format to another.
+func defaultConvertOptions() convertOptions {
+	return convertOptions{multiValueSeparator: "|", stripHTML: true}
+}
+
+func newConvertCmd() *cobra.Command {
+	options := defaultConvertOptions()
+	command := &cobra.Command{
+		Use:   "convert <from> <to>",
+		Short: "Convert metadata between formats",
+		Long: `Convert scholarly metadata from one format to another.
 
 Arguments:
   from    Source format (drupal, csv)
@@ -75,29 +89,30 @@ Examples:
   # With taxonomy resolution
   crosswalk convert drupal csv -i data.json --taxonomy-file terms.json
 
-  # Enrich entity references from live Drupal site
-  crosswalk convert drupal csv -i data.json --base-url https://example.com`,
-	Args: cobra.ExactArgs(2),
-	RunE: runConvert,
+  # Resolve relative source identifiers without network access
+  crosswalk convert archivesspace csv -i data.json --base-url https://example.com`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(command *cobra.Command, args []string) error {
+			return runConvert(command, args, options)
+		},
+	}
+	command.Flags().StringVarP(&options.inputPath, "input", "i", "", "Input file (default: stdin)")
+	command.Flags().StringVarP(&options.outputPath, "output", "o", "", "Output file (default: stdout)")
+	command.Flags().StringVar(&options.sourceProfileName, "source-profile", "", "Canonical model-bound profile for the source system")
+	command.Flags().StringVar(&options.targetProfileName, "target-profile", "", "Canonical model-bound profile for the target system")
+	command.Flags().StringVar(&options.taxonomyPath, "taxonomy-file", "", "Taxonomy term resolution file (JSON)")
+	command.Flags().StringSliceVarP(&options.columns, "columns", "c", nil, "CSV columns to output")
+	command.Flags().StringVar(&options.multiValueSeparator, "separator", options.multiValueSeparator, "Multi-value field separator")
+	command.Flags().BoolVar(&options.stripHTML, "strip-html", options.stripHTML, "Strip HTML from text fields")
+	command.Flags().BoolVar(&options.pretty, "pretty", false, "Pretty-print JSON output")
+	command.Flags().StringVar(&options.baseURL, "base-url", "", "source system base URL used only to resolve relative identifiers")
+	command.Flags().StringSliceVar(&options.referenceDOIs, "reference-doi", nil, "DOI referenced by this work; repeat or comma-separate")
+	command.Flags().BoolVar(&options.skipReferenceDOIValidation, "skip-reference-doi-validation", false, "Do not resolve --reference-doi values with DOI.org before writing output")
+	command.Flags().StringVar(&options.transformationSpecPath, "spec", "", "Transformation specification JSON/YAML for spec-driven conversion")
+	return command
 }
 
-func init() {
-	convertCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file (default: stdin)")
-	convertCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file (default: stdout)")
-	convertCmd.Flags().StringVarP(&profileName, "profile", "p", "", "Mapping profile name (e.g., islandora)")
-	convertCmd.Flags().StringVar(&profileFile, "profile-file", "", "Custom profile YAML file")
-	convertCmd.Flags().StringVar(&taxonomyFile, "taxonomy-file", "", "Taxonomy term resolution file (JSON)")
-	convertCmd.Flags().StringSliceVarP(&columns, "columns", "c", nil, "CSV columns to output")
-	convertCmd.Flags().StringVar(&multiValueSep, "separator", "|", "Multi-value field separator")
-	convertCmd.Flags().BoolVar(&stripHTML, "strip-html", true, "Strip HTML from text fields")
-	convertCmd.Flags().BoolVar(&pretty, "pretty", false, "Pretty-print JSON output")
-	convertCmd.Flags().StringVar(&baseURL, "base-url", "", "Drupal site base URL for enriching entity references")
-	convertCmd.Flags().IntVar(&enrichDepth, "enrich-depth", 2, "Maximum depth for recursive entity enrichment")
-	convertCmd.Flags().StringSliceVar(&referenceDOIs, "reference-doi", nil, "DOI referenced by this work; repeat or comma-separate")
-	convertCmd.Flags().BoolVar(&skipReferenceDOIValidation, "skip-reference-doi-validation", false, "Do not resolve --reference-doi values with DOI.org before writing output")
-}
-
-func runConvert(cmd *cobra.Command, args []string) (err error) {
+func runConvert(cmd *cobra.Command, args []string, options convertOptions) (err error) {
 	fromFormat := args[0]
 	toFormat := args[1]
 
@@ -105,8 +120,8 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 	var input io.Reader
 	var inputName string
 
-	if inputFile != "" {
-		f, err := os.Open(inputFile)
+	if options.inputPath != "" {
+		f, err := os.Open(options.inputPath)
 		if err != nil {
 			return fmt.Errorf("opening input file: %w", err)
 		}
@@ -116,42 +131,16 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 			}
 		}()
 		input = f
-		inputName = inputFile
+		inputName = options.inputPath
 	} else {
-		input = os.Stdin
+		input = cmd.InOrStdin()
 		inputName = "stdin"
 	}
 
-	// Enrich Drupal input if base URL is provided
-	if baseURL != "" && fromFormat == "drupal" {
-		enrichedInput, err := enrichDrupalInput(input)
-		if err != nil {
-			return fmt.Errorf("enriching input: %w", err)
-		}
-		input = enrichedInput
-	}
-
-	if len(referenceDOIs) > 0 && !skipReferenceDOIValidation {
-		if err := validateReferenceDOIValues(referenceDOIs); err != nil {
+	if len(options.referenceDOIs) > 0 && !options.skipReferenceDOIValidation {
+		if err := validateReferenceDOIValues(cmd.Context(), options.referenceDOIs); err != nil {
 			return err
 		}
-	}
-
-	// Determine output destination
-	var output io.Writer
-	if outputFile != "" {
-		f, err := os.Create(outputFile)
-		if err != nil {
-			return fmt.Errorf("creating output file: %w", err)
-		}
-		defer func() {
-			if cerr := f.Close(); cerr != nil && err == nil {
-				err = fmt.Errorf("closing output file: %w", cerr)
-			}
-		}()
-		output = f
-	} else {
-		output = os.Stdout
 	}
 
 	// Get parser
@@ -166,16 +155,61 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unknown target format %q: %w", toFormat, err)
 	}
 
-	// Load profile
-	profile, err := loadProfile(fromFormat)
+	// Static format mappings and instance-specific system profiles are separate
+	// contracts. Source configuration is never reused as a target mapping.
+	sourceMapping := defaultStaticProfile(fromFormat)
+	targetMapping := defaultStaticProfile(toFormat)
+	sourceProfile, err := loadSystemProfile(options.sourceProfileName, fromFormat, "source")
 	if err != nil {
-		return fmt.Errorf("loading profile: %w", err)
+		return err
+	}
+	targetProfile, err := loadSystemProfile(options.targetProfileName, toFormat, "target")
+	if err != nil {
+		return err
+	}
+	if sourceProfile != nil {
+		sourceMapping = nil
+	}
+	if targetProfile != nil {
+		targetMapping = nil
+	}
+
+	transformation, err := loadTransformationSpec(options.transformationSpecPath, fromFormat, toFormat)
+	if err != nil {
+		return err
+	}
+	if transformation != nil {
+		if sourceProfile != nil {
+			return fmt.Errorf("--spec cannot be combined with --source-profile")
+		}
+		if transformation.Fingerprint.Profile != "" && targetProfile == nil {
+			return fmt.Errorf("profile-bound --spec requires the exact --target-profile")
+		}
+		if targetProfile != nil {
+			if targetProfile.System() != "drupal" || toFormat != "islandora-workbench" {
+				return fmt.Errorf("--target-profile with --spec is supported only for a Drupal-bound Islandora Workbench target")
+			}
+			if transformation.Fingerprint.Model != targetProfile.ModelFingerprint() {
+				return fmt.Errorf("transformation model fingerprint does not match target profile model")
+			}
+			if transformation.Fingerprint.Profile != targetProfile.Fingerprint() {
+				return fmt.Errorf("transformation profile fingerprint does not match target profile")
+			}
+		}
+		if cmd.Flags().Changed("columns") {
+			return fmt.Errorf("--spec cannot be combined with --columns; target columns come from the specification")
+		}
+		if cmd.Flags().Changed("separator") {
+			return fmt.Errorf("--spec cannot be combined with --separator; the target separator comes from the specification")
+		}
+	} else if targetProfile != nil && toFormat == "islandora-workbench" {
+		return fmt.Errorf("--target-profile for islandora-workbench requires a profile-bound --spec")
 	}
 
 	// Load taxonomy resolver
 	var resolver format.TaxonomyResolver
-	if taxonomyFile != "" {
-		store, err := drupal.LoadTaxonomyFile(taxonomyFile)
+	if options.taxonomyPath != "" {
+		store, err := drupal.LoadTaxonomyFile(options.taxonomyPath)
 		if err != nil {
 			return fmt.Errorf("loading taxonomy file: %w", err)
 		}
@@ -185,47 +219,114 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 
 	// Parse input
 	parseOpts := &format.ParseOptions{
-		Profile:          profile,
+		Profile:          sourceMapping,
+		SystemProfile:    sourceProfile,
 		TaxonomyResolver: resolver,
-		StripHTML:        stripHTML,
+		StripHTML:        options.stripHTML,
 		SourceName:       inputName,
-		BaseURL:          baseURL,
+		BaseURL:          options.baseURL,
+		Spec:             transformation,
+		Strict:           transformation != nil,
+	}
+	if transformation != nil && targetProfile != nil && fromFormat == "csv" && toFormat == "islandora-workbench" {
+		// Profile-bound identifier columns are source cells, but their authority
+		// and validation rules belong to the exact target Drupal profile.
+		parseOpts.ValueProfile = targetProfile
 	}
 
-	records, err := parser.Parse(input, parseOpts)
+	dataset, err := format.ParseDataset(parser, input, parseOpts)
 	if err != nil {
 		return fmt.Errorf("parsing input: %w", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "Parsed %d records\n", len(records))
+	fmt.Fprintf(cmd.ErrOrStderr(), "Parsed %d records\n", len(dataset.Records))
 
 	// Serialize output
 	serializeOpts := &format.SerializeOptions{
-		Profile:             profile,
-		Columns:             columns,
-		MultiValueSeparator: multiValueSep,
+		Profile:             targetMapping,
+		SystemProfile:       targetProfile,
+		Columns:             options.columns,
+		MultiValueSeparator: options.multiValueSeparator,
 		IncludeHeader:       true,
-		Pretty:              pretty,
-		ReferenceDOIs:       referenceDOIs,
+		Pretty:              options.pretty,
+		ReferenceDOIs:       options.referenceDOIs,
+		Spec:                transformation,
+	}
+	if toFormat == "islandora-workbench" && serializeOpts.Spec == nil {
+		serializeOpts.Spec, err = compatibilityWorkbenchSpec(options.multiValueSeparator)
+		if err != nil {
+			return err
+		}
 	}
 
-	if len(serializeOpts.Columns) == 0 && toFormat == "csv" {
+	if transformation == nil && len(serializeOpts.Columns) == 0 && toFormat == "csv" {
 		serializeOpts.Columns = csvfmt.DefaultColumns()
 	}
 
-	if err := serializer.Serialize(output, records, serializeOpts); err != nil {
-		return fmt.Errorf("serializing output: %w", err)
+	serialize := func(output io.Writer) error {
+		if err := format.SerializeDataset(serializer, output, dataset, serializeOpts); err != nil {
+			return fmt.Errorf("serializing output: %w", err)
+		}
+		return nil
 	}
+	if options.outputPath != "" {
+		return writeOutputFile(options.outputPath, serialize)
+	}
+	return serialize(cmd.OutOrStdout())
+}
 
-	return nil
+// compatibilityWorkbenchSpec makes use of the legacy Workbench layout an
+// explicit caller decision. Direct Workbench serializers require a sealed
+// specification so profile binding and artifact provenance cannot be bypassed.
+func compatibilityWorkbenchSpec(separator string) (*transformationspec.Transformation, error) {
+	transformation := transformationspec.FabricatorWorkbench()
+	if separator != "" && separator != transformation.Target.MultiValueSeparator {
+		transformation.Target.MultiValueSeparator = separator
+		if err := transformation.SealFingerprint(); err != nil {
+			return nil, fmt.Errorf("sealing built-in Workbench transformation: %w", err)
+		}
+	}
+	if err := transformation.ValidateSealed(); err != nil {
+		return nil, fmt.Errorf("validating built-in Workbench transformation: %w", err)
+	}
+	return transformation, nil
+}
+
+func loadTransformationSpec(specPath, fromFormat, toFormat string) (*transformationspec.Transformation, error) {
+	if strings.TrimSpace(specPath) == "" {
+		return nil, nil
+	}
+	file, err := os.Open(specPath)
+	if err != nil {
+		return nil, fmt.Errorf("opening transformation specification: %w", err)
+	}
+	transformation, loadErr := transformationspec.Load(file)
+	closeErr := file.Close()
+	if loadErr != nil {
+		return nil, fmt.Errorf("loading transformation specification: %w", loadErr)
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("closing transformation specification: %w", closeErr)
+	}
+	if transformation.Source.Format != fromFormat {
+		return nil, fmt.Errorf("transformation source format %q does not match requested source %q", transformation.Source.Format, fromFormat)
+	}
+	if transformation.Target.Format != toFormat {
+		return nil, fmt.Errorf("transformation target format %q does not match requested target %q", transformation.Target.Format, toFormat)
+	}
+	return transformation, nil
 }
 
 type doiHandleResponse struct {
 	ResponseCode int `json:"responseCode"`
 }
 
-func validateReferenceDOIValues(values []string) error {
-	client := &http.Client{Timeout: 10 * time.Second}
+func validateReferenceDOIValues(ctx context.Context, values []string) error {
+	if ctx == nil {
+		return fmt.Errorf("validating reference DOIs: context is required")
+	}
+	client := source.NewClient()
+	client.MaxResponseBytes = 1 << 20
 	seen := make(map[string]bool)
 
 	for _, raw := range values {
@@ -236,22 +337,16 @@ func validateReferenceDOIValues(values []string) error {
 		seen[doi] = true
 
 		handleURL := "https://doi.org/api/handles/" + url.PathEscape(doi)
-		resp, err := client.Get(handleURL)
+		document, err := client.FetchRequest(ctx, source.Request{
+			URL: handleURL, Accept: "application/json", RedirectPolicy: source.RedirectHTTPS,
+		})
 		if err != nil {
 			return fmt.Errorf("validating reference DOI %q: %w", doi, err)
 		}
 
 		var handle doiHandleResponse
-		decodeErr := json.NewDecoder(resp.Body).Decode(&handle)
-		closeErr := resp.Body.Close()
-		if closeErr != nil {
-			return fmt.Errorf("validating reference DOI %q: %w", doi, closeErr)
-		}
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			return fmt.Errorf("reference DOI %q did not resolve through DOI.org: HTTP %d", doi, resp.StatusCode)
-		}
-		if decodeErr != nil {
-			return fmt.Errorf("validating reference DOI %q: decoding DOI.org response: %w", doi, decodeErr)
+		if err := json.Unmarshal(document.Data, &handle); err != nil {
+			return fmt.Errorf("validating reference DOI %q: decoding DOI.org response: %w", doi, err)
 		}
 		if handle.ResponseCode != 1 {
 			return fmt.Errorf("reference DOI %q did not resolve through DOI.org: responseCode %d", doi, handle.ResponseCode)
@@ -261,126 +356,29 @@ func validateReferenceDOIValues(values []string) error {
 	return nil
 }
 
-func loadProfile(fromFormat string) (*mapping.Profile, error) {
-	// Load from file if specified
-	if profileFile != "" {
-		return mapping.LoadProfile(profileFile)
-	}
-
-	// Load from user profiles by name first
-	if profileName != "" {
-		// Try user profile in ~/.crosswalk/profiles/
-		if profile.Exists(profileName) {
-			p, err := profile.Load(profileName)
-			if err != nil {
-				return nil, fmt.Errorf("loading user profile: %w", err)
-			}
-			return convertUserProfile(p), nil
-		}
-
-		// Fall back to embedded profiles
-		registry, err := mapping.NewProfileRegistry()
-		if err != nil {
-			return nil, err
-		}
-
-		mp, ok := registry.Get(profileName)
-		if !ok {
-			return nil, fmt.Errorf("unknown profile: %s (not found in ~/.crosswalk/profiles/ or embedded profiles)", profileName)
-		}
-		return mp, nil
-	}
-
-	// Try auto-discovery from user profiles based on input file
-	if inputFile != "" {
-		p, err := autoDiscoverProfile(fromFormat, inputFile)
-		if err == nil && p != nil {
-			fmt.Fprintf(os.Stderr, "Auto-discovered profile: %s\n", p.Name)
-			return convertUserProfile(p), nil
-		}
-	}
-
+func defaultStaticProfile(formatName string) *mapping.Profile {
 	// Use generated spoke code as default profile if available
-	if mp, ok := spokeregistry.ProfileFrom(fromFormat); ok {
-		return mp, nil
+	if staticProfile, ok := spokeregistry.ProfileFrom(formatName); ok {
+		return staticProfile
 	}
-
-	return nil, nil
+	return nil
 }
 
-// autoDiscoverProfile attempts to find a matching user profile for the input.
-func autoDiscoverProfile(format, inputPath string) (*profile.Profile, error) {
-	switch format {
-	case "csv":
-		return profile.MatchCSVProfile(inputPath)
-	case "drupal":
-		// Read JSON and try to match based on field fingerprint
-		data, err := os.ReadFile(inputPath)
-		if err != nil {
-			return nil, nil
-		}
-		return profile.MatchDrupalProfile(data)
-	default:
+func loadSystemProfile(name, formatName, direction string) (*profile.Compiled, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
 		return nil, nil
 	}
-}
-
-// enrichDrupalInput enriches entity references in Drupal JSON input.
-func enrichDrupalInput(input io.Reader) (io.Reader, error) {
-	// Read all input
-	data, err := io.ReadAll(input)
+	stored, err := profile.LoadStored(name)
 	if err != nil {
-		return nil, fmt.Errorf("reading input: %w", err)
+		return nil, fmt.Errorf("loading %s profile %q: %w", direction, name, err)
 	}
-
-	// Create enricher
-	enricher, err := drupal.NewEnricher(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("creating enricher: %w", err)
+	wantSystem := formatName
+	if direction == "target" && formatName == "islandora-workbench" {
+		wantSystem = "drupal"
 	}
-	enricher.MaxDepth = enrichDepth
-
-	fmt.Fprintf(os.Stderr, "Enriching entity references from %s...\n", baseURL)
-
-	// Enrich the data
-	enrichedData, err := enricher.Enrich(data)
-	if err != nil {
-		return nil, fmt.Errorf("enriching data: %w", err)
+	if stored.Compiled.System() != wantSystem {
+		return nil, fmt.Errorf("%s profile %q targets system %q, not format %q", direction, name, stored.Compiled.System(), formatName)
 	}
-
-	return strings.NewReader(string(enrichedData)), nil
-}
-
-// convertUserProfile converts a user profile.Profile to mapping.Profile.
-func convertUserProfile(p *profile.Profile) *mapping.Profile {
-	mp := &mapping.Profile{
-		Name:        p.Name,
-		Format:      p.Format,
-		Description: p.Description,
-		Fields:      make(map[string]mapping.FieldMapping),
-		Options: mapping.ProfileOptions{
-			MultiValueSeparator: p.Options.MultiValueSeparator,
-			CSVDelimiter:        p.Options.CSVDelimiter,
-			StripHTML:           p.Options.StripHTML,
-			TaxonomyMode:        p.Options.TaxonomyMode,
-		},
-	}
-
-	for source, fm := range p.Fields {
-		mp.Fields[source] = mapping.FieldMapping{
-			IR:           fm.Hub, // Hub field maps to IR in the mapping package
-			Type:         fm.Type,
-			Priority:     fm.Priority,
-			DateType:     fm.DateType,
-			Parser:       fm.Parser,
-			Resolve:      fm.Resolve,
-			RoleField:    fm.RoleField,
-			RelationType: fm.RelationType,
-			Vocabulary:   fm.Vocabulary,
-			MultiValue:   fm.MultiValue,
-			Delimiter:    fm.Delimiter,
-		}
-	}
-
-	return mp
+	return stored.Compiled, nil
 }

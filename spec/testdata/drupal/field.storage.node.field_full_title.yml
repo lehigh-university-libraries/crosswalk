@@ -1,0 +1,6 @@
+id: node.field_full_title
+field_name: field_full_title
+entity_type: node
+type: string_long
+settings: { case_sensitive: false }
+cardinality: 1

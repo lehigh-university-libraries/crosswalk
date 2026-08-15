@@ -3,6 +3,7 @@ package csv
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -19,24 +20,62 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 	if opts == nil {
 		opts = format.NewParseOptions()
 	}
+	// Validate executable specification/profile binding before reading input so
+	// an empty document cannot bypass the same trust boundary as a populated one.
+	if opts.Spec != nil {
+		if err := validateSpecParseOptions(opts); err != nil {
+			return nil, err
+		}
+	}
 
-	reader := csv.NewReader(r)
+	limited := &io.LimitedReader{R: r, N: maxCSVInputBytes + 1}
+	reader := csv.NewReader(limited)
 	reader.FieldsPerRecord = -1 // Allow variable number of fields
-	reader.LazyQuotes = true
+	reader.LazyQuotes = false
 
-	// Read all rows
-	rows, err := reader.ReadAll()
+	rows, err := readBoundedCSVRows(reader)
 	if err != nil {
+		var parseError *csv.ParseError
+		if errors.As(err, &parseError) {
+			return nil, &format.DiagnosticsError{Diagnostics: []format.Diagnostic{{
+				Source:  opts.SourceName,
+				Row:     parseError.Line,
+				Column:  parseError.Column,
+				Code:    "invalid_csv",
+				Message: parseError.Err.Error(),
+			}}}
+		}
 		return nil, fmt.Errorf("parsing CSV: %w", err)
+	}
+	if limited.N == 0 {
+		return nil, fmt.Errorf("CSV input exceeds %d bytes", maxCSVInputBytes)
 	}
 
 	if len(rows) == 0 {
 		return nil, nil
 	}
+	if opts.Spec != nil {
+		return parseRowsWithSpec(rows, opts)
+	}
 
 	// First row is header
 	header := rows[0]
 	columnMap := buildColumnMap(header, opts.Profile)
+	diagnostics := make([]format.Diagnostic, 0)
+	if opts.Strict {
+		for index, name := range header {
+			if _, ok := columnMap[index]; !ok && strings.TrimSpace(name) != "" {
+				diagnostics = append(diagnostics, format.Diagnostic{
+					Source:  opts.SourceName,
+					Row:     1,
+					Column:  index + 1,
+					Header:  strings.TrimSpace(name),
+					Code:    "unknown_column",
+					Message: "column has no CSV-to-Hub mapping",
+				})
+			}
+		}
+	}
 
 	// Get multi-value separator
 	sep := "|"
@@ -47,14 +86,80 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 	// Parse data rows
 	records := make([]*hubv1.Record, 0, len(rows)-1)
 	for i := 1; i < len(rows); i++ {
+		if emptyRow(rows[i]) {
+			continue
+		}
+		if len(rows[i]) != len(header) {
+			diagnostics = append(diagnostics, format.Diagnostic{
+				Source:  opts.SourceName,
+				Row:     i + 1,
+				Code:    "column_count",
+				Message: fmt.Sprintf("got %d columns; header defines %d", len(rows[i]), len(header)),
+			})
+			continue
+		}
 		record, err := rowToRecord(rows[i], header, columnMap, sep, opts)
 		if err != nil {
-			continue // Skip invalid rows
+			diagnostic := format.Diagnostic{
+				Source:  opts.SourceName,
+				Row:     i + 1,
+				Code:    "invalid_row",
+				Message: err.Error(),
+			}
+			if cell, ok := err.(*cellError); ok {
+				diagnostic.Column = cell.column + 1
+				diagnostic.Header = header[cell.column]
+				diagnostic.Code = cell.code
+				diagnostic.Message = cell.message
+			}
+			diagnostics = append(diagnostics, diagnostic)
+			continue
 		}
 		records = append(records, record)
 	}
+	if len(diagnostics) > 0 {
+		return nil, &format.DiagnosticsError{Diagnostics: diagnostics}
+	}
 
 	return records, nil
+}
+
+const (
+	maxCSVInputBytes = int64(64 << 20)
+	maxCSVRows       = 100_002
+	maxCSVCells      = int64(1_000_000)
+)
+
+func readBoundedCSVRows(reader *csv.Reader) ([][]string, error) {
+	rows := make([][]string, 0)
+	var cells int64
+	for {
+		row, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			return rows, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(rows) >= maxCSVRows {
+			return nil, fmt.Errorf("CSV row count exceeds %d", maxCSVRows)
+		}
+		if int64(len(row)) > maxCSVCells-cells {
+			return nil, fmt.Errorf("CSV cell count exceeds %d", maxCSVCells)
+		}
+		cells += int64(len(row))
+		rows = append(rows, row)
+	}
+}
+
+type cellError struct {
+	column  int
+	code    string
+	message string
+}
+
+func (e *cellError) Error() string {
+	return e.message
 }
 
 func buildColumnMap(header []string, profile *mapping.Profile) map[int]string {
@@ -165,17 +270,32 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			// Contributors always use " ; " as multi-value separator to match serialization
 			entries := splitMultiValue(value, " ; ")
 			for _, entry := range entries {
-				if c := parseContributor(entry); c != nil {
-					record.Contributors = append(record.Contributors, c)
+				entry = strings.TrimSpace(entry)
+				if strings.HasPrefix(entry, "{") {
+					var object map[string]any
+					if err := json.Unmarshal([]byte(entry), &object); err != nil {
+						return nil, &cellError{column: i, code: "invalid_contributor", message: "contributor JSON is invalid"}
+					}
+					record.Contributors = append(record.Contributors, parseContributorFromJSON(object))
+					continue
+				}
+				if entry != "" {
+					record.Contributors = append(record.Contributors, parseContributorFromString(entry))
 				}
 			}
 
 		case "Dates":
 			dateType := dateTypeFromString(subtype)
 			for _, v := range splitMultiValue(value, sep) {
-				date, _ := helpers.ParseEDTF(v, dateType)
+				date, err := helpers.ParseEDTF(v, dateType)
 				if date.Year > 0 {
 					record.Dates = append(record.Dates, date)
+				} else {
+					message := fmt.Sprintf("must be a valid EDTF date: %q", v)
+					if err != nil {
+						message = err.Error()
+					}
+					return nil, &cellError{column: i, code: "invalid_date", message: message}
 				}
 			}
 
@@ -360,9 +480,9 @@ func cleanValue(value string, opts *format.ParseOptions) string {
 
 // parseContributor parses a contributor from either JSON format or a plain prefixed string.
 //
-// JSON format: {"name":"relators:cre:person:Qin, Tian","institution":"...","orcid":"..."}
-// Plain format: "relators:cre:person:Qin, Tian" (Islandora workbench style)
-// Simple format: "Qin, Tian"
+// JSON format: {"name":"relators:cre:person:Example, Avery","institution":"...","orcid":"..."}
+// Plain format: "relators:cre:person:Example, Avery" (Islandora workbench style)
+// Simple format: "Example, Avery"
 func parseContributor(s string) *hubv1.Contributor {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -380,7 +500,7 @@ func parseContributor(s string) *hubv1.Contributor {
 }
 
 // parseContributorFromString parses a plain or prefixed contributor string.
-// Prefixed format: "relators:cre:person:Qin, Tian" (role_code:type:name)
+// Prefixed format: "relators:cre:person:Example, Avery" (role_code:type:name)
 func parseContributorFromString(s string) *hubv1.Contributor {
 	roleCode, contribType, name := parseNamePrefix(s)
 	c := &hubv1.Contributor{
@@ -454,18 +574,19 @@ func parseContributorFromJSON(obj map[string]any) *hubv1.Contributor {
 }
 
 // parseNamePrefix extracts role code, contributor type, and name from a prefixed string.
-// Format: "[roleCode:]type:name" where type is "person" or "organization".
-// Example: "relators:cre:person:Qin, Tian" → ("relators:cre", PERSON, "Qin, Tian")
+// Format: "[roleCode:]type:name" where type is "person", "organization", or
+// Workbench's canonical "corporate_body" spelling.
+// Example: "relators:cre:person:Example, Avery" → ("relators:cre", PERSON, "Example, Avery")
 func parseNamePrefix(s string) (roleCode string, contribType hubv1.ContributorType, name string) {
 	contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
 
-	for _, keyword := range []string{"person", "organization"} {
+	for _, keyword := range []string{"person", "organization", "corporate_body"} {
 		// Look for ":keyword:" in the middle of the string
 		marker := ":" + keyword + ":"
 		if idx := strings.Index(s, marker); idx >= 0 {
 			roleCode = s[:idx]
 			name = s[idx+len(marker):]
-			if keyword == "organization" {
+			if keyword != "person" {
 				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
 			}
 			return
@@ -473,7 +594,7 @@ func parseNamePrefix(s string) (roleCode string, contribType hubv1.ContributorTy
 		// Look for "keyword:" at the start (no role prefix)
 		if strings.HasPrefix(s, keyword+":") {
 			name = s[len(keyword)+1:]
-			if keyword == "organization" {
+			if keyword != "person" {
 				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
 			}
 			return

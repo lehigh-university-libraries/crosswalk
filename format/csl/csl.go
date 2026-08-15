@@ -3,6 +3,7 @@ package csl
 
 import (
 	"bytes"
+	"encoding/json"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 )
@@ -16,6 +17,7 @@ type Format struct{}
 // Ensure Format implements the interfaces
 var (
 	_ format.Format     = (*Format)(nil)
+	_ format.Parser     = (*Format)(nil)
 	_ format.Serializer = (*Format)(nil)
 )
 
@@ -41,28 +43,37 @@ func (f *Format) CanParse(peek []byte) bool {
 		return false
 	}
 
-	// CSL-JSON starts with [ or { and contains type field
+	// Detect top-level CSL item keys structurally. Byte searches across nested
+	// objects made Zenodo and other API envelopes look like CSL merely because
+	// they contained an unrelated id and title below the document root.
 	if peek[0] != '[' && peek[0] != '{' {
 		return false
 	}
-
-	patterns := [][]byte{
-		[]byte(`"type"`),
-		[]byte(`"id"`),
-		[]byte(`"title"`),
-		[]byte(`"author"`),
-	}
-
-	matchCount := 0
-	for _, pattern := range patterns {
-		if bytes.Contains(peek, pattern) {
-			matchCount++
+	var item map[string]json.RawMessage
+	if peek[0] == '{' {
+		if err := json.Unmarshal(peek, &item); err != nil {
+			return false
+		}
+	} else {
+		var items []json.RawMessage
+		if err := json.Unmarshal(peek, &items); err != nil || len(items) == 0 {
+			return false
+		}
+		if err := json.Unmarshal(items[0], &item); err != nil {
+			return false
 		}
 	}
-
-	return matchCount >= 2
+	if _, hasType := item["type"]; !hasType {
+		return false
+	}
+	for _, key := range []string{"id", "title", "author"} {
+		if _, exists := item[key]; exists {
+			return true
+		}
+	}
+	return false
 }
 
 func init() {
-	format.Register(&Format{})
+	format.MustRegister(&Format{})
 }

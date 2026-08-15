@@ -1,6 +1,7 @@
 package protoxml
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -15,13 +16,20 @@ import (
 // Unmarshal populates a proto message from XML using hub.v1 field annotations.
 // The root element name must match the message's xml_name annotation.
 func Unmarshal(data []byte, msg proto.Message) error {
-	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	if int64(len(data)) > maxXMLInputBytes {
+		return fmt.Errorf("XML input exceeds %d bytes", maxXMLInputBytes)
+	}
+	decoder := newDecoder(bytes.NewReader(data))
 	return unmarshalFromDecoder(decoder, msg, "")
 }
 
 // UnmarshalReader populates a proto message from an XML reader.
 func UnmarshalReader(r io.Reader, msg proto.Message) error {
-	decoder := xml.NewDecoder(r)
+	data, err := readBoundedXML(r)
+	if err != nil {
+		return err
+	}
+	decoder := newDecoder(bytes.NewReader(data))
 	return unmarshalFromDecoder(decoder, msg, "")
 }
 
@@ -29,7 +37,11 @@ func UnmarshalReader(r io.Reader, msg proto.Message) error {
 // root element name. This is useful for extracting records from OAI-PMH wrappers.
 // If rootElement is empty, the message's xml_name annotation is used.
 func UnmarshalElement(r io.Reader, msg proto.Message, rootElement string) error {
-	decoder := xml.NewDecoder(r)
+	data, err := readBoundedXML(r)
+	if err != nil {
+		return err
+	}
+	decoder := newDecoder(bytes.NewReader(data))
 	return unmarshalFromDecoder(decoder, msg, rootElement)
 }
 
@@ -37,7 +49,11 @@ func UnmarshalElement(r io.Reader, msg proto.Message, rootElement string) error 
 // proto message. The factory function creates a new empty message for each element.
 // This is useful for parsing documents with multiple records (e.g., OAI-PMH ListRecords).
 func UnmarshalAll(r io.Reader, factory func() proto.Message) ([]proto.Message, error) {
-	decoder := xml.NewDecoder(r)
+	data, err := readBoundedXML(r)
+	if err != nil {
+		return nil, err
+	}
+	decoder := newDecoder(bytes.NewReader(data))
 	sample := factory()
 	md := sample.ProtoReflect().Descriptor()
 
@@ -72,6 +88,48 @@ func UnmarshalAll(r io.Reader, factory func() proto.Message) ([]proto.Message, e
 	}
 
 	return results, nil
+}
+
+const maxXMLInputBytes = int64(64 << 20)
+
+func readBoundedXML(r io.Reader) ([]byte, error) {
+	if r == nil {
+		return nil, fmt.Errorf("XML input reader is required")
+	}
+	data, err := io.ReadAll(io.LimitReader(r, maxXMLInputBytes+1))
+	if err != nil {
+		return nil, fmt.Errorf("reading XML input: %w", err)
+	}
+	if int64(len(data)) > maxXMLInputBytes {
+		return nil, fmt.Errorf("XML input exceeds %d bytes", maxXMLInputBytes)
+	}
+	return data, nil
+}
+
+func newDecoder(r io.Reader) *xml.Decoder {
+	decoder := xml.NewDecoder(r)
+	decoder.CharsetReader = xmlCharsetReader
+	return decoder
+}
+
+func xmlCharsetReader(label string, input io.Reader) (io.Reader, error) {
+	switch strings.ToLower(strings.TrimSpace(label)) {
+	case "utf-8", "utf8", "us-ascii", "ascii":
+		return input, nil
+	case "iso-8859-1", "iso8859-1", "latin1", "latin-1":
+		data, err := io.ReadAll(input)
+		if err != nil {
+			return nil, fmt.Errorf("reading %s XML: %w", label, err)
+		}
+		var converted bytes.Buffer
+		converted.Grow(len(data))
+		for _, value := range data {
+			converted.WriteRune(rune(value))
+		}
+		return bytes.NewReader(converted.Bytes()), nil
+	default:
+		return nil, fmt.Errorf("unsupported XML character encoding %q", label)
+	}
 }
 
 // unmarshalFromDecoder scans for the root element and unmarshals it into the message.

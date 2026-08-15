@@ -179,6 +179,15 @@ func TestParseGenreSetsArticleResourceTypeFromAuthorityURI(t *testing.T) {
 	}
 }
 
+func TestIdentifierTypeFromStringRecognizesWebOfScience(t *testing.T) {
+	t.Parallel()
+	for _, label := range []string{"wos", "Web of Science", "web-of-science"} {
+		if got := identifierTypeFromString(label); got != hubv1.IdentifierType_IDENTIFIER_TYPE_WOS {
+			t.Fatalf("identifierTypeFromString(%q) = %v, want WOS", label, got)
+		}
+	}
+}
+
 func TestParseResourceTypeFromAuthorityURIWhenGenreMappedAsResourceType(t *testing.T) {
 	input := `{
 		"title": [{"value": "Test"}],

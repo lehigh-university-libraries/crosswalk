@@ -90,6 +90,9 @@ func TestParseJournalArticle(t *testing.T) {
 	for _, id := range r.Identifiers {
 		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_DOI && id.Value == "10.1234/test.2025.001" {
 			foundDOI = true
+			if id.IdentityLevel != hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK {
+				t.Errorf("DOI identity level: got %s, want WORK", id.IdentityLevel)
+			}
 		}
 	}
 	if !foundDOI {
@@ -211,7 +214,7 @@ func TestParseDissertation(t *testing.T) {
         <month>5</month>
       </approval_date>
       <institution>
-        <institution_name>Lehigh University</institution_name>
+        <institution_name>Example University</institution_name>
         <institution_department>Computer Science</institution_department>
       </institution>
       <degree>PhD</degree>
@@ -273,8 +276,8 @@ func TestParseDissertation(t *testing.T) {
 	if r.DegreeInfo == nil {
 		t.Fatal("DegreeInfo is nil")
 	}
-	if r.DegreeInfo.Institution != "Lehigh University" {
-		t.Errorf("institution: got %q, want %q", r.DegreeInfo.Institution, "Lehigh University")
+	if r.DegreeInfo.Institution != "Example University" {
+		t.Errorf("institution: got %q, want %q", r.DegreeInfo.Institution, "Example University")
 	}
 	if r.DegreeInfo.Department != "Computer Science" {
 		t.Errorf("department: got %q, want %q", r.DegreeInfo.Department, "Computer Science")

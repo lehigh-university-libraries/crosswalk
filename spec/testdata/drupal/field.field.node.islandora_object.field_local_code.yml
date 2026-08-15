@@ -1,0 +1,9 @@
+id: node.islandora_object.field_local_code
+field_name: field_local_code
+entity_type: node
+bundle: islandora_object
+label: 'Local Code'
+description: 'A repository-specific scalar code.'
+required: false
+settings: { }
+field_type: string

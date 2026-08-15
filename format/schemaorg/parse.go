@@ -13,7 +13,7 @@ import (
 
 // Parse reads schema.org JSON-LD and returns hub records.
 func (f *Format) Parse(r io.Reader, _ *format.ParseOptions) ([]*hubv1.Record, error) {
-	data, err := io.ReadAll(r)
+	data, err := format.ReadInput(r)
 	if err != nil {
 		return nil, fmt.Errorf("reading input: %w", err)
 	}

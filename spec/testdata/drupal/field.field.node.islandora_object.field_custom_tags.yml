@@ -1,0 +1,9 @@
+id: node.islandora_object.field_custom_tags
+field_name: field_custom_tags
+entity_type: node
+bundle: islandora_object
+label: 'Local Tags'
+description: 'Repository-specific tags.'
+required: false
+settings: { }
+field_type: string

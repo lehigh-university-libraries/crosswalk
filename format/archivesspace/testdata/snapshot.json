@@ -1,0 +1,227 @@
+{
+  "crosswalk_format": "archivesspace-jsonmodel",
+  "version": 1,
+  "source_uri": "https://aspace.example.edu/staff?session=redacted#fragment",
+  "source_id": "repository-2-resource-1",
+  "retrieved_at": "2026-08-13T12:30:00Z",
+  "records": [
+    {
+      "jsonmodel_type": "resource",
+      "uri": "/repositories/2/resources/1",
+      "title": "The Example Family Papers",
+      "publish": true,
+      "id_0": "SC",
+      "id_1": "001",
+      "ead_id": "example-family-papers",
+      "ead_location": "https://archives.example.edu/repositories/2/resources/1",
+      "level": "collection",
+      "resource_type": "papers",
+      "finding_aid_title": "Guide to the Example Family Papers",
+      "finding_aid_author": "Example University Archives",
+      "finding_aid_language": "eng",
+      "dates": [
+        {
+          "jsonmodel_type": "date",
+          "date_type": "inclusive",
+          "label": "creation",
+          "expression": "1901-1950",
+          "begin": "1901",
+          "end": "1950"
+        }
+      ],
+      "extents": [
+        {
+          "jsonmodel_type": "extent",
+          "portion": "whole",
+          "number": "12",
+          "extent_type": "linear_feet",
+          "container_summary": "24 boxes",
+          "dimensions": "30 cm"
+        }
+      ],
+      "lang_materials": [
+        {
+          "jsonmodel_type": "lang_material",
+          "language_and_script": {
+            "jsonmodel_type": "language_and_script",
+            "language": "eng",
+            "script": "Latn"
+          }
+        }
+      ],
+      "linked_agents": [
+        {
+          "role": "creator",
+          "relator": "cre",
+          "ref": "/agents/people/3",
+          "is_primary": true,
+          "_resolved": {
+            "jsonmodel_type": "agent_person",
+            "uri": "/agents/people/3",
+            "title": "Example, Ada, 1870-1955",
+            "display_name": {
+              "jsonmodel_type": "name_person",
+              "primary_name": "Example",
+              "rest_of_name": "Ada",
+              "suffix": "1870-1955",
+              "name_order": "inverted"
+            },
+            "external_ids": [
+              {"source": "lcnaf", "external_id": "n12345678"}
+            ]
+          }
+        }
+      ],
+      "subjects": [
+        {
+          "ref": "/subjects/5",
+          "_resolved": {
+            "jsonmodel_type": "subject",
+            "uri": "/subjects/5",
+            "title": "Women engineers -- History",
+            "source": "lcsh",
+            "authority_id": "https://id.loc.gov/authorities/subjects/sh85147540",
+            "terms": [
+              {"term": "Women engineers", "term_type": "topical", "vocabulary": "/vocabularies/1"},
+              {"term": "History", "term_type": "topical", "vocabulary": "/vocabularies/1"}
+            ]
+          }
+        }
+      ],
+      "notes": [
+        {
+          "jsonmodel_type": "note_multipart",
+          "type": "scopecontent",
+          "subnotes": [
+            {"jsonmodel_type": "note_text", "content": "<p>Correspondence and research files.</p>"}
+          ]
+        },
+        {
+          "jsonmodel_type": "note_singlepart",
+          "type": "prefercite",
+          "content": ["Example Family Papers, Example University Archives."]
+        }
+      ]
+    },
+    {
+      "jsonmodel_type": "archival_object",
+      "uri": "/repositories/2/archival_objects/10",
+      "title": "Professional correspondence",
+      "publish": true,
+      "ref_id": "ref-series-1",
+      "component_id": "Series I",
+      "level": "series",
+      "position": 0,
+      "resource": {"ref": "/repositories/2/resources/1"},
+      "dates": [
+        {"jsonmodel_type": "date", "date_type": "inclusive", "label": "creation", "begin": "1901", "end": "1930"}
+      ]
+    },
+    {
+      "jsonmodel_type": "archival_object",
+      "uri": "/repositories/2/archival_objects/11",
+      "title": "Project files",
+      "publish": true,
+      "ref_id": "ref-file-1",
+      "component_id": "File A",
+      "level": "file",
+      "position": 0,
+      "parent": {"ref": "/repositories/2/archival_objects/10"},
+      "resource": {"ref": "/repositories/2/resources/1"}
+    },
+    {
+      "jsonmodel_type": "archival_object",
+      "uri": "/repositories/2/archival_objects/12",
+      "title": "Blueprint and notes",
+      "publish": true,
+      "ref_id": "ref-item-1",
+      "component_id": "Item 1",
+      "level": "item",
+      "position": 0,
+      "parent": {"ref": "/repositories/2/archival_objects/11"},
+      "resource": {"ref": "/repositories/2/resources/1"},
+      "extents": [
+        {"jsonmodel_type": "extent", "portion": "whole", "number": "1", "extent_type": "item"}
+      ],
+      "instances": [
+        {
+          "jsonmodel_type": "instance",
+          "instance_type": "mixed_materials",
+          "sub_container": {
+            "jsonmodel_type": "sub_container",
+            "top_container": {
+              "ref": "/repositories/2/top_containers/7",
+              "_resolved": {
+                "jsonmodel_type": "top_container",
+                "uri": "/repositories/2/top_containers/7",
+                "type": "box",
+                "indicator": "3",
+                "barcode": "39000000000007"
+              }
+            },
+            "type_2": "folder",
+            "indicator_2": "7",
+            "display_string": "Box 3, Folder 7"
+          }
+        },
+        {
+          "jsonmodel_type": "instance",
+          "instance_type": "digital_object",
+          "digital_object": {
+            "ref": "/repositories/2/digital_objects/4",
+            "_resolved": {
+              "jsonmodel_type": "digital_object",
+              "uri": "/repositories/2/digital_objects/4",
+              "title": "Digital surrogate",
+              "file_versions": [
+                {
+                  "jsonmodel_type": "file_version",
+                  "file_uri": "https://media.example.edu/blueprint.pdf?download_token=secret",
+                  "file_name": "blueprint.pdf",
+                  "file_format_name": "application/pdf",
+                  "file_size_bytes": 12345,
+                  "checksum": "abc123",
+                  "checksum_method": "sha-256",
+                  "use_statement": "image-service",
+                  "caption": "Access copy"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "rights_statements": [
+        {
+          "jsonmodel_type": "rights_statement",
+          "rights_type": "copyright",
+          "status": "copyrighted",
+          "license_terms": "Research use permitted"
+        }
+      ],
+      "external_documents": [
+        {"jsonmodel_type": "external_document", "title": "Catalog record", "location": "https://catalog.example.edu/items/12"}
+      ]
+    },
+    {
+      "jsonmodel_type": "archival_object",
+      "uri": "/repositories/2/archival_objects/20",
+      "title": "Photographs",
+      "publish": true,
+      "ref_id": "ref-series-2",
+      "component_id": "Series II",
+      "level": "series",
+      "position": 1,
+      "resource": {"ref": "/repositories/2/resources/1"}
+    }
+  ],
+  "ordered_records": {
+    "jsonmodel_type": "resource_ordered_records",
+    "uris": [
+      {"ref": "/repositories/2/resources/1", "display_string": "The Example Family Papers", "depth": 0, "level": "collection"},
+      {"ref": "/repositories/2/archival_objects/10", "display_string": "Professional correspondence", "depth": 1, "level": "series"},
+      {"ref": "/repositories/2/archival_objects/11", "display_string": "Project files", "depth": 2, "level": "file"},
+      {"ref": "/repositories/2/archival_objects/12", "display_string": "Blueprint and notes", "depth": 3, "level": "item"},
+      {"ref": "/repositories/2/archival_objects/20", "display_string": "Photographs", "depth": 1, "level": "series"}
+    ]
+  }
+}
