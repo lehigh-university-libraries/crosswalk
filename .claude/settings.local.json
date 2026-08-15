@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(./crosswalk convert:*)",
+      "Bash(buf lint:*)",
+      "WebFetch(domain:schema.datacite.org)",
+      "WebFetch(domain:www.crossref.org)",
+      "WebFetch(domain:www.dublincore.org)",
+      "WebFetch(domain:www.loc.gov)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(go run:*)",
+      "Bash(for f in /workspace/spoke/*/v*/*.proto)",
+      "Bash(done)",
+      "Bash(tree:*)",
+      "Bash(xargs:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(tee:*)"
+    ]
+  }
+}

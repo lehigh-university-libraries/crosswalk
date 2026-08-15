@@ -1,0 +1,9 @@
+id: node.islandora_object.field_local_date
+field_name: field_local_date
+entity_type: node
+bundle: islandora_object
+label: 'Local Date'
+description: 'A repository-specific EDTF date.'
+required: false
+settings: { }
+field_type: edtf

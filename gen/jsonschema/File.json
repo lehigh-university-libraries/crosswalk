@@ -22,6 +22,20 @@
                 "role": {
                     "type": "string",
                     "description": "e.g. \"supplemental\", \"service\", \"thumbnail\""
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "Canonical remote resource URI, when no local path exists."
+                },
+                "checksum": {
+                    "type": "string"
+                },
+                "checksum_algorithm": {
+                    "type": "string"
+                },
+                "access_url": {
+                    "type": "string",
+                    "description": "Download URL when distinct from the resource URI."
                 }
             },
             "additionalProperties": true,

@@ -154,7 +154,6 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	if len(record.Notes) > 0 {
 		item.Note = strings.Join(record.Notes, "; ")
 	}
-
 	return item, nil
 }
 
@@ -264,8 +263,8 @@ func spokeToJSON(spoke *cslv1.Item) JSONItem {
 		Language:       spoke.Language,
 		DOI:            spoke.Doi,
 		URL:            spoke.Url,
-		ISBN:           spoke.Isbn,
-		ISSN:           spoke.Issn,
+		ISBN:           jsonStringList(spoke.Isbn),
+		ISSN:           jsonStringList(spoke.Issn),
 		PMID:           spoke.Pmid,
 		PMCID:          spoke.Pmcid,
 		Publisher:      spoke.Publisher,
@@ -357,29 +356,72 @@ func itemTypeToString(t cslv1.ItemType) string {
 // JSON types for CSL-JSON output.
 
 type JSONItem struct {
-	ID             string     `json:"id"`
-	Type           string     `json:"type"`
-	Title          string     `json:"title,omitempty"`
-	Abstract       string     `json:"abstract,omitempty"`
-	Language       string     `json:"language,omitempty"`
-	Author         []JSONName `json:"author,omitempty"`
-	Editor         []JSONName `json:"editor,omitempty"`
-	Translator     []JSONName `json:"translator,omitempty"`
-	Issued         *JSONDate  `json:"issued,omitempty"`
-	DOI            string     `json:"DOI,omitempty"`
-	URL            string     `json:"URL,omitempty"`
-	ISBN           string     `json:"ISBN,omitempty"`
-	ISSN           string     `json:"ISSN,omitempty"`
-	PMID           string     `json:"PMID,omitempty"`
-	PMCID          string     `json:"PMCID,omitempty"`
-	Publisher      string     `json:"publisher,omitempty"`
-	PublisherPlace string     `json:"publisher-place,omitempty"`
-	ContainerTitle string     `json:"container-title,omitempty"`
-	Edition        string     `json:"edition,omitempty"`
-	Volume         string     `json:"volume,omitempty"`
-	Issue          string     `json:"issue,omitempty"`
-	Page           string     `json:"page,omitempty"`
-	Note           string     `json:"note,omitempty"`
+	ID             string         `json:"id"`
+	Type           string         `json:"type"`
+	Title          string         `json:"title,omitempty"`
+	Abstract       string         `json:"abstract,omitempty"`
+	Language       string         `json:"language,omitempty"`
+	Author         []JSONName     `json:"author,omitempty"`
+	Editor         []JSONName     `json:"editor,omitempty"`
+	Translator     []JSONName     `json:"translator,omitempty"`
+	Issued         *JSONDate      `json:"issued,omitempty"`
+	DOI            string         `json:"DOI,omitempty"`
+	URL            string         `json:"URL,omitempty"`
+	ISBN           JSONStringList `json:"ISBN,omitempty"`
+	ISSN           JSONStringList `json:"ISSN,omitempty"`
+	PMID           string         `json:"PMID,omitempty"`
+	PMCID          string         `json:"PMCID,omitempty"`
+	Publisher      string         `json:"publisher,omitempty"`
+	PublisherPlace string         `json:"publisher-place,omitempty"`
+	ContainerTitle string         `json:"container-title,omitempty"`
+	Edition        string         `json:"edition,omitempty"`
+	Volume         string         `json:"volume,omitempty"`
+	Issue          string         `json:"issue,omitempty"`
+	Page           string         `json:"page,omitempty"`
+	Note           string         `json:"note,omitempty"`
+	Keyword        string         `json:"keyword,omitempty"`
+}
+
+// JSONStringList accepts identifier values represented as either one JSON
+// string or an array. DOI content-negotiation responses use both shapes.
+// A single value is marshaled as a string to preserve Crosswalk's canonical
+// CSL-JSON output.
+type JSONStringList []string
+
+// UnmarshalJSON accepts a string, an array of strings, or null.
+func (values *JSONStringList) UnmarshalJSON(data []byte) error {
+	if strings.TrimSpace(string(data)) == "null" {
+		*values = nil
+		return nil
+	}
+
+	var single string
+	if err := json.Unmarshal(data, &single); err == nil {
+		*values = JSONStringList{single}
+		return nil
+	}
+
+	var multiple []string
+	if err := json.Unmarshal(data, &multiple); err != nil {
+		return fmt.Errorf("expected a string or array of strings: %w", err)
+	}
+	*values = multiple
+	return nil
+}
+
+// MarshalJSON emits one value as a scalar and multiple values as an array.
+func (values JSONStringList) MarshalJSON() ([]byte, error) {
+	if len(values) == 1 {
+		return json.Marshal(values[0])
+	}
+	return json.Marshal([]string(values))
+}
+
+func jsonStringList(value string) JSONStringList {
+	if value == "" {
+		return nil
+	}
+	return JSONStringList{value}
 }
 
 type JSONName struct {

@@ -88,6 +88,9 @@ func TestParseBareRecord(t *testing.T) {
 	for _, id := range r.Identifiers {
 		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV && id.Value == "2511.11447" {
 			foundArxiv = true
+			if id.IdentityLevel != hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK {
+				t.Errorf("arXiv identity level: got %s, want WORK", id.IdentityLevel)
+			}
 		}
 	}
 	if !foundArxiv {
@@ -183,6 +186,9 @@ func TestParseBareRecord(t *testing.T) {
 	for _, id := range r.Identifiers {
 		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_DOI && id.Value == "10.1234/test.2025" {
 			foundDOI = true
+			if id.IdentityLevel != hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_WORK {
+				t.Errorf("DOI identity level: got %s, want WORK", id.IdentityLevel)
+			}
 		}
 	}
 	if !foundDOI {
@@ -441,6 +447,9 @@ func TestParseOAIFormat(t *testing.T) {
 	if r.Contributors[0].Name != "Liza Daly" {
 		t.Errorf("Author 0 display name: got %q", r.Contributors[0].Name)
 	}
+	if r.Contributors[0].RoleCode != "relators:aut" {
+		t.Errorf("Author 0 role code: got %q", r.Contributors[0].RoleCode)
+	}
 
 	// Dates: created + updated
 	if len(r.Dates) != 2 {
@@ -665,6 +674,9 @@ func TestParseAtomAPI(t *testing.T) {
 	// PDF URL in extra
 	if v := hub.GetExtraString(r, "pdf_url"); v != "https://arxiv.org/pdf/2511.11447v2" {
 		t.Errorf("pdf_url: got %q", v)
+	}
+	if len(r.Files) != 0 {
+		t.Errorf("remote PDF URL must not be emitted as a local Workbench file: %#v", r.Files)
 	}
 
 	// Source info

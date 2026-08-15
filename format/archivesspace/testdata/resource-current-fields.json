@@ -1,0 +1,63 @@
+{
+  "jsonmodel_type": "resource",
+  "uri": "/repositories/2/resources/42",
+  "title": "Current JSONModel fields collection",
+  "id_0": "MS-042",
+  "level": "collection",
+  "finding_aid_language": "eng",
+  "finding_aid_script": "Latn",
+  "revision_statements": [
+    {
+      "jsonmodel_type": "revision_statement",
+      "date": "2025-05-12",
+      "description": "Updated container list"
+    }
+  ],
+  "metadata_rights_declarations": [
+    {
+      "jsonmodel_type": "metadata_rights_declaration",
+      "license": "cc0",
+      "descriptive_note": "Metadata is dedicated to the public domain."
+    }
+  ],
+  "user_defined": {
+    "jsonmodel_type": "user_defined",
+    "boolean_1": true,
+    "integer_1": 9007199254740993,
+    "real_1": 1.50,
+    "string_1": "locally reviewed"
+  },
+  "collection_management": {
+    "jsonmodel_type": "collection_management",
+    "processing_priority": "high",
+    "processing_status": "completed",
+    "processors": "Archives staff"
+  },
+  "rights_statements": [
+    {
+      "jsonmodel_type": "rights_statement",
+      "rights_type": "copyright",
+      "status": "copyrighted",
+      "acts": [
+        {
+          "jsonmodel_type": "rights_statement_act",
+          "act_type": "use",
+          "restriction": "allow",
+          "start_date": "2025-01-01",
+          "end_date": "2049-12-31",
+          "notes": [
+            {
+              "jsonmodel_type": "note_rights_statement_act",
+              "type": "additional_information",
+              "content": ["Reading-room use is permitted."]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "local_plugin_data": {
+    "sequence": 9007199254740995,
+    "review_state": "approved"
+  }
+}

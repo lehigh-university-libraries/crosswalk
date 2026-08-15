@@ -1,0 +1,7 @@
+id: node.field_custom_tags
+field_name: field_custom_tags
+entity_type: node
+type: string
+settings:
+  max_length: 128
+cardinality: -1

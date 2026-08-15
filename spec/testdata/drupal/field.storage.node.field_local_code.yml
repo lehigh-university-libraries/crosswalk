@@ -1,0 +1,7 @@
+id: node.field_local_code
+field_name: field_local_code
+entity_type: node
+type: string
+settings:
+  max_length: 32
+cardinality: 1

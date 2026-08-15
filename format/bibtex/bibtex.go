@@ -70,5 +70,5 @@ func (f *Format) CanParse(peek []byte) bool {
 }
 
 func init() {
-	format.Register(&Format{})
+	format.MustRegister(&Format{})
 }

@@ -1,12 +1,13 @@
 package hub
 
 import (
+	"encoding/hex"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/internal/provenanceuri"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -65,6 +66,9 @@ type ValidationOptions struct {
 	ValidateIdentifierFormats bool
 	// ValidateDates checks date value validity
 	ValidateDates bool
+	// IdentifierRegistry validates built-in and institution-defined schemes.
+	// Nil uses DefaultIdentifierRegistry.
+	IdentifierRegistry *IdentifierRegistry
 }
 
 // DefaultValidationOptions returns standard validation options.
@@ -133,15 +137,19 @@ func Validate(record *hubv1.Record, opts ValidationOptions) *ValidationResult {
 	// Validate identifiers
 	if opts.ValidateIdentifierFormats {
 		for i, id := range record.GetIdentifiers() {
-			if errs := validateIdentifier(id, i); len(errs) > 0 {
+			if errs := validateIdentifier(id, i, opts.IdentifierRegistry); len(errs) > 0 {
 				result.Errors = append(result.Errors, errs...)
 			}
 		}
 	}
 
+	if errs := validateSourceInfo(record.GetSourceInfo()); len(errs) > 0 {
+		result.Errors = append(result.Errors, errs...)
+	}
+
 	// Validate contributors
 	for i, contrib := range record.GetContributors() {
-		if errs := validateContributor(contrib, i); len(errs) > 0 {
+		if errs := validateContributor(contrib, i, opts.IdentifierRegistry); len(errs) > 0 {
 			result.Errors = append(result.Errors, errs...)
 		}
 	}
@@ -164,18 +172,60 @@ func Validate(record *hubv1.Record, opts ValidationOptions) *ValidationResult {
 	return result
 }
 
-// Identifier format patterns
-var (
-	doiPattern   = regexp.MustCompile(`^10\.\d{4,}/[^\s]+$`)
-	orcidPattern = regexp.MustCompile(`^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$`)
-	issnPattern  = regexp.MustCompile(`^\d{4}-\d{3}[\dX]$`)
-)
+func validateSourceInfo(source *hubv1.SourceInfo) []ValidationError {
+	if source == nil {
+		return nil
+	}
+	errors := make([]ValidationError, 0, 4)
+	if value := source.GetSourceUri(); value != "" {
+		normalized, err := provenanceuri.Normalize(value, provenanceuri.Options{AllowRelative: true})
+		if err != nil || normalized != value {
+			errors = append(errors, ValidationError{
+				Field: "source_info.source_uri", Code: "unsafe_provenance_uri",
+				Message: "must be a canonical HTTP(S) URI or safe relative reference without credentials or fragments",
+			})
+		}
+	}
+	if source.GetProfileFingerprint() == "" && source.GetModelFingerprint() == "" {
+		return errors
+	}
+	if strings.TrimSpace(source.GetProfile()) == "" {
+		errors = append(errors, ValidationError{
+			Field: "source_info.profile", Code: "required",
+			Message: "profile is required when provenance fingerprints are present",
+		})
+	}
+	if source.GetProfileFingerprint() == "" || source.GetModelFingerprint() == "" {
+		errors = append(errors, ValidationError{
+			Field: "source_info", Code: "incomplete_profile_fingerprints",
+			Message: "profile and model fingerprints must be supplied together",
+		})
+	}
+	for _, value := range []struct {
+		field, digest string
+	}{
+		{field: "source_info.profile_fingerprint", digest: source.GetProfileFingerprint()},
+		{field: "source_info.model_fingerprint", digest: source.GetModelFingerprint()},
+	} {
+		if value.digest == "" {
+			continue
+		}
+		if len(value.digest) != 64 || value.digest != strings.ToLower(value.digest) {
+			errors = append(errors, ValidationError{Field: value.field, Code: "invalid_format", Message: "must be a lowercase SHA-256 digest"})
+			continue
+		}
+		if _, err := hex.DecodeString(value.digest); err != nil {
+			errors = append(errors, ValidationError{Field: value.field, Code: "invalid_format", Message: "must be a lowercase SHA-256 digest"})
+		}
+	}
+	return errors
+}
 
-func validateIdentifier(id *hubv1.Identifier, index int) []ValidationError {
+func validateIdentifier(id *hubv1.Identifier, index int, registry *IdentifierRegistry) []ValidationError {
 	var errs []ValidationError
 	field := fmt.Sprintf("identifiers[%d]", index)
 
-	if strings.TrimSpace(id.GetValue()) == "" {
+	if id == nil || strings.TrimSpace(id.GetValue()) == "" {
 		errs = append(errs, ValidationError{
 			Field:   field + ".value",
 			Code:    "required",
@@ -184,63 +234,16 @@ func validateIdentifier(id *hubv1.Identifier, index int) []ValidationError {
 		return errs
 	}
 
-	// Validate format based on type
-	value := strings.TrimSpace(id.GetValue())
-	switch id.GetType() {
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_DOI:
-		// Strip common prefixes
-		value = strings.TrimPrefix(value, "https://doi.org/")
-		value = strings.TrimPrefix(value, "http://doi.org/")
-		value = strings.TrimPrefix(value, "doi:")
-		if !doiPattern.MatchString(value) {
-			errs = append(errs, ValidationError{
-				Field:   field + ".value",
-				Code:    "invalid_format",
-				Message: fmt.Sprintf("invalid DOI format: %s (expected 10.XXXX/...)", id.GetValue()),
-			})
-		}
-
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID:
-		// Strip common prefixes
-		value = strings.TrimPrefix(value, "https://orcid.org/")
-		value = strings.TrimPrefix(value, "http://orcid.org/")
-		if !orcidPattern.MatchString(value) {
-			errs = append(errs, ValidationError{
-				Field:   field + ".value",
-				Code:    "invalid_format",
-				Message: fmt.Sprintf("invalid ORCID format: %s (expected XXXX-XXXX-XXXX-XXXX)", id.GetValue()),
-			})
-		}
-
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN:
-		value = strings.ReplaceAll(value, "-", "")
-		if len(value) == 8 {
-			value = value[:4] + "-" + value[4:]
-		}
-		if !issnPattern.MatchString(value) {
-			errs = append(errs, ValidationError{
-				Field:   field + ".value",
-				Code:    "invalid_format",
-				Message: fmt.Sprintf("invalid ISSN format: %s (expected XXXX-XXXX)", id.GetValue()),
-			})
-		}
-
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN:
-		// Remove hyphens and spaces for validation
-		cleaned := strings.ReplaceAll(strings.ReplaceAll(value, "-", ""), " ", "")
-		if len(cleaned) != 10 && len(cleaned) != 13 {
-			errs = append(errs, ValidationError{
-				Field:   field + ".value",
-				Code:    "invalid_format",
-				Message: fmt.Sprintf("invalid ISBN format: %s (expected 10 or 13 digits)", id.GetValue()),
-			})
-		}
+	if _, err := effectiveIdentifierRegistry(registry).CanonicalizeIdentifier(id); err != nil {
+		errs = append(errs, ValidationError{
+			Field: field + ".value", Code: "invalid_format", Message: err.Error(),
+		})
 	}
 
 	return errs
 }
 
-func validateContributor(contrib *hubv1.Contributor, index int) []ValidationError {
+func validateContributor(contrib *hubv1.Contributor, index int, registry *IdentifierRegistry) []ValidationError {
 	var errs []ValidationError
 	field := fmt.Sprintf("contributors[%d]", index)
 
@@ -260,7 +263,7 @@ func validateContributor(contrib *hubv1.Contributor, index int) []ValidationErro
 
 	// Validate contributor identifiers (e.g., ORCID)
 	for i, id := range contrib.GetIdentifiers() {
-		subErrs := validateIdentifier(id, i)
+		subErrs := validateIdentifier(id, i, registry)
 		for _, e := range subErrs {
 			e.Field = field + "." + e.Field
 			errs = append(errs, e)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"sort"
 	"strings"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
@@ -12,7 +13,10 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/helpers"
 	"github.com/lehigh-university-libraries/crosswalk/hub"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
+	"github.com/lehigh-university-libraries/crosswalk/value"
 )
+
+const maxDrupalInputBytes = int64(64 << 20)
 
 // Parse reads Drupal JSON and returns hub records.
 func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record, error) {
@@ -20,9 +24,15 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 		opts = format.NewParseOptions()
 	}
 
-	data, err := io.ReadAll(r)
+	if opts.Profile != nil && opts.SystemProfile != nil {
+		return nil, fmt.Errorf("drupal parsing accepts either a static mapping or a compiled system profile, not both")
+	}
+	data, err := io.ReadAll(io.LimitReader(r, maxDrupalInputBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading input: %w", err)
+	}
+	if int64(len(data)) > maxDrupalInputBytes {
+		return nil, fmt.Errorf("reading input: Drupal JSON exceeds %d bytes", maxDrupalInputBytes)
 	}
 
 	data = trimBOM(data)
@@ -66,6 +76,9 @@ func (f *Format) Parse(r io.Reader, opts *format.ParseOptions) ([]*hubv1.Record,
 }
 
 func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Record, error) {
+	if opts.SystemProfile != nil {
+		return convertEntityWithCompiledProfile(entity, opts, opts.SystemProfile)
+	}
 	record := &hubv1.Record{}
 	// Always start from the built-in default so that field types like
 	// part_detail, related_item, etc. are mapped even when a spoke-generated
@@ -76,8 +89,15 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 	// Track which hub fields have been set with their priorities
 	priorities := make(map[string]int)
 
-	// Process each field in the entity
-	for fieldName, rawValue := range entity {
+	// Process each field in deterministic source-name order. Priority remains
+	// authoritative when several source fields target the same Hub value.
+	fieldNames := make([]string, 0, len(entity))
+	for fieldName := range entity {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	for _, fieldName := range fieldNames {
+		rawValue := entity[fieldName]
 		fieldMapping, ok := profile.Fields[fieldName]
 		if !ok {
 			// Unknown field - might store in Extra later
@@ -101,7 +121,9 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 		// processField returns true if a value was actually set
 		valueSet, err := processField(record, fieldName, rawValue, fieldMapping, opts)
 		if err != nil {
-			// Log error but continue processing
+			if opts.Strict {
+				return nil, fmt.Errorf("field %q: %w", fieldName, err)
+			}
 			continue
 		}
 
@@ -110,6 +132,8 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			priorities[priorityKey] = fieldMapping.Priority
 		}
 	}
+
+	addDrupalResourceIdentifier(record, entity, opts)
 
 	return record, nil
 }
@@ -126,13 +150,24 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		}
 		return false, nil
 
-	case "AltTitle":
+	case "FullTitle":
 		val, _ := ExtractString(rawValue)
 		if val != "" {
-			record.AltTitle = append(record.AltTitle, cleanText(val, opts))
+			record.FullTitle = cleanText(val, opts)
 			return true, nil
 		}
 		return false, nil
+
+	case "AltTitle":
+		values, _ := ExtractStrings(rawValue)
+		added := false
+		for _, value := range values {
+			if cleaned := cleanText(value, opts); cleaned != "" {
+				record.AltTitle = append(record.AltTitle, cleaned)
+				added = true
+			}
+		}
+		return added, nil
 
 	case "Abstract":
 		val, _ := ExtractFormattedText(rawValue, true)
@@ -334,6 +369,12 @@ func dateTypeFromString(s string) hubv1.DateType {
 		return hubv1.DateType_DATE_TYPE_ACCEPTED
 	case "published":
 		return hubv1.DateType_DATE_TYPE_PUBLISHED
+	case "valid":
+		return hubv1.DateType_DATE_TYPE_VALID
+	case "updated":
+		return hubv1.DateType_DATE_TYPE_UPDATED
+	case "collected":
+		return hubv1.DateType_DATE_TYPE_COLLECTED
 	default:
 		return hubv1.DateType_DATE_TYPE_OTHER
 	}
@@ -765,6 +806,10 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 			rel.TargetIdType = hubv1.IdentifierType_IDENTIFIER_TYPE_NID
 		}
 
+		if desc := drupalRelationDescription(ref, rel.TargetUri, opts.BaseURL); desc != "" {
+			rel.Description = desc
+		}
+
 		// Extract target resource type from enriched node data (e.g., Collection, Image)
 		if model, ok := ref.GetNodeModel(); ok {
 			slog.Debug("extracted node model", "targetId", ref.GetTargetID(), "model", model)
@@ -785,6 +830,191 @@ func processRelations(record *hubv1.Record, rawValue json.RawMessage, fieldMappi
 	}
 
 	return true, nil
+}
+
+type drupalRelationMetadata struct {
+	Source      string                  `json:"source,omitempty"`
+	Title       string                  `json:"title,omitempty"`
+	DOI         string                  `json:"doi,omitempty"`
+	Resource    string                  `json:"resource,omitempty"`
+	TargetNID   string                  `json:"target_nid,omitempty"`
+	TargetUUID  string                  `json:"target_uuid,omitempty"`
+	TargetAlias string                  `json:"target_alias,omitempty"`
+	Genres      []string                `json:"genres,omitempty"`
+	Parent      *drupalRelationMetadata `json:"parent,omitempty"`
+}
+
+func drupalRelationDescription(ref FieldValue, resource, baseURL string) string {
+	meta := buildDrupalRelationMetadata(ref, resource, baseURL, 0)
+	if meta == nil {
+		return ""
+	}
+
+	b, err := json.Marshal(meta)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func buildDrupalRelationMetadata(ref FieldValue, resource, baseURL string, depth int) *drupalRelationMetadata {
+	if len(ref.Entity) == 0 {
+		return nil
+	}
+
+	var entity map[string]json.RawMessage
+	if err := json.Unmarshal(ref.Entity, &entity); err != nil {
+		return nil
+	}
+
+	meta := drupalRelationMetadata{
+		Source:    "drupal",
+		Title:     titleFromDrupalEntity(entity),
+		DOI:       doiFromDrupalEntity(entity),
+		Resource:  resource,
+		TargetNID: ref.GetTargetID(),
+		Genres:    genreURIsFromDrupalEntity(entity),
+	}
+	if uuidRaw, ok := entity["uuid"]; ok {
+		meta.TargetUUID = valueFromDrupalTextField(uuidRaw)
+	}
+	if pathRaw, ok := entity["path"]; ok {
+		meta.TargetAlias = aliasFromDrupalPath(pathRaw)
+	}
+
+	if depth == 0 {
+		if parent := parentRelationMetadataFromDrupalEntity(entity, baseURL, depth+1); parent != nil {
+			meta.Parent = parent
+		}
+	}
+
+	if meta.Title == "" && meta.DOI == "" && meta.Resource == "" && meta.TargetNID == "" &&
+		meta.TargetUUID == "" && meta.TargetAlias == "" && len(meta.Genres) == 0 && meta.Parent == nil {
+		return nil
+	}
+	return &meta
+}
+
+func parentRelationMetadataFromDrupalEntity(entity map[string]json.RawMessage, baseURL string, depth int) *drupalRelationMetadata {
+	raw, ok := entity["field_member_of"]
+	if !ok {
+		return nil
+	}
+	refs, err := ExtractEntityRefs(raw)
+	if err != nil || len(refs) == 0 {
+		return nil
+	}
+	ref := refs[0]
+	resource := ""
+	if baseURL != "" && ref.TargetURL != "" {
+		resource = strings.TrimSuffix(baseURL, "/") + ref.TargetURL
+	} else if baseURL != "" && ref.GetTargetID() != "" {
+		resource = strings.TrimSuffix(baseURL, "/") + "/node/" + ref.GetTargetID()
+	}
+	return buildDrupalRelationMetadata(ref, resource, baseURL, depth)
+}
+
+func addDrupalResourceIdentifier(record *hubv1.Record, entity DrupalEntity, opts *format.ParseOptions) {
+	if opts == nil || opts.BaseURL == "" || hasIdentifier(record, hubv1.IdentifierType_IDENTIFIER_TYPE_URL) {
+		return
+	}
+
+	resource := ""
+	if raw, ok := entity["nid"]; ok {
+		if nid := valueFromDrupalTextField(raw); nid != "" {
+			resource = strings.TrimSuffix(opts.BaseURL, "/") + "/node/" + nid
+		}
+	}
+	if resource == "" {
+		if raw, ok := entity["path"]; ok {
+			if alias := aliasFromDrupalPath(raw); alias != "" {
+				resource = strings.TrimSuffix(opts.BaseURL, "/") + alias
+			}
+		}
+	}
+	if resource != "" {
+		record.Identifiers = append(record.Identifiers, hub.NewIdentifier(resource, hubv1.IdentifierType_IDENTIFIER_TYPE_URL))
+	}
+}
+
+func hasIdentifier(record *hubv1.Record, idType hubv1.IdentifierType) bool {
+	for _, id := range record.Identifiers {
+		if id.Type == idType && id.Value != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func doiFromDrupalEntity(entity map[string]json.RawMessage) string {
+	raw, ok := entity["field_identifier"]
+	if !ok {
+		return ""
+	}
+
+	attrFields, _ := ExtractAttrFields(raw)
+	for _, field := range attrFields {
+		if strings.EqualFold(field.Attr0, "doi") && field.Value != "" {
+			return field.Value
+		}
+	}
+
+	return ""
+}
+
+func titleFromDrupalEntity(entity map[string]json.RawMessage) string {
+	if raw, ok := entity["title"]; ok {
+		return valueFromDrupalTextField(raw)
+	}
+	if raw, ok := entity["name"]; ok {
+		return valueFromDrupalTextField(raw)
+	}
+	return ""
+}
+
+func genreURIsFromDrupalEntity(entity map[string]json.RawMessage) []string {
+	raw, ok := entity["field_genre"]
+	if !ok {
+		return nil
+	}
+	refs, err := ExtractEntityRefs(raw)
+	if err != nil {
+		return nil
+	}
+	uris := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		if uri, ok := ref.GetAuthorityURI(); ok {
+			uris = append(uris, uri)
+		}
+	}
+	return uris
+}
+
+func valueFromDrupalTextField(raw json.RawMessage) string {
+	var vals []struct {
+		Value any `json:"value"`
+	}
+	if err := json.Unmarshal(raw, &vals); err != nil || len(vals) == 0 {
+		return ""
+	}
+	return value.Text(vals[0].Value)
+}
+
+func aliasFromDrupalPath(raw json.RawMessage) string {
+	var vals []struct {
+		Alias any `json:"alias"`
+	}
+	if err := json.Unmarshal(raw, &vals); err != nil || len(vals) == 0 {
+		return ""
+	}
+	alias := value.Text(vals[0].Alias)
+	if alias == "" || alias == "null" {
+		return ""
+	}
+	if !strings.HasPrefix(alias, "/") {
+		alias = "/" + alias
+	}
+	return alias
 }
 
 func processPublication(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
@@ -968,6 +1198,8 @@ func identifierTypeFromString(s string) hubv1.IdentifierType {
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_PMCID
 	case "arxiv":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_ARXIV
+	case "wos", "web-of-science", "web of science":
+		return hubv1.IdentifierType_IDENTIFIER_TYPE_WOS
 	case "local", "islandora", "item-number", "file-name", "barcode":
 		return hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL
 	case "pid":

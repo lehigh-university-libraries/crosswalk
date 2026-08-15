@@ -9,8 +9,35 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	"github.com/lehigh-university-libraries/crosswalk/format/csl"
 	"github.com/lehigh-university-libraries/crosswalk/format/drupal"
+	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
+
+func TestSerializeIdentifierValuesRemainScalars(t *testing.T) {
+	t.Parallel()
+	record := &hubv1.Record{
+		Title: "Scalar identifiers",
+		Identifiers: []*hubv1.Identifier{
+			{Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN, Value: "978-1-4028-9462-6"},
+			{Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN, Value: "0028-0836"},
+		},
+	}
+
+	var output bytes.Buffer
+	if err := (&csl.Format{}).Serialize(&output, []*hubv1.Record{record}, format.NewSerializeOptions()); err != nil {
+		t.Fatalf("Serialize() error = %v", err)
+	}
+	var item map[string]any
+	if err := json.Unmarshal(output.Bytes(), &item); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+	if got, ok := item["ISBN"].(string); !ok || got != "978-1-4028-9462-6" {
+		t.Errorf("ISBN = %#v", item["ISBN"])
+	}
+	if got, ok := item["ISSN"].(string); !ok || got != "0028-0836" {
+		t.Errorf("ISSN = %#v", item["ISSN"])
+	}
+}
 
 // loadFixture reads a JSON fixture from the testdata directory.
 func loadFixture(t *testing.T, name string) []byte {

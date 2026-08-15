@@ -1,12 +1,51 @@
 package islandora_workbench
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/spec"
 )
+
+func TestParseStrictDiagnostics(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		code   string
+		row    int
+		column int
+	}{
+		{name: "unknown column", input: "title,mystery\nExample,value\n", code: "unknown_column", row: 1, column: 2},
+		{name: "ragged row", input: "title,node_id\nExample\n", code: "column_count", row: 2},
+		{name: "invalid date", input: "title,field_edtf_date_issued\nExample,never\n", code: "invalid_date", row: 2, column: 2},
+		{name: "invalid CSV", input: "title\n\"unterminated\n", code: "invalid_csv", row: 2, column: 15},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := (&Format{}).Parse(strings.NewReader(test.input), &format.ParseOptions{Strict: true, SourceName: "input.csv"})
+			var diagnostics *format.DiagnosticsError
+			if !errors.As(err, &diagnostics) || len(diagnostics.Diagnostics) == 0 {
+				t.Fatalf("error = %T %v, want diagnostics", err, err)
+			}
+			got := diagnostics.Diagnostics[0]
+			if got.Code != test.code || got.Row != test.row || got.Column != test.column {
+				t.Errorf("diagnostic = %+v, want code=%s row=%d column=%d", got, test.code, test.row, test.column)
+			}
+		})
+	}
+}
+
+func TestParseRejectsExcessiveWorkbenchRows(t *testing.T) {
+	input := "title\n" + strings.Repeat("x\n", maxWorkbenchRows)
+	_, err := (&Format{}).Parse(strings.NewReader(input), nil)
+	if err == nil || !strings.Contains(err.Error(), "row count exceeds") {
+		t.Fatalf("Parse() row-limit error = %v", err)
+	}
+}
 
 func TestParseWorkbenchLinkedAgent(t *testing.T) {
 	tests := []struct {
@@ -19,23 +58,23 @@ func TestParseWorkbenchLinkedAgent(t *testing.T) {
 	}{
 		{
 			name:     "person with role",
-			input:    "relators:cre:person:Qin, Tian",
-			wantName: "Qin, Tian",
+			input:    "relators:cre:person:Example, Avery",
+			wantName: "Example, Avery",
 			wantRole: "relators:cre",
 			wantType: hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 		},
 		{
 			name:            "person with role and institution",
-			input:           "relators:cre:person:Qin, Tian - Lehigh University",
-			wantName:        "Qin, Tian",
+			input:           "relators:cre:person:Example, Avery - Example University",
+			wantName:        "Example, Avery",
 			wantRole:        "relators:cre",
 			wantType:        hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantInstitution: "Lehigh University",
+			wantInstitution: "Example University",
 		},
 		{
 			name:     "corporate body",
-			input:    "relators:pbl:corporate_body:Lehigh University Press",
-			wantName: "Lehigh University Press",
+			input:    "relators:pbl:corporate_body:Example University Press",
+			wantName: "Example University Press",
 			wantRole: "relators:pbl",
 			wantType: hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION,
 		},
@@ -116,7 +155,7 @@ func TestIslandoraModelToResourceType(t *testing.T) {
 
 func TestParse_StandardColumns(t *testing.T) {
 	csvInput := "id,title,field_model,field_language,field_rights,field_linked_agent,field_edtf_date_issued,field_identifier\n" +
-		`1,A Study of Something,Digital Document,en,http://rightsstatements.org/vocab/InC/1.0/,"relators:cre:person:Qin, Tian|relators:ths:person:Huang, Wei-Min",2024,"{""value"":""10.1234/example"",""attr0"":""doi""}"` + "\n"
+		`1,A Study of Something,Digital Document,en,http://rightsstatements.org/vocab/InC/1.0/,"relators:cre:person:Example, Avery|relators:ths:person:Sample, Morgan",2024,"{""value"":""10.1234/example"",""attr0"":""doi""}"` + "\n"
 
 	f := &Format{}
 	opts := format.NewParseOptions()
@@ -145,10 +184,10 @@ func TestParse_StandardColumns(t *testing.T) {
 	if len(r.Contributors) != 2 {
 		t.Fatalf("expected 2 contributors, got %d", len(r.Contributors))
 	}
-	if r.Contributors[0].Name != "Qin, Tian" || r.Contributors[0].RoleCode != "relators:cre" {
+	if r.Contributors[0].Name != "Example, Avery" || r.Contributors[0].RoleCode != "relators:cre" {
 		t.Errorf("contributor[0] = %+v", r.Contributors[0])
 	}
-	if r.Contributors[1].Name != "Huang, Wei-Min" || r.Contributors[1].RoleCode != "relators:ths" {
+	if r.Contributors[1].Name != "Sample, Morgan" || r.Contributors[1].RoleCode != "relators:ths" {
 		t.Errorf("contributor[1] = %+v", r.Contributors[1])
 	}
 	if len(r.Identifiers) != 1 || r.Identifiers[0].Value != "10.1234/example" {
@@ -224,6 +263,7 @@ func TestParse_RoundTrip(t *testing.T) {
 	f := &Format{}
 	serOpts := format.NewSerializeOptions()
 	serOpts.IncludeHeader = true
+	serOpts.Spec = spec.FabricatorWorkbench()
 	if err := f.Serialize(&buf, []*hubv1.Record{record}, serOpts); err != nil {
 		t.Fatalf("Serialize error: %v", err)
 	}
@@ -258,5 +298,32 @@ func TestParse_RoundTrip(t *testing.T) {
 	}
 	if len(p.Rights) != 1 || p.Rights[0].Uri != "http://rightsstatements.org/vocab/InC/1.0/" {
 		t.Errorf("Rights = %v", p.Rights)
+	}
+}
+
+func TestParseHeaderOrderDoesNotChangeResourceType(t *testing.T) {
+	input := "field_resource_type,field_model,title\nImage,Paged Content,Example\n"
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{Strict: true})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	record := records[0]
+	if record.ObjectModel != "Paged Content" {
+		t.Errorf("object model = %q", record.ObjectModel)
+	}
+	if record.ResourceType == nil || record.ResourceType.Type != hubv1.ResourceTypeValue_RESOURCE_TYPE_IMAGE {
+		t.Errorf("resource type = %+v, want image", record.ResourceType)
+	}
+}
+
+func TestParseHeaderOrderKeepsFileMetadataTogether(t *testing.T) {
+	input := "field_media_type,file,title\nimage/tiff,item.tif,Example\n"
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{Strict: true})
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	files := records[0].Files
+	if len(files) != 1 || files[0].Path != "item.tif" || files[0].MimeType != "image/tiff" {
+		t.Fatalf("files = %+v", files)
 	}
 }

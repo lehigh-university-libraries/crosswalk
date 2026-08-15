@@ -1,0 +1,6 @@
+id: node.field_local_date
+field_name: field_local_date
+entity_type: node
+type: edtf
+settings: { }
+cardinality: 1
