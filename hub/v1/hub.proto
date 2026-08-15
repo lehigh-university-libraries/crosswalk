@@ -30,7 +30,11 @@ message Record {
   string language = 9;
 
   // Publication info
+  // Publisher is the primary publisher retained for compatibility with
+  // consumers that support only one value.
   string publisher = 10;
+  // Publishers is the complete ordered list of publisher names.
+  repeated string publishers = 45;
   string place_published = 11;
   PublicationDetails publication = 24;
 

@@ -162,7 +162,7 @@ func compiledHubValues(record *hubv1.Record, entry compiledDrupalMapping) ([]any
 	case "Description":
 		return nonemptyStringValue(record.GetDescription()), nil
 	case "Publisher":
-		return nonemptyStringValue(record.GetPublisher()), nil
+		return stringValues(hub.GetPublishers(record)), nil
 	case "PlacePublished":
 		return nonemptyStringValue(record.GetPlacePublished()), nil
 	case "PhysicalDesc":

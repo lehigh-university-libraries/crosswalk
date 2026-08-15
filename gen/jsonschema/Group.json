@@ -675,7 +675,14 @@
                 },
                 "publisher": {
                     "type": "string",
-                    "description": "Publication info"
+                    "description": "Publication info Publisher is the primary publisher retained for compatibility with consumers that support only one value."
+                },
+                "publishers": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Publishers is the complete ordered list of publisher names."
                 },
                 "place_published": {
                     "type": "string"

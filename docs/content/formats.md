@@ -22,6 +22,7 @@ matches an input.
 | `drupal` | Drupal/Islandora JSON | Yes | Yes |
 | `dublincore` | Dublin Core | Yes | Yes |
 | `islandora-workbench` | Islandora Workbench CSV | Yes | Yes |
+| `marc` | MARC21 binary or MARCXML bibliographic records | Yes | Yes |
 | `mods` | MODS XML 3.8 | Yes | Yes |
 | `omeka-s` | Omeka S JSON-LD acquisition snapshot | Yes | No |
 | `proquest` | ProQuest ETD XML/delivery data | Yes | Yes |
@@ -57,6 +58,17 @@ in [Islandora Workbench](workbench.md).
 ArchivesSpace currently uses a versioned JSONModel API adapter without an
 installation profile. It preserves hierarchy in a Dataset and retains unknown
 top-level plugin/newer fields in canonical JSON for later use.
+
+## MARC21
+
+The `marc` adapter reads MARC21 binary and MARCXML. Serialization writes binary
+ISO 2709 by default; pass `--pretty` to write readable MARCXML instead.
+
+MARC maps directly between its tag/subfield record model and the Hub. The
+current mapping is implemented in the adapter and compiled into Crosswalk; it
+is not exposed as a site profile or CLI mapping override. A site that needs
+local MARC tags currently has to extend the adapter. See [Which mappings are
+configurable?](profiles.md#which-mappings-are-configurable).
 
 ## ProQuest embargo codes
 

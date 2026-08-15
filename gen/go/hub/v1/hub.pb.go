@@ -955,7 +955,11 @@ type Record struct {
 	Subjects []*Subject `protobuf:"bytes,8,rep,name=subjects,proto3" json:"subjects,omitempty"`
 	Language string     `protobuf:"bytes,9,opt,name=language,proto3" json:"language,omitempty"`
 	// Publication info
-	Publisher      string              `protobuf:"bytes,10,opt,name=publisher,proto3" json:"publisher,omitempty"`
+	// Publisher is the primary publisher retained for compatibility with
+	// consumers that support only one value.
+	Publisher string `protobuf:"bytes,10,opt,name=publisher,proto3" json:"publisher,omitempty"`
+	// Publishers is the complete ordered list of publisher names.
+	Publishers     []string            `protobuf:"bytes,45,rep,name=publishers,proto3" json:"publishers,omitempty"`
 	PlacePublished string              `protobuf:"bytes,11,opt,name=place_published,json=placePublished,proto3" json:"place_published,omitempty"`
 	Publication    *PublicationDetails `protobuf:"bytes,24,opt,name=publication,proto3" json:"publication,omitempty"`
 	// Rights and access
@@ -1119,6 +1123,13 @@ func (x *Record) GetPublisher() string {
 		return x.Publisher
 	}
 	return ""
+}
+
+func (x *Record) GetPublishers() []string {
+	if x != nil {
+		return x.Publishers
+	}
+	return nil
 }
 
 func (x *Record) GetPlacePublished() string {
@@ -2985,7 +2996,7 @@ var File_hub_v1_hub_proto protoreflect.FileDescriptor
 
 const file_hub_v1_hub_proto_rawDesc = "" +
 	"\n" +
-	"\x10hub/v1/hub.proto\x12\x06hub.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xda\r\n" +
+	"\x10hub/v1/hub.proto\x12\x06hub.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xfa\r\n" +
 	"\x06Record\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1b\n" +
 	"\talt_title\x18\x02 \x03(\tR\baltTitle\x12\x1a\n" +
@@ -2997,7 +3008,10 @@ const file_hub_v1_hub_proto_rawDesc = "" +
 	"\bsubjects\x18\b \x03(\v2\x0f.hub.v1.SubjectR\bsubjects\x12\x1a\n" +
 	"\blanguage\x18\t \x01(\tR\blanguage\x12\x1c\n" +
 	"\tpublisher\x18\n" +
-	" \x01(\tR\tpublisher\x12'\n" +
+	" \x01(\tR\tpublisher\x12\x1e\n" +
+	"\n" +
+	"publishers\x18- \x03(\tR\n" +
+	"publishers\x12'\n" +
 	"\x0fplace_published\x18\v \x01(\tR\x0eplacePublished\x12<\n" +
 	"\vpublication\x18\x18 \x01(\v2\x1a.hub.v1.PublicationDetailsR\vpublication\x12&\n" +
 	"\x06rights\x18\f \x03(\v2\x0e.hub.v1.RightsR\x06rights\x12\x1b\n" +

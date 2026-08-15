@@ -63,16 +63,21 @@ extra_javascript:
   - js/mermaid-init.mjs
 
 nav:
-  - Home: index.md
-  - Getting started: getting-started.md
-  - Architecture: architecture.md
-  - Hub records and datasets: hub-dataset.md
-  - Profiles and models: profiles.md
-  - Transformation specifications: specifications.md
-  - Acquisition and network safety: acquisition.md
-  - Existing-item reconciliation: reconciliation.md
-  - Islandora Workbench: workbench.md
-  - HTTP service: http-service.md
-  - Format support: formats.md
-  - Boundaries and migration: limitations.md
-  - Contributing: contributing.md
+  - Start here:
+      - What Crosswalk does: index.md
+      - Install and try a conversion: getting-started.md
+      - Check supported source and target formats: formats.md
+  - Configure site-specific mappings:
+      - Map Drupal or Omeka S fields: profiles.md
+      - Map spreadsheet and Workbench fields: specifications.md
+  - Acquire and prepare records:
+      - Fetch metadata and media safely: acquisition.md
+      - Check for existing repository items: reconciliation.md
+      - Create Islandora Workbench files: workbench.md
+  - Operate Crosswalk:
+      - Run the authenticated HTTP service: http-service.md
+      - Review limits and rollout checks: limitations.md
+  - How Crosswalk works:
+      - Follow the conversion pipeline: architecture.md
+      - Understand Hub records and datasets: hub-dataset.md
+  - Develop and contribute: contributing.md

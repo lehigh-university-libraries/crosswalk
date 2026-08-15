@@ -216,9 +216,15 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		return processIdentifiers(record, rawValue, fieldMapping, opts)
 
 	case "Publisher":
-		val, _ := ExtractString(rawValue)
-		if val != "" {
-			record.Publisher = cleanText(val, opts)
+		vals, _ := ExtractStrings(rawValue)
+		publishers := make([]string, 0, len(vals))
+		for _, val := range vals {
+			if val = cleanText(val, opts); val != "" {
+				publishers = append(publishers, val)
+			}
+		}
+		if len(publishers) > 0 {
+			hub.SetPublishers(record, publishers)
 			return true, nil
 		}
 		return false, nil

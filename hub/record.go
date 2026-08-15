@@ -2,6 +2,8 @@
 package hub
 
 import (
+	"strings"
+
 	"google.golang.org/protobuf/types/known/structpb"
 
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
@@ -18,7 +20,49 @@ func NewRecord() *hubv1.Record {
 		Notes:        make([]string, 0),
 		Relations:    make([]*hubv1.Relation, 0),
 		Genres:       make([]*hubv1.Subject, 0),
+		Publishers:   make([]string, 0),
 	}
+}
+
+// SetPublishers stores the complete ordered publisher list and mirrors its
+// first value to the legacy scalar Publisher field for compatibility.
+func SetPublishers(r *hubv1.Record, publishers []string) {
+	if r == nil {
+		return
+	}
+
+	r.Publishers = normalizePublishers(publishers)
+	r.Publisher = ""
+	if len(r.Publishers) > 0 {
+		r.Publisher = r.Publishers[0]
+	}
+}
+
+// GetPublishers returns the complete ordered publisher list. Records created
+// before the repeated field was added fall back to the legacy scalar value.
+func GetPublishers(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if publishers := normalizePublishers(r.Publishers); len(publishers) > 0 {
+		return publishers
+	}
+	return normalizePublishers([]string{r.Publisher})
+}
+
+func normalizePublishers(publishers []string) []string {
+	result := make([]string, 0, len(publishers))
+	for _, publisher := range publishers {
+		publisher = strings.TrimSpace(publisher)
+		if publisher == "" {
+			continue
+		}
+		result = append(result, publisher)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 // GetDate returns the first date of a given type, or nil if not found.

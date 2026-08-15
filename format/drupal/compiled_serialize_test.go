@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"math"
+	"slices"
 	"strings"
 	"testing"
 
@@ -13,6 +14,41 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/model"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
 )
+
+func TestCompiledProfilePreservesMultiplePublishers(t *testing.T) {
+	compiled := compileDrupalEncodingProfile(t, []model.Field{{
+		Path: "field_publisher", SourceType: "string", Kind: model.ValueText, Cardinality: -1,
+	}}, []profile.Mapping{{
+		Field: profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_publisher"},
+		Hub:   "Publisher", Decode: "text", Encode: "text", Merge: profile.MergeFirstNonempty,
+	}}, nil)
+	want := []string{"First Press", "Second Press", "Third Press"}
+	input := `{"field_publisher":[{"value":"First Press"},{"value":"Second Press"},{"value":"Third Press"}]}`
+
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{SystemProfile: compiled})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if len(records) != 1 || !slices.Equal(records[0].GetPublishers(), want) {
+		t.Fatalf("Parse() publishers = %#v, want %#v", records[0].GetPublishers(), want)
+	}
+
+	var output bytes.Buffer
+	if err := (&Format{}).Serialize(&output, records, &format.SerializeOptions{SystemProfile: compiled}); err != nil {
+		t.Fatalf("Serialize() error = %v", err)
+	}
+	var entity map[string][]map[string]any
+	if err := json.Unmarshal(output.Bytes(), &entity); err != nil {
+		t.Fatalf("decoding serialized entity: %v", err)
+	}
+	got := make([]string, 0, len(entity["field_publisher"]))
+	for _, value := range entity["field_publisher"] {
+		got = append(got, value["value"].(string))
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("serialized field_publisher = %#v, want %#v", got, want)
+	}
+}
 
 func TestEncodeEntityWithProfileRejectsNilInputs(t *testing.T) {
 	compiled := compileDrupalEncodingProfile(t, []model.Field{{

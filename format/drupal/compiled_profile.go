@@ -455,7 +455,7 @@ func clearReplaceableHubValue(record *hubv1.Record, path string) error {
 	case "Description":
 		record.Description = ""
 	case "Publisher":
-		record.Publisher = ""
+		hub.SetPublishers(record, nil)
 	case "PlacePublished":
 		record.PlacePublished = ""
 	case "PhysicalDesc":

@@ -1,7 +1,9 @@
 package drupal
 
 import (
+	"bytes"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -9,6 +11,49 @@ import (
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	"github.com/lehigh-university-libraries/crosswalk/mapping"
 )
+
+func TestDefaultProfilePreservesMultiplePublishers(t *testing.T) {
+	input := `{
+		"title": [{"value": "Multiple publishers"}],
+		"field_publisher": [
+			{"value": "First Press"},
+			{"value": "Second Press"},
+			{"value": "Third Press"}
+		]
+	}`
+
+	formatPlugin := &Format{}
+	records, err := formatPlugin.Parse(strings.NewReader(input), format.NewParseOptions())
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("Parse() records = %d, want 1", len(records))
+	}
+	want := []string{"First Press", "Second Press", "Third Press"}
+	if !slices.Equal(records[0].GetPublishers(), want) {
+		t.Fatalf("Record.Publishers = %#v, want %#v", records[0].GetPublishers(), want)
+	}
+	if records[0].GetPublisher() != want[0] {
+		t.Fatalf("Record.Publisher = %q, want primary %q", records[0].GetPublisher(), want[0])
+	}
+
+	var output bytes.Buffer
+	if err := formatPlugin.Serialize(&output, records, format.NewSerializeOptions()); err != nil {
+		t.Fatalf("Serialize() error = %v", err)
+	}
+	var entity DrupalEntity
+	if err := json.Unmarshal(output.Bytes(), &entity); err != nil {
+		t.Fatalf("decoding serialized Drupal JSON: %v", err)
+	}
+	got, err := ExtractStrings(entity["field_publisher"])
+	if err != nil {
+		t.Fatalf("ExtractStrings(field_publisher) error = %v", err)
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("serialized field_publisher = %#v, want %#v", got, want)
+	}
+}
 
 func TestResourceTypeFromGenreAuthorityURI(t *testing.T) {
 	tests := []struct {

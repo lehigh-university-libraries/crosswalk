@@ -223,9 +223,13 @@ func recordToEntityWithStaticProfile(record *hubv1.Record, profile *mapping.Prof
 	}
 
 	// Publisher
-	if record.Publisher != "" {
+	if publishers := hub.GetPublishers(record); len(publishers) > 0 {
 		if sources, ok := irToSource["Publisher"]; ok && len(sources) > 0 {
-			entity[sources[0].SourceField] = []map[string]any{{"value": record.Publisher}}
+			values := make([]map[string]any, 0, len(publishers))
+			for _, publisher := range publishers {
+				values = append(values, map[string]any{"value": publisher})
+			}
+			entity[sources[0].SourceField] = values
 		}
 	}
 

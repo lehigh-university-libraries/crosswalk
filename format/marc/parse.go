@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	marcfile "github.com/hectorcorrea/marcli/pkg/marc"
@@ -16,6 +17,8 @@ import (
 )
 
 var yearPattern = regexp.MustCompile(`\d{4}`)
+
+const maxMARCInputBytes = int64(64 << 20)
 
 // Parse reads MARC21 binary or MARCXML and returns hub records.
 func (f *Format) Parse(r io.Reader, _ *format.ParseOptions) ([]*hubv1.Record, error) {
@@ -49,8 +52,12 @@ func (f *Format) Parse(r io.Reader, _ *format.ParseOptions) ([]*hubv1.Record, er
 }
 
 func readerFile(r io.Reader) (*os.File, func(), error) {
-	if file, ok := r.(*os.File); ok {
-		return file, func() {}, nil
+	return readerFileWithLimit(r, maxMARCInputBytes)
+}
+
+func readerFileWithLimit(r io.Reader, maxBytes int64) (*os.File, func(), error) {
+	if r == nil {
+		return nil, nil, fmt.Errorf("MARC input reader is required")
 	}
 
 	tmp, err := os.CreateTemp("", "crosswalk-marc-*")
@@ -63,9 +70,14 @@ func readerFile(r io.Reader) (*os.File, func(), error) {
 		_ = os.Remove(name)
 	}
 
-	if _, err := io.Copy(tmp, r); err != nil {
+	written, err := io.Copy(tmp, io.LimitReader(r, maxBytes+1))
+	if err != nil {
 		cleanup()
 		return nil, nil, fmt.Errorf("buffering MARC input: %w", err)
+	}
+	if written > maxBytes {
+		cleanup()
+		return nil, nil, fmt.Errorf("MARC input exceeds %d bytes", maxBytes)
 	}
 	if _, err := tmp.Seek(0, io.SeekStart); err != nil {
 		cleanup()
@@ -213,18 +225,24 @@ func addContributors(record *hubv1.Record, rec marcfile.Record) {
 }
 
 func addPublication(record *hubv1.Record, rec marcfile.Record) {
-	field := publicationField(rec)
-	if field.Tag == "" {
+	fields := publicationFields(rec)
+	if len(fields) == 0 {
 		return
 	}
 
-	record.PlacePublished = cleanMARCValue(firstSubfield(field, "a"))
-	record.Publisher = cleanMARCValue(firstSubfield(field, "b"))
-
-	rawDate := cleanDateValue(firstSubfield(field, "c"))
-	if rawDate != "" {
-		record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_ISSUED))
+	var publishers []string
+	for _, field := range fields {
+		if record.PlacePublished == "" {
+			record.PlacePublished = cleanMARCValue(firstSubfield(field, "a"))
+		}
+		publishers = append(publishers, subfieldValues(field, "b")...)
+		if len(record.Dates) == 0 {
+			if rawDate := cleanDateValue(firstSubfield(field, "c")); rawDate != "" {
+				record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_ISSUED))
+			}
+		}
 	}
+	hub.SetPublishers(record, publishers)
 }
 
 func addPhysicalDescription(record *hubv1.Record, rec marcfile.Record) {
@@ -330,13 +348,17 @@ func firstField(rec marcfile.Record, tag string) marcfile.Field {
 	return fields[0]
 }
 
-func publicationField(rec marcfile.Record) marcfile.Field {
+func publicationFields(rec marcfile.Record) []marcfile.Field {
+	var fields []marcfile.Field
 	for _, f := range rec.FieldsByTag("264") {
 		if f.Indicator2 == "1" || f.Indicator2 == " " || f.Indicator2 == "" {
-			return f
+			fields = append(fields, f)
 		}
 	}
-	return firstField(rec, "260")
+	if len(fields) > 0 {
+		return fields
+	}
+	return rec.FieldsByTag("260")
 }
 
 func titleFromField(f marcfile.Field) string {
@@ -476,8 +498,7 @@ func dateFromString(value string, dateType hubv1.DateType) *hubv1.DateValue {
 		Raw:  value,
 	}
 	if year := yearPattern.FindString(value); year != "" {
-		var parsed int
-		if _, err := fmt.Sscanf(year, "%d", &parsed); err == nil {
+		if parsed, err := strconv.ParseInt(year, 10, 32); err == nil {
 			date.Year = int32(parsed)
 			date.Precision = hubv1.DatePrecision_DATE_PRECISION_YEAR
 		}

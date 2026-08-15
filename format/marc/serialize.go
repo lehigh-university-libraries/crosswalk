@@ -171,12 +171,14 @@ func hubToFields(record *hubv1.Record) []marcfile.Field {
 		}
 	}
 
-	if record.PlacePublished != "" || record.Publisher != "" || primaryDateString(record) != "" {
-		fields = append(fields, dataField("264", " ", "1",
-			subfield("a", record.PlacePublished),
-			subfield("b", record.Publisher),
-			subfield("c", primaryDateString(record)),
-		))
+	publishers := hub.GetPublishers(record)
+	if record.PlacePublished != "" || len(publishers) > 0 || primaryDateString(record) != "" {
+		subs := []marcfile.SubField{subfield("a", record.PlacePublished)}
+		for _, publisher := range publishers {
+			subs = append(subs, subfield("b", publisher))
+		}
+		subs = append(subs, subfield("c", primaryDateString(record)))
+		fields = append(fields, dataField("264", " ", "1", subs...))
 	}
 
 	if record.PhysicalDesc != "" {
