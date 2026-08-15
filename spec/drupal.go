@@ -19,10 +19,11 @@ const (
 // DrupalCompileOptions controls compilation of a Drupal node bundle into a
 // transformation specification.
 type DrupalCompileOptions struct {
-	Bundle       string
-	MaxFileBytes int64
-	MaxBytes     int64
-	MaxFiles     int
+	Bundle                string
+	AllowNewTaxonomyTerms bool
+	MaxFileBytes          int64
+	MaxBytes              int64
+	MaxFiles              int
 }
 
 // CompileDrupalDirectory compiles a transformation from an uncompressed
@@ -72,8 +73,9 @@ type drupalFieldConfig struct {
 }
 
 type drupalAttachedField struct {
-	storage drupalStorageConfig
-	field   drupalFieldConfig
+	storage   drupalStorageConfig
+	field     drupalFieldConfig
+	reference *model.Reference
 }
 
 // CompileDrupalModel derives an Islandora Workbench transformation from the
@@ -102,6 +104,12 @@ func CompileDrupalModel(snapshot *model.Snapshot, options DrupalCompileOptions) 
 	}
 	attached := make(map[string]drupalAttachedField)
 	for _, field := range entity.Fields {
+		// Workbench accepts the authored creation timestamp but not Drupal's
+		// runtime-managed modification timestamp. Keeping changed in a generated
+		// sheet would advertise an input that Workbench silently ignores.
+		if field.Path == "changed" {
+			continue
+		}
 		attached[field.Path] = drupalAttachedField{
 			storage: drupalStorageConfig{
 				Type: field.SourceType, Cardinality: field.Cardinality,
@@ -111,10 +119,13 @@ func CompileDrupalModel(snapshot *model.Snapshot, options DrupalCompileOptions) 
 				Label: field.Label, Description: field.Description,
 				Required: field.Required, Settings: cloneMap(field.InstanceSettings),
 			},
+			reference: field.Reference,
 		}
 	}
 
 	transformation := reconcileDrupalFields(FabricatorWorkbench(), attached)
+	configureDrupalWorkbenchMediaValidations(transformation, snapshot)
+	configureDrupalTaxonomyNamePolicy(transformation, options.AllowNewTaxonomyTerms)
 	transformation.Name = "drupal-" + bundle + "-workbench"
 	transformation.Description = fmt.Sprintf("Drupal %s node bundle to Islandora Workbench CSV", bundle)
 	transformation.Fingerprint = Fingerprint{
@@ -188,18 +199,34 @@ func reconcileDrupalFields(base *Transformation, attached map[string]drupalAttac
 		result.Target.Fields = append(result.Target.Fields, field)
 		seenTarget[drupalBaseField(field.Name)] = struct{}{}
 	}
-	urlAlias := Field{
-		Name:        "url_alias",
-		Label:       "URL Alias",
-		Hub:         "Extra.url_alias",
-		Codec:       "string",
-		Cardinality: 1,
-		Operations:  []Operation{OperationCreate, OperationUpdate},
+	reservedFields := []Field{
+		{
+			Name: "url_alias", Label: "URL Alias", Hub: "Extra.url_alias", Codec: "string", Cardinality: 1,
+			Operations: []Operation{OperationCreate, OperationUpdate},
+			Validations: []Validation{
+				{Rule: ValidationPattern, Pattern: `^/.*$`},
+				{Rule: ValidationNoLineBreaks},
+				{Rule: ValidationContextURLAliasAvailable, Phase: ValidationPhaseContext},
+			},
+		},
+		{
+			Name: "langcode", Label: "Language Code", Hub: "Extra.langcode", Codec: "string", Cardinality: 1,
+			Operations:  []Operation{OperationCreate, OperationUpdate},
+			Validations: []Validation{{Rule: ValidationEnum, Values: append([]string(nil), drupalSupportedLanguageCodes...)}},
+		},
 	}
-	result.Source.Fields = append(result.Source.Fields, urlAlias)
-	result.Target.Fields = append(result.Target.Fields, urlAlias)
-	seenSource[urlAlias.Name] = struct{}{}
-	seenTarget[urlAlias.Name] = struct{}{}
+	for _, field := range reservedFields {
+		if _, exists := seenSource[field.Name]; !exists {
+			result.Source.Fields = append(result.Source.Fields, field)
+			seenSource[field.Name] = struct{}{}
+		}
+		if _, exists := seenTarget[field.Name]; !exists {
+			field.Validations = nil
+			result.Target.Fields = append(result.Target.Fields, field)
+			seenTarget[field.Name] = struct{}{}
+		}
+	}
+	result.Source.Validations = append(result.Source.Validations, Validation{Rule: ValidationUnique, Fields: []string{"url_alias"}})
 
 	names := make([]string, 0, len(attached))
 	for name := range attached {
@@ -221,8 +248,61 @@ func reconcileDrupalFields(base *Transformation, attached map[string]drupalAttac
 	}
 	result.Source.Fields = uniqueDrupalHeaders(result.Source.Fields)
 	result.Target.Fields = uniqueDrupalHeaders(result.Target.Fields)
+	result.Source.Fields = retainFieldValidations(result.Source.Fields)
+	result.Target.Fields = retainFieldValidations(result.Target.Fields)
 	result.Source.RequiredGroups = requiredDrupalSourceGroups(result.Source.Fields, attached)
+	result.Source.Validations = retainTableValidations(result.Source.Validations, result.Source.Fields)
+	result.Target.Validations = retainTableValidations(result.Target.Validations, result.Target.Fields)
 	return result
+}
+
+func retainFieldValidations(fields []Field) []Field {
+	available := make(map[string]struct{}, len(fields))
+	for _, field := range fields {
+		available[normalizedHeader(field.Name)] = struct{}{}
+	}
+	for index := range fields {
+		retained := fields[index].Validations[:0]
+		for _, validation := range fields[index].Validations {
+			if validation.Field != "" {
+				if _, exists := available[normalizedHeader(validation.Field)]; !exists {
+					continue
+				}
+			}
+			if validation.When != nil {
+				if _, exists := available[normalizedHeader(validation.When.Field)]; !exists {
+					continue
+				}
+			}
+			retained = append(retained, validation)
+		}
+		fields[index].Validations = retained
+	}
+	return fields
+}
+
+func retainTableValidations(validations []Validation, fields []Field) []Validation {
+	available := make(map[string]struct{}, len(fields))
+	for _, field := range fields {
+		available[normalizedHeader(field.Name)] = struct{}{}
+	}
+	retained := validations[:0]
+	for _, validation := range validations {
+		valid := true
+		for _, name := range validation.Fields {
+			if _, exists := available[normalizedHeader(name)]; !exists {
+				valid = false
+				break
+			}
+		}
+		if valid && validation.When != nil {
+			_, valid = available[normalizedHeader(validation.When.Field)]
+		}
+		if valid {
+			retained = append(retained, validation)
+		}
+	}
+	return retained
 }
 
 func requiredDrupalSourceGroups(fields []Field, attached map[string]drupalAttachedField) []RequiredGroup {
@@ -301,10 +381,69 @@ func applyDrupalFieldConfig(field Field, config drupalAttachedField, useLabel, i
 	if inferRequired && config.field.Required && !containsOperation(field.RequiredFor, OperationCreate) {
 		field.RequiredFor = append(field.RequiredFor, OperationCreate)
 	}
+	compiledValidations := compileDrupalFieldValidations(config)
+	if field.Name != drupalBaseField(field.Name) {
+		compiledValidations = retainScalarDrupalValidations(compiledValidations)
+	}
+	if hasValidationRule(field.Validations, ValidationContextNodeExists) {
+		compiledValidations = withoutValidationRule(compiledValidations, ValidationContextEntityExists)
+	}
+	field.Validations = mergeDrupalFieldValidations(field.Validations, compiledValidations)
+	field.Validations = configureContributorRelators(field.Validations, drupalConfiguredStrings(config.field.Settings["rel_types"]))
+	field.Validations = ensureWorkbenchLineBreakValidation(field)
 	return field
 }
 
+func hasValidationRule(validations []Validation, rule ValidationRule) bool {
+	for _, validation := range validations {
+		if validation.Rule == rule {
+			return true
+		}
+	}
+	return false
+}
+
+func withoutValidationRule(validations []Validation, rule ValidationRule) []Validation {
+	result := validations[:0]
+	for _, validation := range validations {
+		if validation.Rule != rule {
+			result = append(result, validation)
+		}
+	}
+	return result
+}
+
+func retainScalarDrupalValidations(validations []Validation) []Validation {
+	result := validations[:0]
+	for _, validation := range validations {
+		switch validation.Rule {
+		case ValidationGeolocation, ValidationAuthorityLink, ValidationMediaTrack, ValidationEntityReference, ValidationTypedRelation, ValidationContextEntityExists:
+			continue
+		default:
+			result = append(result, validation)
+		}
+	}
+	return result
+}
+
+func configureContributorRelators(validations []Validation, relators []string) []Validation {
+	if len(relators) == 0 {
+		return validations
+	}
+	for index := range validations {
+		if validations[index].Rule == ValidationContributor {
+			validations[index].Values = append([]string(nil), relators...)
+		}
+	}
+	return validations
+}
+
 func genericDrupalField(name string, config drupalAttachedField, useLabel bool) Field {
+	operations := []Operation{OperationCreate, OperationUpdate}
+	if name == "uid" {
+		// Workbench only applies an explicit owner while creating a node.
+		operations = []Operation{OperationCreate}
+	}
 	field := Field{
 		Name:             name,
 		SchemaLabel:      config.field.Label,
@@ -315,7 +454,7 @@ func genericDrupalField(name string, config drupalAttachedField, useLabel bool) 
 		Settings:         cloneMap(config.storage.Settings),
 		InstanceSettings: cloneMap(config.field.Settings),
 		Cardinality:      drupalCardinality(config.storage.Cardinality),
-		Operations:       []Operation{OperationCreate, OperationUpdate},
+		Operations:       operations,
 	}
 	if useLabel {
 		field.Label = config.field.Label
@@ -323,7 +462,27 @@ func genericDrupalField(name string, config drupalAttachedField, useLabel bool) 
 	if config.field.Required {
 		field.RequiredFor = []Operation{OperationCreate}
 	}
+	field.Validations = compileDrupalFieldValidations(config)
+	if name == "created" {
+		field.Validations = mergeDrupalFieldValidations(field.Validations, []Validation{
+			{Rule: ValidationPattern, Pattern: `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$`},
+			{Rule: ValidationNotFutureTimestamp},
+		})
+	}
+	field.Validations = ensureWorkbenchLineBreakValidation(field)
 	return field
+}
+
+func ensureWorkbenchLineBreakValidation(field Field) []Validation {
+	if !workbenchSourceRejectsLineBreaks(field) {
+		return field.Validations
+	}
+	for _, validation := range field.Validations {
+		if validation.Rule == ValidationNoLineBreaks {
+			return field.Validations
+		}
+	}
+	return append(field.Validations, Validation{Rule: ValidationNoLineBreaks})
 }
 
 func drupalBaseField(name string) string {

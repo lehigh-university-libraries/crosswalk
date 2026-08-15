@@ -47,6 +47,158 @@ func TestIdentifierRegistryCanonicalizationIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestIdentifierRegistryCanonicalAuthorityResolvers(t *testing.T) {
+	t.Parallel()
+	registry := DefaultIdentifierRegistry()
+	tests := []struct {
+		name      string
+		scheme    string
+		value     string
+		canonical string
+		uri       string
+	}{
+		{name: "Handle", scheme: "handle", value: "https://hdl.handle.net/20.500.12345/example", canonical: "20.500.12345/example", uri: "https://hdl.handle.net/20.500.12345/example"},
+		{name: "ISBN", scheme: "isbn", value: "ISBN-13: 978-0-306-40615-7", canonical: "9780306406157", uri: "urn:isbn:9780306406157"},
+		{name: "ISSN", scheme: "issn", value: "urn:issn:2049-3630", canonical: "2049-3630", uri: "urn:issn:2049-3630"},
+		{name: "ROR", scheme: "ror", value: "https://ror.org/02MHBDP94", canonical: "02mhbdp94", uri: "https://ror.org/02mhbdp94"},
+		{name: "GND", scheme: "gnd", value: "https://d-nb.info/gnd/118540238", canonical: "118540238", uri: "https://d-nb.info/gnd/118540238"},
+		{name: "ISNI", scheme: "isni", value: "https://isni.org/isni/000000012124423X", canonical: "000000012124423X", uri: "https://isni.org/isni/000000012124423X"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			identifier, err := registry.NewIdentifierForScheme(test.value, test.scheme, hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_UNSPECIFIED)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if identifier.GetValue() != test.canonical || identifier.GetScheme() != test.scheme {
+				t.Fatalf("canonical identifier = %v, want %s:%s", identifier, test.scheme, test.canonical)
+			}
+			if got := IdentifierURI(identifier); got != test.uri {
+				t.Fatalf("IdentifierURI() = %q, want %q", got, test.uri)
+			}
+			if got := registry.DetectScheme(test.value); got != test.scheme {
+				t.Fatalf("DetectScheme(%q) = %q, want %q", test.value, got, test.scheme)
+			}
+		})
+	}
+}
+
+func TestIdentifierRegistryRejectsMalformedRORIdentifiers(t *testing.T) {
+	t.Parallel()
+	registry := DefaultIdentifierRegistry()
+	for _, value := range []string{
+		"https://ror.org/02mhbdp9",
+		"https://ror.org/12mhbdp94",
+		"https://ror.org/02mhbdp9x",
+		"https://ror.org/02mhbdp94/extra",
+		"https://ror.org.attacker.example/02mhbdp94",
+	} {
+		if _, err := registry.NewIdentifierForScheme(value, "ror", hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_UNSPECIFIED); err == nil {
+			t.Errorf("NewIdentifierForScheme(%q, ror) succeeded, want error", value)
+		}
+	}
+}
+
+func TestIdentifierRegistryValidatesISBNFormats(t *testing.T) {
+	t.Parallel()
+	registry := DefaultIdentifierRegistry()
+	tests := []struct {
+		name  string
+		value string
+		want  string
+		valid bool
+	}{
+		{name: "ISBN-10 digits", value: "0306406152", want: "0306406152", valid: true},
+		{name: "ISBN-10 lowercase check digit and prefix", value: "ISBN-10: 0-9752298-0-x", want: "097522980X", valid: true},
+		{name: "ISBN-13 digits", value: "9780306406157", want: "9780306406157", valid: true},
+		{name: "ISBN-13 hyphens and prefix", value: "ISBN-13: 978-0-306-40615-7", want: "9780306406157", valid: true},
+		{name: "generic prefix and spaces", value: "isbn: 978 0 306 40615 7", want: "9780306406157", valid: true},
+		{name: "single digit", value: "1"},
+		{name: "short hyphenated", value: "123-45"},
+		{name: "truncated ISBN-10", value: "0-306-40615"},
+		{name: "truncated ISBN-13", value: "978-0-306-40615"},
+		{name: "too many digits", value: "97803064061570"},
+		{name: "double hyphen", value: "978--0-306-40615-7"},
+		{name: "leading hyphen", value: "-9780306406157"},
+		{name: "trailing hyphen", value: "9780306406157-"},
+		{name: "ISBN-10 X before check digit", value: "03064061X2"},
+		{name: "ISBN-13 X check digit", value: "978030640615X"},
+		{name: "non-digit", value: "978-0-30A-40615-7"},
+		{name: "ISBN-10 prefix with ISBN-13 value", value: "ISBN-10: 9780306406157"},
+		{name: "ISBN-13 prefix with ISBN-10 value", value: "ISBN-13: 0306406152"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			identifier := &hubv1.Identifier{Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN, Value: test.value}
+			canonical, err := registry.CanonicalizeIdentifier(identifier)
+			result := Validate(&hubv1.Record{Title: "ISBN validation", Identifiers: []*hubv1.Identifier{identifier}}, DefaultValidationOptions())
+			if !test.valid {
+				if err == nil {
+					t.Errorf("CanonicalizeIdentifier(%q) = %v, want error", test.value, canonical)
+				}
+				if result.IsValid() {
+					t.Errorf("Validate() accepted invalid ISBN %q", test.value)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("CanonicalizeIdentifier(%q): %v", test.value, err)
+			}
+			if canonical.GetScheme() != "isbn" || canonical.GetValue() != test.want {
+				t.Errorf("CanonicalizeIdentifier(%q) = %v, want ISBN value %q", test.value, canonical, test.want)
+			}
+			if scheme := registry.DetectScheme(test.value); scheme != "isbn" {
+				t.Errorf("DetectScheme(%q) = %q, want isbn", test.value, scheme)
+			}
+			if err := result.Error(); err != nil {
+				t.Errorf("Validate() rejected valid ISBN %q: %v", test.value, err)
+			}
+		})
+	}
+}
+
+func TestIdentifierRegistryValidatesISNIFormats(t *testing.T) {
+	t.Parallel()
+	registry := DefaultIdentifierRegistry()
+	tests := []struct {
+		name  string
+		value string
+		want  string
+		valid bool
+	}{
+		{name: "compact", value: "000000012124423X", want: "000000012124423X", valid: true},
+		{name: "human-readable", value: "ISNI 0000 0001 2124 423x", want: "000000012124423X", valid: true},
+		{name: "canonical URL", value: "https://isni.org/isni/000000012124423X", want: "000000012124423X", valid: true},
+		{name: "arbitrary text", value: "not-an-isni"},
+		{name: "too short", value: "000000012124423"},
+		{name: "misplaced check digit", value: "00000001212442X3"},
+		{name: "malformed grouping", value: "0000  0001 2124 423X"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			canonical, err := registry.CanonicalizeIdentifier(&hubv1.Identifier{
+				Type:  hubv1.IdentifierType_IDENTIFIER_TYPE_ISNI,
+				Value: test.value,
+			})
+			if !test.valid {
+				if err == nil {
+					t.Errorf("CanonicalizeIdentifier(%q) = %v, want error", test.value, canonical)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("CanonicalizeIdentifier(%q): %v", test.value, err)
+			}
+			if canonical.GetScheme() != "isni" || canonical.GetValue() != test.want {
+				t.Errorf("CanonicalizeIdentifier(%q) = %v, want ISNI value %q", test.value, canonical, test.want)
+			}
+		})
+	}
+}
+
 func TestIdentifierRegistryDistinguishesZenodoConceptAndVersionIdentity(t *testing.T) {
 	t.Parallel()
 	registry := DefaultIdentifierRegistry()

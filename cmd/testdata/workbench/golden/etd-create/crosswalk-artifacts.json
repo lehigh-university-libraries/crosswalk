@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "spec": {
+    "name": "fabricator-workbench",
+    "version": "1",
+    "fingerprint": "512baedbd9ed12ffb74284ddca77e26e0506c1aa135b7254bec7fabb48f3cc32"
+  },
+  "policy": {
+    "path_mode": "staged-posix",
+    "staging_root": "/mnt/islandora_staging",
+    "allowed_absolute_roots": [
+      "/home",
+      "/mnt"
+    ],
+    "supplemental_media_use_tid": "151326",
+    "pending_supplemental_published": "1",
+    "unpublished_supplemental_media_use_tid": "151326",
+    "unpublished_supplemental_published": "0"
+  },
+  "artifacts": [
+    {
+      "path": "target.csv",
+      "media_type": "text/csv; charset=utf-8",
+      "sha256": "124d891403c86887bf256cf0bebd8df03b53454def78b6933115377bce738e8b",
+      "bytes": 1170,
+      "csv_rows": 1
+    },
+    {
+      "path": "agents.csv",
+      "media_type": "text/csv; charset=utf-8",
+      "sha256": "a3a24adb8a0b16ad308a70acbf1ae489ddaf40eb842ab7354922f3d6844d8b68",
+      "bytes": 366,
+      "csv_rows": 2
+    }
+  ]
+}

@@ -35,6 +35,9 @@ func CompileDrupalProfile(snapshot *model.Snapshot, compiled *profile.Compiled, 
 	bundle := strings.TrimSpace(options.Bundle)
 	mappedPaths := make(map[string]struct{})
 	for _, mapping := range mappings {
+		if !profileMappingIsWorkbenchInput(mapping) {
+			continue
+		}
 		selector := mapping.Field.Selector
 		if selector.EntityType != "node" || strings.TrimSpace(selector.Bundle) == "" {
 			return nil, fmt.Errorf(
@@ -71,22 +74,15 @@ func CompileDrupalProfile(snapshot *model.Snapshot, compiled *profile.Compiled, 
 		return nil, fmt.Errorf("compiling Drupal profile transformation: %w", err)
 	}
 	profileMappings := make(map[string][]profile.CompiledMapping)
-	identifierRules := make(map[string]string)
-	for _, rule := range compiled.LookupPlan().Identifiers {
-		key := profileSelectorKey(rule.Value.Selector)
-		if previous, exists := identifierRules[key]; exists && previous != rule.Name {
-			// DOI work and version intentionally share storage. Prefer the work
-			// rule for an unqualified Workbench column; sources that retain
-			// version semantics already carry them in the Hub identifier.
-			if previous != "doi" && rule.Name == "doi" {
-				identifierRules[key] = rule.Name
-			}
-			continue
-		}
-		identifierRules[key] = rule.Name
+	identifierRules, err := profileIdentifierBindings(compiled.LookupPlan().Identifiers)
+	if err != nil {
+		return nil, fmt.Errorf("compiling Drupal profile transformation: %w", err)
 	}
 	for _, mapping := range mappings {
 		if mapping.Encode == "none" && mapping.Decode == "none" {
+			continue
+		}
+		if !profileMappingIsWorkbenchInput(mapping) {
 			continue
 		}
 		profileMappings[mapping.Field.Selector.Path] = append(profileMappings[mapping.Field.Selector.Path], mapping)
@@ -97,6 +93,8 @@ func CompileDrupalProfile(snapshot *model.Snapshot, compiled *profile.Compiled, 
 	}
 	transformation.Source.RequiredGroups = retainedRequiredGroups(transformation.Source.RequiredGroups, transformation.Source.Fields)
 	transformation.Source.RequiredGroups = expandRequiredGroups(transformation.Source.RequiredGroups, transformation.Source.Fields)
+	transformation.Source.Fields = retainFieldValidations(transformation.Source.Fields)
+	transformation.Source.Validations = retainTableValidations(transformation.Source.Validations, transformation.Source.Fields)
 	filtered := make([]Field, 0, len(transformation.Target.Fields))
 	resolved := make(map[string]struct{}, len(mappedPaths))
 	for _, field := range transformation.Target.Fields {
@@ -124,6 +122,12 @@ func CompileDrupalProfile(snapshot *model.Snapshot, compiled *profile.Compiled, 
 		)
 	}
 	transformation.Target.Fields = filtered
+	transformation.Target.Fields = retainFieldValidations(transformation.Target.Fields)
+	transformation.Target.Validations = retainTableValidations(transformation.Target.Validations, transformation.Target.Fields)
+	// profileBoundSourceFields may add selector-specific columns after the
+	// model-only pass, so apply the explicit Workbench term-creation policy to
+	// the final source contract as well.
+	configureDrupalTaxonomyNamePolicy(transformation, options.AllowNewTaxonomyTerms)
 	transformation.Name = "drupal-" + bundle + "-" + compiled.Name() + "-workbench"
 	transformation.Description = fmt.Sprintf(
 		"Profile %s mapping Drupal %s node metadata to Islandora Workbench CSV",
@@ -181,7 +185,48 @@ func retainedRequiredGroups(groups []RequiredGroup, fields []Field) []RequiredGr
 	return result
 }
 
-func profileBoundSourceFields(fields []Field, mappings map[string][]profile.CompiledMapping, identifierRules map[string]string) ([]Field, error) {
+type profileIdentifierBinding struct {
+	Name          string
+	Scheme        string
+	Pattern       string
+	Canonicalizer string
+}
+
+func profileIdentifierBindings(rules []profile.CompiledIdentifierRule) (map[string]profileIdentifierBinding, error) {
+	bindings := make(map[string]profileIdentifierBinding)
+	for _, rule := range rules {
+		key := profileSelectorKey(rule.Value.Selector)
+		candidate := profileIdentifierBinding{
+			Name: rule.Name, Scheme: rule.Scheme,
+			Pattern: rule.Pattern, Canonicalizer: rule.Canonicalizer,
+		}
+		previous, exists := bindings[key]
+		if !exists {
+			bindings[key] = candidate
+			continue
+		}
+		if previous.Scheme != candidate.Scheme || previous.Pattern != candidate.Pattern || previous.Canonicalizer != candidate.Canonicalizer {
+			first, second := previous.Name, candidate.Name
+			if second < first {
+				first, second = second, first
+			}
+			return nil, fmt.Errorf(
+				"profile identity rules %q and %q share exact selector %q but differ in scheme, pattern, or canonicalizer",
+				first, second, profileSelectorFieldName(rule.Value.Selector),
+			)
+		}
+		// Equivalent rules may describe identity levels that a single Workbench
+		// cell cannot distinguish (notably DOI work and version). Select the
+		// lexicographically first rule name so the representative is independent
+		// of policy order; this deliberately selects "doi" over "doi-version".
+		if candidate.Name < previous.Name {
+			bindings[key] = candidate
+		}
+	}
+	return bindings, nil
+}
+
+func profileBoundSourceFields(fields []Field, mappings map[string][]profile.CompiledMapping, identifierRules map[string]profileIdentifierBinding) ([]Field, error) {
 	result := make([]Field, 0, len(fields))
 	seenSelectors := make(map[string]struct{})
 	for _, field := range fields {
@@ -209,12 +254,22 @@ func profileBoundSourceFields(fields []Field, mappings map[string][]profile.Comp
 			field.Codec = profileSourceCodec(selected)
 		}
 		if selected.Decode == "typed-identifier" {
+			binding := identifierRules[profileSelectorKey(selected.Field.Selector)]
 			field.Hub = "Identifiers"
 			field.Codec = "profile_identifier"
-			field.ProfileRule = identifierRules[profileSelectorKey(selected.Field.Selector)]
+			field.ProfileRule = binding.Name
 			if field.ProfileRule == "" {
 				return nil, fmt.Errorf("source field %q typed-identifier mapping has no exact profile identity rule", field.Name)
 			}
+			field.Validations = mergeDrupalFieldValidations(field.Validations, []Validation{{Rule: ValidationPattern, Pattern: binding.Pattern}})
+		}
+		if strings.EqualFold(strings.TrimSpace(selected.Field.SourceType), "created") {
+			// The generic profile Hub path is intentionally broad, but Workbench's
+			// authored creation timestamp must remain distinguishable from issued
+			// and descriptive dates so it can be emitted with its full RFC 3339
+			// value rather than as an EDTF calendar date.
+			field.Hub = "Dates.Created"
+			field.Codec = "edtf"
 		}
 		result = append(result, field)
 		seenSelectors[profileSelectorKey(selected.Field.Selector)] = struct{}{}
@@ -236,20 +291,31 @@ func profileBoundSourceFields(fields []Field, mappings map[string][]profile.Comp
 	sort.Strings(extraSelectors)
 	for _, key := range extraSelectors {
 		mapping := bySelector[key]
+		resolved := mapping.Field
 		field := Field{
 			Name: profileSelectorFieldName(mapping.Field.Selector), Hub: mapping.Hub,
-			Codec: profileSourceCodec(mapping), SourceType: mapping.Field.SourceType,
-			Cardinality: drupalCardinality(mapping.Field.Cardinality),
+			SchemaLabel: resolved.Label, Description: resolved.Description,
+			Codec: profileSourceCodec(mapping), SourceType: resolved.SourceType,
+			Settings: cloneMap(resolved.StorageSettings), InstanceSettings: cloneMap(resolved.InstanceSettings),
+			Cardinality: drupalCardinality(resolved.Cardinality),
 			Operations:  []Operation{OperationCreate, OperationUpdate},
 		}
+		config := drupalAttachedField{
+			storage:   drupalStorageConfig{Type: resolved.SourceType, Cardinality: resolved.Cardinality, Settings: cloneMap(resolved.StorageSettings)},
+			field:     drupalFieldConfig{Label: resolved.Label, Description: resolved.Description, Required: resolved.Required, Settings: cloneMap(resolved.InstanceSettings)},
+			reference: resolved.Reference,
+		}
+		field.Validations = retainScalarDrupalValidations(compileDrupalFieldValidations(config))
+		field.Validations = ensureWorkbenchLineBreakValidation(field)
 		if mapping.Decode == "typed-identifier" {
-			rule := identifierRules[key]
-			if rule == "" {
+			binding := identifierRules[key]
+			if binding.Name == "" {
 				return nil, fmt.Errorf("typed-identifier selector for Drupal field %q has no exact profile identity rule", mapping.Field.Selector.Path)
 			}
 			field.Hub = "Identifiers"
 			field.Codec = "profile_identifier"
-			field.ProfileRule = rule
+			field.ProfileRule = binding.Name
+			field.Validations = mergeDrupalFieldValidations(field.Validations, []Validation{{Rule: ValidationPattern, Pattern: binding.Pattern}})
 		}
 		result = append(result, field)
 	}
@@ -269,6 +335,14 @@ func profileMappingNeedsSourceField(mapping profile.CompiledMapping) bool {
 	default:
 		return false
 	}
+}
+
+func profileMappingIsWorkbenchInput(mapping profile.CompiledMapping) bool {
+	// Drupal changes this base field itself and Islandora Workbench does not
+	// accept it as node input. It may remain useful in the immutable system
+	// profile for Drupal JSON conversion, but it must not enter the Workbench
+	// transformation contract.
+	return mapping.Field.Selector.Path != "changed"
 }
 
 func profileSelectorFieldName(selector profile.FieldSelector) string {
@@ -292,13 +366,20 @@ func profileSelectorKey(selector profile.FieldSelector) string {
 }
 
 func profileMappingForSpecField(field Field, mappings []profile.CompiledMapping) (profile.CompiledMapping, bool, error) {
-	if len(mappings) == 1 {
-		return mappings[0], true, nil
-	}
 	name := field.Name
 	for _, mapping := range mappings {
 		selector := mapping.Field.Selector
 		if name == profileSelectorFieldName(selector) {
+			return mapping, true, nil
+		}
+	}
+	if len(mappings) == 1 {
+		mapping := mappings[0]
+		selector := mapping.Field.Selector
+		mappingHub, _, _ := strings.Cut(mapping.Hub, ".")
+		fieldHub, _, _ := strings.Cut(field.Hub, ".")
+		if selector.Attribute == "" && selector.Where == nil &&
+			selector.Path == drupalBaseField(field.Name) && mappingHub != "" && mappingHub == fieldHub {
 			return mapping, true, nil
 		}
 	}
@@ -331,8 +412,9 @@ func validateProfileWorkbenchEncoding(mapping profile.CompiledMapping) error {
 	supported := false
 	switch sourceType {
 	case "string", "string_long", "string_textfield", "text", "text_long", "text_with_summary",
-		"email", "telephone", "boolean", "integer", "list_integer", "decimal", "float",
-		"datetime", "daterange", "edtf", "link", "entity_reference", "typed_relation",
+		"email", "telephone", "boolean", "integer", "list_integer", "list_string", "decimal", "float",
+		"datetime", "daterange", "edtf", "created", "link", "entity_reference", "typed_relation",
+		"geolocation", "authority_link", "media_track", "linked_data_field",
 		"textfield_attr", "textarea_attr", "part_detail", "related_item":
 		supported = true
 	}
@@ -343,8 +425,13 @@ func validateProfileWorkbenchEncoding(mapping profile.CompiledMapping) error {
 		)
 	}
 	if sourceType == "typed_relation" && mapping.Encode != "typed-identifier" {
-		if mapping.Field.Reference == nil || len(mapping.Field.Reference.Bundles) != 1 || strings.TrimSpace(mapping.Field.Reference.Bundles[0]) == "" {
-			return fmt.Errorf("drupal field %q typed relation requires exactly one reference bundle for deterministic Workbench encoding", mapping.Field.Selector.Path)
+		if mapping.Field.Reference == nil || len(mapping.Field.Reference.Bundles) == 0 {
+			return fmt.Errorf("drupal field %q typed relation requires at least one model-declared reference bundle for Workbench encoding", mapping.Field.Selector.Path)
+		}
+		for _, bundle := range mapping.Field.Reference.Bundles {
+			if strings.TrimSpace(bundle) == "" {
+				return fmt.Errorf("drupal field %q typed relation has an empty reference bundle", mapping.Field.Selector.Path)
+			}
 		}
 	}
 	selector := mapping.Field.Selector
@@ -424,7 +511,7 @@ func profileRelatedItemHubSupported(hubPath, attribute string) bool {
 func isWorkbenchTransportField(name string) bool {
 	switch drupalBaseField(name) {
 	case "id", "parent_id", "field_weight", "node_id", "file", "supplemental_file", "title",
-		"unpublished_supplemental_file", "published", "url_alias":
+		"unpublished_supplemental_file", "published", "url_alias", "langcode":
 		return true
 	default:
 		return false

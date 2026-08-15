@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLookupSelectsImmediateRepositoryLicense(t *testing.T) {
@@ -181,9 +182,75 @@ func TestDefaultHTTPClientDoesNotInheritEnvironmentProxy(t *testing.T) {
 	}
 }
 
+func TestSuppliedHTTPClientRetainsSHERPASSRFProtections(t *testing.T) {
+	t.Parallel()
+
+	transportCalled := false
+	provided := &http.Client{
+		Timeout: 17 * time.Second,
+		Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			transportCalled = true
+			return nil, errors.New("unprotected transport was used")
+		}),
+	}
+	client := &Client{
+		SearchURL: "https://sherpa.example/search", RetrieveURL: "https://sherpa.example/retrieve", HTTP: provided,
+	}
+	protected, ok := client.httpClient().(*http.Client)
+	if !ok {
+		t.Fatalf("httpClient() = %T, want *http.Client", client.httpClient())
+	}
+	if protected == provided {
+		t.Fatal("supplied HTTP client was modified instead of cloned")
+	}
+	if protected.Timeout != provided.Timeout {
+		t.Fatalf("Timeout = %s, want %s", protected.Timeout, provided.Timeout)
+	}
+	transport, ok := protected.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", protected.Transport)
+	}
+	if transport.Proxy != nil {
+		t.Fatal("protected transport permits proxies")
+	}
+	if transport.DialContext == nil {
+		t.Fatal("protected transport has no validating dialer")
+	}
+	request, err := http.NewRequest(http.MethodGet, "https://sherpa.example/publication/1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	origin, err := http.NewRequest(http.MethodGet, "https://sherpa.example/search", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protected.CheckRedirect(request, []*http.Request{origin}); !errors.Is(err, http.ErrUseLastResponse) {
+		t.Fatalf("CheckRedirect() error = %v", err)
+	}
+
+	client.SearchURL = "https://10.0.0.1/search"
+	client.RetrieveURL = "https://10.0.0.1/retrieve"
+	_, err = client.Lookup(t.Context(), "1234-5678", "secret")
+	if err == nil || !strings.Contains(err.Error(), "no permitted address") {
+		t.Fatalf("Lookup() error = %v, want private-address rejection", err)
+	}
+	if transportCalled {
+		t.Fatal("supplied unprotected transport handled a request")
+	}
+	if _, ok := provided.Transport.(roundTripperFunc); !ok || provided.Timeout != 17*time.Second {
+		t.Fatal("supplied HTTP client was modified")
+	}
+}
+
 type httpDoerFunc func(*http.Request) (*http.Response, error)
 
 func (do httpDoerFunc) Do(request *http.Request) (*http.Response, error) {
+	return do(request)
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (do roundTripperFunc) RoundTrip(request *http.Request) (*http.Response, error) {
 	return do(request)
 }
 

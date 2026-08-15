@@ -51,7 +51,7 @@ docs-docker-build: ## Build the Zensical docs image
 	docker build -f docs/Dockerfile -t $(DOCS_IMAGE) .
 
 docs-build: docs-docker-build ## Build the static docs site into ./docs/site
-	rm -rf site docs/site
+	rm -rf docs/site
 	docker run --rm \
 		-u "$(DOCS_DOCKER_USER)" \
 		$(if $(SITE_URL),-e SITE_URL=$(SITE_URL)) \
@@ -80,4 +80,4 @@ docs-preview: ## Build docs and serve ./docs/site at http://localhost:8888
 		-m http.server 8080
 
 docs-clean: ## Remove the generated docs site
-	rm -rf site docs/site
+	rm -rf docs/site

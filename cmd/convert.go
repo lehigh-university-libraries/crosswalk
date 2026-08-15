@@ -43,26 +43,32 @@ import (
 	_ "github.com/lehigh-university-libraries/crosswalk/spoke/islandora_workbench/v1"
 )
 
-var (
-	inputFile                  string
-	outputFile                 string
+type convertOptions struct {
+	inputPath                  string
+	outputPath                 string
 	sourceProfileName          string
 	targetProfileName          string
-	taxonomyFile               string
+	taxonomyPath               string
 	columns                    []string
-	multiValueSep              string
+	multiValueSeparator        string
 	stripHTML                  bool
 	pretty                     bool
 	baseURL                    string
 	referenceDOIs              []string
 	skipReferenceDOIValidation bool
-	transformationSpecFile     string
-)
+	transformationSpecPath     string
+}
 
-var convertCmd = &cobra.Command{
-	Use:   "convert <from> <to>",
-	Short: "Convert metadata between formats",
-	Long: `Convert scholarly metadata from one format to another.
+func defaultConvertOptions() convertOptions {
+	return convertOptions{multiValueSeparator: "|", stripHTML: true}
+}
+
+func newConvertCmd() *cobra.Command {
+	options := defaultConvertOptions()
+	command := &cobra.Command{
+		Use:   "convert <from> <to>",
+		Short: "Convert metadata between formats",
+		Long: `Convert scholarly metadata from one format to another.
 
 Arguments:
   from    Source format (drupal, csv)
@@ -85,27 +91,28 @@ Examples:
 
   # Resolve relative source identifiers without network access
   crosswalk convert archivesspace csv -i data.json --base-url https://example.com`,
-	Args: cobra.ExactArgs(2),
-	RunE: runConvert,
+		Args: cobra.ExactArgs(2),
+		RunE: func(command *cobra.Command, args []string) error {
+			return runConvert(command, args, options)
+		},
+	}
+	command.Flags().StringVarP(&options.inputPath, "input", "i", "", "Input file (default: stdin)")
+	command.Flags().StringVarP(&options.outputPath, "output", "o", "", "Output file (default: stdout)")
+	command.Flags().StringVar(&options.sourceProfileName, "source-profile", "", "Canonical model-bound profile for the source system")
+	command.Flags().StringVar(&options.targetProfileName, "target-profile", "", "Canonical model-bound profile for the target system")
+	command.Flags().StringVar(&options.taxonomyPath, "taxonomy-file", "", "Taxonomy term resolution file (JSON)")
+	command.Flags().StringSliceVarP(&options.columns, "columns", "c", nil, "CSV columns to output")
+	command.Flags().StringVar(&options.multiValueSeparator, "separator", options.multiValueSeparator, "Multi-value field separator")
+	command.Flags().BoolVar(&options.stripHTML, "strip-html", options.stripHTML, "Strip HTML from text fields")
+	command.Flags().BoolVar(&options.pretty, "pretty", false, "Pretty-print JSON output")
+	command.Flags().StringVar(&options.baseURL, "base-url", "", "source system base URL used only to resolve relative identifiers")
+	command.Flags().StringSliceVar(&options.referenceDOIs, "reference-doi", nil, "DOI referenced by this work; repeat or comma-separate")
+	command.Flags().BoolVar(&options.skipReferenceDOIValidation, "skip-reference-doi-validation", false, "Do not resolve --reference-doi values with DOI.org before writing output")
+	command.Flags().StringVar(&options.transformationSpecPath, "spec", "", "Transformation specification JSON/YAML for spec-driven conversion")
+	return command
 }
 
-func init() {
-	convertCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file (default: stdin)")
-	convertCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file (default: stdout)")
-	convertCmd.Flags().StringVar(&sourceProfileName, "source-profile", "", "Canonical model-bound profile for the source system")
-	convertCmd.Flags().StringVar(&targetProfileName, "target-profile", "", "Canonical model-bound profile for the target system")
-	convertCmd.Flags().StringVar(&taxonomyFile, "taxonomy-file", "", "Taxonomy term resolution file (JSON)")
-	convertCmd.Flags().StringSliceVarP(&columns, "columns", "c", nil, "CSV columns to output")
-	convertCmd.Flags().StringVar(&multiValueSep, "separator", "|", "Multi-value field separator")
-	convertCmd.Flags().BoolVar(&stripHTML, "strip-html", true, "Strip HTML from text fields")
-	convertCmd.Flags().BoolVar(&pretty, "pretty", false, "Pretty-print JSON output")
-	convertCmd.Flags().StringVar(&baseURL, "base-url", "", "source system base URL used only to resolve relative identifiers")
-	convertCmd.Flags().StringSliceVar(&referenceDOIs, "reference-doi", nil, "DOI referenced by this work; repeat or comma-separate")
-	convertCmd.Flags().BoolVar(&skipReferenceDOIValidation, "skip-reference-doi-validation", false, "Do not resolve --reference-doi values with DOI.org before writing output")
-	convertCmd.Flags().StringVar(&transformationSpecFile, "spec", "", "Transformation specification JSON/YAML for spec-driven conversion")
-}
-
-func runConvert(cmd *cobra.Command, args []string) (err error) {
+func runConvert(cmd *cobra.Command, args []string, options convertOptions) (err error) {
 	fromFormat := args[0]
 	toFormat := args[1]
 
@@ -113,8 +120,8 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 	var input io.Reader
 	var inputName string
 
-	if inputFile != "" {
-		f, err := os.Open(inputFile)
+	if options.inputPath != "" {
+		f, err := os.Open(options.inputPath)
 		if err != nil {
 			return fmt.Errorf("opening input file: %w", err)
 		}
@@ -124,14 +131,14 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 			}
 		}()
 		input = f
-		inputName = inputFile
+		inputName = options.inputPath
 	} else {
 		input = cmd.InOrStdin()
 		inputName = "stdin"
 	}
 
-	if len(referenceDOIs) > 0 && !skipReferenceDOIValidation {
-		if err := validateReferenceDOIValues(cmd.Context(), referenceDOIs); err != nil {
+	if len(options.referenceDOIs) > 0 && !options.skipReferenceDOIValidation {
+		if err := validateReferenceDOIValues(cmd.Context(), options.referenceDOIs); err != nil {
 			return err
 		}
 	}
@@ -152,11 +159,11 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 	// contracts. Source configuration is never reused as a target mapping.
 	sourceMapping := defaultStaticProfile(fromFormat)
 	targetMapping := defaultStaticProfile(toFormat)
-	sourceProfile, err := loadSystemProfile(sourceProfileName, fromFormat, "source")
+	sourceProfile, err := loadSystemProfile(options.sourceProfileName, fromFormat, "source")
 	if err != nil {
 		return err
 	}
-	targetProfile, err := loadSystemProfile(targetProfileName, toFormat, "target")
+	targetProfile, err := loadSystemProfile(options.targetProfileName, toFormat, "target")
 	if err != nil {
 		return err
 	}
@@ -167,7 +174,7 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 		targetMapping = nil
 	}
 
-	transformation, err := loadTransformationSpec(transformationSpecFile, fromFormat, toFormat)
+	transformation, err := loadTransformationSpec(options.transformationSpecPath, fromFormat, toFormat)
 	if err != nil {
 		return err
 	}
@@ -201,8 +208,8 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 
 	// Load taxonomy resolver
 	var resolver format.TaxonomyResolver
-	if taxonomyFile != "" {
-		store, err := drupal.LoadTaxonomyFile(taxonomyFile)
+	if options.taxonomyPath != "" {
+		store, err := drupal.LoadTaxonomyFile(options.taxonomyPath)
 		if err != nil {
 			return fmt.Errorf("loading taxonomy file: %w", err)
 		}
@@ -215,9 +222,9 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 		Profile:          sourceMapping,
 		SystemProfile:    sourceProfile,
 		TaxonomyResolver: resolver,
-		StripHTML:        stripHTML,
+		StripHTML:        options.stripHTML,
 		SourceName:       inputName,
-		BaseURL:          baseURL,
+		BaseURL:          options.baseURL,
 		Spec:             transformation,
 		Strict:           transformation != nil,
 	}
@@ -238,15 +245,15 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 	serializeOpts := &format.SerializeOptions{
 		Profile:             targetMapping,
 		SystemProfile:       targetProfile,
-		Columns:             columns,
-		MultiValueSeparator: multiValueSep,
+		Columns:             options.columns,
+		MultiValueSeparator: options.multiValueSeparator,
 		IncludeHeader:       true,
-		Pretty:              pretty,
-		ReferenceDOIs:       referenceDOIs,
+		Pretty:              options.pretty,
+		ReferenceDOIs:       options.referenceDOIs,
 		Spec:                transformation,
 	}
 	if toFormat == "islandora-workbench" && serializeOpts.Spec == nil {
-		serializeOpts.Spec, err = compatibilityWorkbenchSpec(multiValueSep)
+		serializeOpts.Spec, err = compatibilityWorkbenchSpec(options.multiValueSeparator)
 		if err != nil {
 			return err
 		}
@@ -262,8 +269,8 @@ func runConvert(cmd *cobra.Command, args []string) (err error) {
 		}
 		return nil
 	}
-	if outputFile != "" {
-		return writeOutputFile(outputFile, serialize)
+	if options.outputPath != "" {
+		return writeOutputFile(options.outputPath, serialize)
 	}
 	return serialize(cmd.OutOrStdout())
 }

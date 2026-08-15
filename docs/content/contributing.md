@@ -69,8 +69,8 @@ go test -race ./...
 
 ## Documentation
 
-Crosswalk's documentation is a Zensical site built from `docs/`. The build
-environment and Zensical version are pinned in `docs/Dockerfile`.
+Crosswalk's documentation is a Zensical site built from `docs/content/`. The
+build environment and Zensical version are pinned in `docs/Dockerfile`.
 
 Build the static site into `docs/site/`:
 

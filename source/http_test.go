@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -17,6 +18,12 @@ import (
 type httpDoerFunc func(*http.Request) (*http.Response, error)
 
 func (f httpDoerFunc) Do(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
@@ -115,6 +122,101 @@ func TestDefaultHTTPClientDoesNotInheritEnvironmentProxy(t *testing.T) {
 	}
 	if transport.Proxy != nil {
 		t.Fatal("protected metadata transport inherited environment proxy support")
+	}
+}
+
+func TestSuppliedHTTPClientRetainsProtectedTransportAndRedirectPolicy(t *testing.T) {
+	t.Parallel()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transportCalled := false
+	callerRedirectCalled := false
+	callerVeto := false
+	vetoError := errors.New("caller refused redirect")
+	providedTransport := roundTripperFunc(func(*http.Request) (*http.Response, error) {
+		transportCalled = true
+		return nil, errors.New("unprotected transport was used")
+	})
+	provided := &http.Client{
+		Timeout:   42 * time.Second,
+		Transport: providedTransport,
+		Jar:       jar,
+		CheckRedirect: func(request *http.Request, _ []*http.Request) error {
+			callerRedirectCalled = true
+			if callerVeto {
+				return vetoError
+			}
+			// A caller hook must not be able to rewrite an otherwise-safe
+			// redirect to an unsafe target.
+			request.URL, _ = url.Parse("https://other.example/metadata")
+			return nil
+		},
+	}
+	client := NewClient()
+	client.HTTP = provided
+
+	protected, ok := client.httpClient(RedirectSameOrigin).(*http.Client)
+	if !ok {
+		t.Fatalf("httpClient() = %T, want *http.Client", client.httpClient(RedirectSameOrigin))
+	}
+	if protected == provided {
+		t.Fatal("supplied HTTP client was modified instead of cloned")
+	}
+	if protected.Timeout != provided.Timeout || protected.Jar != jar {
+		t.Fatalf("client settings were not retained: timeout=%s jar=%T", protected.Timeout, protected.Jar)
+	}
+	transport, ok := protected.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", protected.Transport)
+	}
+	if transport.Proxy != nil {
+		t.Fatal("protected transport permits proxies")
+	}
+	if transport.DialContext == nil {
+		t.Fatal("protected transport has no validating dialer")
+	}
+
+	origin, err := http.NewRequest(http.MethodGet, "https://example.org/start", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	redirect, err := http.NewRequest(http.MethodGet, "https://example.org/next", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protected.CheckRedirect(redirect, []*http.Request{origin}); err == nil || !strings.Contains(err.Error(), "unsafe metadata redirect") {
+		t.Fatalf("mutated cross-origin redirect error = %v", err)
+	}
+	if !callerRedirectCalled {
+		t.Fatal("caller's redirect policy was not invoked")
+	}
+
+	callerVeto = true
+	redirect.URL, _ = url.Parse("https://example.org/next")
+	if err := protected.CheckRedirect(redirect, []*http.Request{origin}); !errors.Is(err, vetoError) {
+		t.Fatalf("caller redirect veto error = %v", err)
+	}
+
+	_, err = client.Fetch(t.Context(), "http://127.0.0.1:1/metadata", "")
+	if err == nil || !strings.Contains(err.Error(), "no permitted address") {
+		t.Fatalf("Fetch() error = %v, want private-address rejection", err)
+	}
+	if transportCalled {
+		t.Fatal("supplied unprotected transport handled a request")
+	}
+	if _, ok := provided.Transport.(roundTripperFunc); !ok || provided.Timeout != 42*time.Second || provided.Jar != jar {
+		t.Fatal("supplied HTTP client was modified")
+	}
+}
+
+func TestSuppliedHTTPClientWithoutTimeoutRetainsFiniteDefault(t *testing.T) {
+	t.Parallel()
+	client := CloneProtectedHTTPClient(&http.Client{}, false, false, RedirectSameOrigin)
+	if client.Timeout != defaultTimeout {
+		t.Fatalf("Timeout = %s, want %s", client.Timeout, defaultTimeout)
 	}
 }
 

@@ -24,6 +24,13 @@ const defaultMaxBytes = int64(1 << 30)
 
 // Downloader streams a remote file into a caller-selected directory.
 type Downloader struct {
+	// HTTP optionally supplies client-level settings. Supplied *http.Client
+	// values retain positive timeouts, cookie jars, and stricter redirect
+	// decisions, but their transports are replaced so DNS pinning, destination
+	// filtering, HTTPS-only redirects, and the no-proxy policy cannot be
+	// bypassed. Other source.HTTPDoer implementations are used verbatim and are
+	// responsible for equivalent protections; that escape hatch is primarily
+	// intended for tests and in-process adapters.
 	HTTP         source.HTTPDoer
 	MaxBytes     int64
 	UserAgent    string
@@ -298,10 +305,17 @@ func (d *Downloader) userAgent() string {
 }
 
 func (d *Downloader) httpClient() source.HTTPDoer {
+	allowPrivate := d != nil && d.AllowPrivate
 	if d != nil && d.HTTP != nil {
+		if provided, ok := d.HTTP.(*http.Client); ok {
+			client := source.CloneProtectedHTTPClient(provided, allowPrivate, false, source.RedirectHTTPS)
+			if provided == nil || provided.Timeout <= 0 {
+				client.Timeout = 5 * time.Minute
+			}
+			return client
+		}
 		return d.HTTP
 	}
-	allowPrivate := d != nil && d.AllowPrivate
 	client := source.NewProtectedHTTPClient(allowPrivate, false, source.RedirectHTTPS)
 	client.Timeout = 5 * time.Minute
 	return client

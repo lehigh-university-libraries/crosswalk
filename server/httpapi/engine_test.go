@@ -129,8 +129,8 @@ func TestCrosswalkEngineCheckDoesNotRequireCreateRelationshipsOnUpdates(t *testi
 
 func TestCrosswalkEngineCheckAllowsSubCollectionWithoutResourceType(t *testing.T) {
 	result, err := NewCrosswalkEngine().Check(context.Background(), [][]string{
-		{"Title", "Object Model", "Full Title", "Resource Type"},
-		{"A child collection", "Sub-Collection", "A child collection", ""},
+		{"Upload ID", "Title", "Object Model", "Full Title", "Resource Type"},
+		{"1", "A child collection", "Sub-Collection", "A child collection", ""},
 	})
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
@@ -204,8 +204,23 @@ func TestCrosswalkEngineCheckRequiresUploadIDForSupplementalOverflow(t *testing.
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if message := result["E2"]; !strings.Contains(message, "upload ID") {
+	if message := result["E2"]; !strings.Contains(message, "Upload ID") {
 		t.Fatalf("Check()[E2] = %q, want upload-ID diagnostic; all = %#v", message, result)
+	}
+}
+
+func TestCrosswalkEngineCheckValidatesSupplementalFileExtensions(t *testing.T) {
+	result, err := NewCrosswalkEngine().Check(context.Background(), [][]string{
+		{"Node ID", "Supplemental File", "Unpublished Supplemental Files"},
+		{"42", "notes.exe", "private.exe"},
+	})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	for _, cell := range []string{"B2", "C2"} {
+		if message := result[cell]; !strings.Contains(message, "File extension .exe") {
+			t.Errorf("Check()[%s] = %q, want mapping-declared supplemental extension diagnostic; all = %#v", cell, message, result)
+		}
 	}
 }
 
@@ -214,17 +229,17 @@ func TestCrosswalkEngineCheckPreservesDeterministicFabricatorRules(t *testing.T)
 	result, err := NewCrosswalkEngine().Check(context.Background(), [][]string{
 		{"Upload ID", "Page/Item Parent ID", "Parent Collection", "Object Model", "Full Title", "Title", "Resource Type", "Catalog or ArchivesSpace URL", "File Path", "Make Public (Y/N)"},
 		{"1", "", "not-a-node", "Digital Document", "First", longTitle, "", "relative/path", "paper.pdf", "sometimes"},
-		{"1", "99", "", "Video", "Second", "Second", "Moving Image", "https://example.org/item", "movie.pdf", "Yes"},
+		{"1", "99", "", "Video", "Second", "Second", "Moving Image", "https://example.org/item", "movie.exe", "Yes"},
 	})
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
 	wants := map[string]string{
-		"A3": "Duplicate upload ID",
-		"B3": "Unknown parent ID",
+		"A3": "Duplicate Upload ID",
+		"B3": "must reference an earlier",
 		"C2": "unsigned integer",
 		"F2": "longer than 255",
-		"G2": "resource type",
+		"G2": "Resource Type",
 		"H2": "Invalid URL",
 		"I3": "File extension",
 		"J2": "Yes or No",
@@ -236,7 +251,7 @@ func TestCrosswalkEngineCheckPreservesDeterministicFabricatorRules(t *testing.T)
 	}
 }
 
-func TestCrosswalkEngineCheckParentIDsMayReferForward(t *testing.T) {
+func TestCrosswalkEngineCheckRequiresParentIDsToPrecedeChildren(t *testing.T) {
 	result, err := NewCrosswalkEngine().Check(context.Background(), [][]string{
 		{"Upload ID", "Page/Item Parent ID", "Object Model", "Full Title", "Title", "Resource Type"},
 		{"2", "1", "Page", "Page", "Page", ""},
@@ -245,8 +260,8 @@ func TestCrosswalkEngineCheckParentIDsMayReferForward(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if message := result["B2"]; message != "" {
-		t.Fatalf("Check()[B2] = %q, want a forward upload-ID reference to be valid; all = %#v", message, result)
+	if message := result["B2"]; !strings.Contains(message, "must reference an earlier") {
+		t.Fatalf("Check()[B2] = %q, want a parent-order finding; all = %#v", message, result)
 	}
 }
 
@@ -272,7 +287,7 @@ func TestCrosswalkEngineHonorsCanceledContext(t *testing.T) {
 	}
 }
 
-func TestCrosswalkEngineMatchesUsesIdentifierFirstAndEmitsReviewCSV(t *testing.T) {
+func TestCrosswalkEngineMatchesUsesConfiguredFinderAndEmitsReviewCSV(t *testing.T) {
 	queries := make([]reconcile.QueryStrategy, 0)
 	finder := finderFunc(func(_ context.Context, query reconcile.Query) ([]reconcile.Candidate, error) {
 		queries = append(queries, query.Strategy)
@@ -280,8 +295,15 @@ func TestCrosswalkEngineMatchesUsesIdentifierFirstAndEmitsReviewCSV(t *testing.T
 			Title: "Example", Identifiers: []*hubv1.Identifier{{Type: hubv1.IdentifierType_IDENTIFIER_TYPE_DOI, Value: "10.1234/example"}},
 		}}}, nil
 	})
-	input := "Title,Object Model,Full Title,Upload ID,DOI\nExample,Digital Document,Example,1,10.1234/example\n"
-	result, err := NewCrosswalkEngine().WithFinder(finder).Matches(context.Background(), strings.NewReader(input), "skip")
+	engine := NewCrosswalkEngine()
+	if err := engine.ConfigureReconciliation(ReconciliationConfig{
+		Finder: finder,
+		Policy: reconcile.PolicyV1(),
+	}); err != nil {
+		t.Fatalf("ConfigureReconciliation() error = %v", err)
+	}
+	input := "Title,Object Model,Full Title,Upload ID,DOI,Resource Type\nExample,Digital Document,Example,1,10.1234/example,Book\n"
+	result, err := engine.Matches(context.Background(), strings.NewReader(input), "skip")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,6 +317,9 @@ func TestCrosswalkEngineMatchesUsesIdentifierFirstAndEmitsReviewCSV(t *testing.T
 	if !bytes.Contains(result.ReviewCSV, []byte("skip or review metadata update")) {
 		t.Fatalf("review CSV = %s", result.ReviewCSV)
 	}
+	if err := result.Report.Provenance.Validate(); err != nil {
+		t.Fatalf("report provenance is invalid: %v", err)
+	}
 }
 
 func TestCrosswalkEngineMatchesPreservesConfiguredProfileProvenance(t *testing.T) {
@@ -307,7 +332,7 @@ func TestCrosswalkEngineMatchesPreservesConfiguredProfileProvenance(t *testing.T
 	if err := engine.ConfigureReconciliation(ReconciliationConfig{Policy: reconcile.PolicyV1(), Provenance: provenance}); err != nil {
 		t.Fatal(err)
 	}
-	input := "Title,Object Model,Full Title,Upload ID,DOI\nExample,Digital Document,Example,1,10.1234/example\n"
+	input := "Title,Object Model,Full Title,Upload ID,DOI,Resource Type\nExample,Digital Document,Example,1,10.1234/example,Book\n"
 	result, err := engine.Matches(context.Background(), strings.NewReader(input), "assume-new")
 	if err != nil {
 		t.Fatal(err)
@@ -345,9 +370,9 @@ func TestCrosswalkEngineRejectsMismatchedReconciliationProvenance(t *testing.T) 
 }
 
 func TestCrosswalkEngineMatchesAssumeNewStillDetectsBatchDuplicates(t *testing.T) {
-	input := "Title,Object Model,Full Title,Upload ID,DOI\n" +
-		"Example,Digital Document,Example,1,10.1234/example\n" +
-		"Example,Digital Document,Example,2,10.1234/example\n"
+	input := "Title,Object Model,Full Title,Upload ID,DOI,Resource Type\n" +
+		"Example,Digital Document,Example,1,10.1234/example,Book\n" +
+		"Example,Digital Document,Example,2,10.1234/example,Book\n"
 	result, err := NewCrosswalkEngine().Matches(context.Background(), strings.NewReader(input), "assume-new")
 	if err != nil {
 		t.Fatal(err)
@@ -370,7 +395,7 @@ func TestCrosswalkEngineTransformPlansWorkbenchArtifacts(t *testing.T) {
 	}{
 		{
 			name:         "create",
-			csv:          "Title,Object Model,Full Title,Upload ID\nExample,Digital Document,Example full,1\n",
+			csv:          "Title,Object Model,Full Title,Upload ID,Resource Type\nExample,Digital Document,Example full,1,Book\n",
 			artifactName: "target.csv",
 			contains:     "Example",
 		},
@@ -382,9 +407,9 @@ func TestCrosswalkEngineTransformPlansWorkbenchArtifacts(t *testing.T) {
 		},
 		{
 			name:         "add media relative",
-			csv:          "Node ID,File Path\n123,Coplay-Echoes\\image.tif\n",
+			csv:          "Node ID,File Path\n123,Example-Gazette\\image.tif\n",
 			artifactName: "target.add_media.csv",
-			contains:     "/mnt/islandora_staging/Coplay-Echoes/image.tif",
+			contains:     "/mnt/islandora_staging/Example-Gazette/image.tif",
 		},
 		{
 			name:         "add media absolute",
@@ -443,7 +468,7 @@ func TestCrosswalkEngineTransformManifestBindsReconciliationProfile(t *testing.T
 	}); err != nil {
 		t.Fatalf("ConfigureReconciliation() error = %v", err)
 	}
-	artifacts, err := engine.Transform(context.Background(), strings.NewReader("Title,Object Model,Full Title,Upload ID\nExample,Digital Document,Example,1\n"))
+	artifacts, err := engine.Transform(context.Background(), strings.NewReader("Title,Object Model,Full Title,Upload ID,Resource Type\nExample,Digital Document,Example,1,Book\n"))
 	if err != nil {
 		t.Fatalf("Transform() error = %v", err)
 	}
@@ -520,11 +545,11 @@ func TestCrosswalkEngineRejectsSpecAndProfileFromDifferentModels(t *testing.T) {
 
 func TestCrosswalkEngineTransformStagesDisallowedAbsolutePathsAndRejectsURLs(t *testing.T) {
 	engine := NewCrosswalkEngine()
-	artifacts, err := engine.Transform(context.Background(), strings.NewReader("Node ID,File Path\n123,/etc/passwd\n"))
+	artifacts, err := engine.Transform(context.Background(), strings.NewReader("Node ID,File Path\n123,/etc/passwd.txt\n"))
 	if err != nil {
 		t.Fatalf("Transform() disallowed absolute error = %v", err)
 	}
-	if len(artifacts) != 2 || artifacts[1].Name != workbenchformat.ArtifactManifestName || !bytes.Contains(artifacts[0].Data, []byte("/mnt/islandora_staging/etc/passwd")) {
+	if len(artifacts) != 2 || artifacts[1].Name != workbenchformat.ArtifactManifestName || !bytes.Contains(artifacts[0].Data, []byte("/mnt/islandora_staging/etc/passwd.txt")) {
 		t.Fatalf("Transform() disallowed absolute artifacts = %#v", artifacts)
 	}
 
@@ -535,8 +560,8 @@ func TestCrosswalkEngineTransformStagesDisallowedAbsolutePathsAndRejectsURLs(t *
 }
 
 func TestCrosswalkEngineTransformPlansSupplementalOverflow(t *testing.T) {
-	input := "Title,Object Model,Full Title,Upload ID,Supplemental File\n" +
-		"Example,Digital Document,Example,1,one.csv ; two.csv ; three.csv\n"
+	input := "Title,Object Model,Full Title,Upload ID,Supplemental File,Resource Type\n" +
+		"Example,Digital Document,Example,1,one.csv ; two.csv ; three.csv,Book\n"
 	artifacts, err := NewCrosswalkEngine().Transform(context.Background(), strings.NewReader(input))
 	if err != nil {
 		t.Fatalf("Transform() error = %v", err)
@@ -572,7 +597,7 @@ func TestCrosswalkEngineTransformPlansExistingSupplementalOverflow(t *testing.T)
 	}
 }
 
-func TestCrosswalkEngineTransformNormalizesRealFabricatorFixture(t *testing.T) {
+func TestCrosswalkEngineTransformNormalizesSyntheticFabricatorFixture(t *testing.T) {
 	fixture, err := os.Open(filepath.Join("..", "..", "format", "csv", "testdata", "fabricator-sample1.csv"))
 	if err != nil {
 		t.Fatalf("open Fabricator fixture: %v", err)
@@ -583,7 +608,7 @@ func TestCrosswalkEngineTransformNormalizesRealFabricatorFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Transform() error = %v", err)
 	}
-	want := []byte("/mnt/islandora_staging/Coplay-Echoes/Coplay-Echoes-1943-09/Coplay-Echoes-1943-09_001.tif")
+	want := []byte("/mnt/islandora_staging/Example-Gazette/Example-Gazette-2001-09/Example-Gazette-2001-09_001.tif")
 	for _, artifact := range artifacts {
 		if artifact.Name == "target.csv" {
 			if !bytes.Contains(artifact.Data, want) {
@@ -605,7 +630,7 @@ func TestCrosswalkEngineConcurrentTransformsDoNotShareState(t *testing.T) {
 		go func() {
 			defer wait.Done()
 			title := fmt.Sprintf("Record %d", index)
-			input := fmt.Sprintf("Title,Object Model,Full Title,Upload ID\n%s,Digital Document,%s,%d\n", title, title, index+1)
+			input := fmt.Sprintf("Title,Object Model,Full Title,Upload ID,Resource Type\n%s,Digital Document,%s,%d,Book\n", title, title, index+1)
 			artifacts, err := engine.Transform(context.Background(), strings.NewReader(input))
 			if err != nil {
 				errorsCh <- fmt.Errorf("request %d: %w", index, err)

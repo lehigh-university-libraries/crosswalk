@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
+	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
@@ -21,6 +25,8 @@ import (
 )
 
 const sep = "|"
+
+var workbenchCreatedPattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$`)
 
 // workbenchRow holds a serialized record's column values and any associated agent rows.
 type workbenchRow struct {
@@ -356,16 +362,9 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 				if !field.AppliesTo(opts.Operation) {
 					continue
 				}
-				value := ""
-				if profileColumns != nil {
-					value = profileColumns[field.Name]
-				}
-				if profileColumns == nil || profileTransportColumn(field.Name) {
-					var valueErr error
-					value, valueErr = targetFieldValue(record, field.Hub, cols, delimiter)
-					if valueErr != nil {
-						return fmt.Errorf("record %d target field %q: %w", index+1, field.Name, valueErr)
-					}
+				value, valueErr := serializedTargetFieldValue(record, field, cols, profileColumns, delimiter)
+				if valueErr != nil {
+					return fmt.Errorf("record %d target field %q: %w", index+1, field.Name, valueErr)
 				}
 				if value == "" {
 					value = field.Default
@@ -429,6 +428,9 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 }
 
 func normalizeFileColumns(cols map[string]string, record *hubv1.Record, transformation *spec.Transformation, delimiter string) error {
+	if err := validateSupplementalFileCardinality(record); err != nil {
+		return err
+	}
 	delete(cols, "file")
 	delete(cols, "supplemental_file")
 	primary := make([]string, 0)
@@ -450,11 +452,22 @@ func normalizeFileColumns(cols map[string]string, record *hubv1.Record, transfor
 	if len(primary) > 0 {
 		cols["file"] = strings.Join(primary, delimiter)
 	}
-	if len(supplemental) > 1 {
-		return fmt.Errorf("multiple supplemental files require artifact planning so each file receives its own Workbench media row")
-	}
 	if len(supplemental) > 0 {
 		cols["supplemental_file"] = strings.Join(supplemental, delimiter)
+	}
+	return nil
+}
+
+func validateSupplementalFileCardinality(record *hubv1.Record) error {
+	count := 0
+	for _, file := range record.GetFiles() {
+		if file == nil || file.GetPath() == "" || file.GetRole() != "supplemental" {
+			continue
+		}
+		count++
+		if count > 1 {
+			return fmt.Errorf("multiple supplemental files require artifact planning so each file receives its own Workbench media row")
+		}
 	}
 	return nil
 }
@@ -562,7 +575,19 @@ func targetFieldValue(record *hubv1.Record, hubPath string, canonical map[string
 	if strings.HasPrefix(hubPath, "Extra.") {
 		return extraString(record, strings.TrimPrefix(hubPath, "Extra."), delimiter)
 	}
+	slog.Warn("Islandora Workbench target has no mapping for Hub path", "hub_path", hubPath)
 	return "", nil
+}
+
+// serializedTargetFieldValue projects one target field exactly as Serialize
+// does before applying a field default. Keeping operation routing on this same
+// projection prevents Hub values outside a hand-maintained field subset from
+// being mistaken for an add-media-only record and silently omitted.
+func serializedTargetFieldValue(record *hubv1.Record, field spec.Field, canonical, profileColumns map[string]string, delimiter string) (string, error) {
+	if profileColumns != nil && !profileTransportColumn(field.Name) {
+		return profileColumns[field.Name], nil
+	}
+	return targetFieldValue(record, field.Hub, canonical, delimiter)
 }
 
 func profileTransportColumn(name string) bool {
@@ -609,6 +634,11 @@ func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, tr
 	}
 	result := make(map[string]string, len(entity))
 	for fieldName, raw := range entity {
+		if fieldName == "changed" {
+			// Drupal owns this modification timestamp. It can still be present in
+			// a reusable system profile, but Workbench does not accept it as input.
+			continue
+		}
 		declared := fields[fieldName]
 		if len(declared) == 0 {
 			return nil, fmt.Errorf("drupal profile emitted undeclared Workbench field %q", fieldName)
@@ -618,7 +648,13 @@ func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, tr
 			return nil, fmt.Errorf("drupal profile emitted field %q without an encodable mapping", fieldName)
 		}
 		for _, field := range declared {
-			cell, err := profileWorkbenchCell(field, resolvedField, raw, delimiter)
+			var cell string
+			var err error
+			if strings.EqualFold(strings.TrimSpace(resolvedField.SourceType), "created") {
+				cell, err = profileWorkbenchCreatedCell(record, field, resolvedField, raw, delimiter)
+			} else {
+				cell, err = profileWorkbenchCellForRecord(record, field, resolvedField, raw, delimiter)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("encoding Drupal field %q for Workbench column %q: %w", fieldName, field.Name, err)
 			}
@@ -631,6 +667,10 @@ func recordToProfileColumns(record *hubv1.Record, compiled *profile.Compiled, tr
 }
 
 func profileWorkbenchCell(field spec.Field, resolved profile.ResolvedField, raw any, delimiter string) (string, error) {
+	return profileWorkbenchCellForRecord(nil, field, resolved, raw, delimiter)
+}
+
+func profileWorkbenchCellForRecord(record *hubv1.Record, field spec.Field, resolved profile.ResolvedField, raw any, delimiter string) (string, error) {
 	values, ok := raw.([]any)
 	if !ok {
 		return "", fmt.Errorf("profile encoder returned %T, want []any", raw)
@@ -641,7 +681,11 @@ func profileWorkbenchCell(field spec.Field, resolved profile.ResolvedField, raw 
 		if !ok {
 			return "", fmt.Errorf("value %d has type %T, want a Drupal field object", index+1, value)
 		}
-		cell, err := profileWorkbenchValue(field, resolved, object)
+		bundleHint, err := profileTypedRelationBundleHint(record, field, resolved, index)
+		if err != nil {
+			return "", fmt.Errorf("value %d: %w", index+1, err)
+		}
+		cell, err := profileWorkbenchValue(field, resolved, object, bundleHint)
 		if err != nil {
 			return "", fmt.Errorf("value %d: %w", index+1, err)
 		}
@@ -652,10 +696,13 @@ func profileWorkbenchCell(field spec.Field, resolved profile.ResolvedField, raw 
 	return strings.Join(encoded, delimiter), nil
 }
 
-func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, value map[string]any) (string, error) {
+func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, value map[string]any, bundleHint string) (string, error) {
 	if len(value) == 0 {
 		return "", nil
 	}
+	// The Drupal encoder is bound to a sealed model and profile, so every
+	// emitted attribute must be accounted for here. Ignoring an unfamiliar key
+	// would silently discard metadata and mask a stale or mismatched profile.
 	sourceType := strings.ToLower(strings.TrimSpace(resolved.SourceType))
 	if sourceType == "typed_relation" {
 		if _, hasValue := value["value"]; hasValue {
@@ -664,15 +711,23 @@ func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, val
 	}
 	switch sourceType {
 	case "string", "string_long", "string_textfield", "text", "text_long", "text_with_summary",
-		"email", "telephone", "boolean", "integer", "list_integer", "decimal", "float",
-		"datetime", "daterange", "edtf":
+		"email", "telephone", "boolean", "integer", "list_integer", "list_string", "decimal", "float",
+		"datetime", "daterange", "edtf", "created":
 		return profileScalarAttribute(value, "value")
 	case "link":
-		return profileSelectedAttribute(value, "uri", "title")
+		return profileWorkbenchLinkValue(value)
 	case "entity_reference":
 		return profileSelectedAttribute(value, "target_id", "target_type", "target_uuid", "url")
 	case "typed_relation":
-		return profileTypedRelation(value, resolved)
+		return profileTypedRelation(value, resolved, bundleHint)
+	case "geolocation":
+		return profileWorkbenchGeolocationValue(value)
+	case "authority_link":
+		return profileWorkbenchAuthorityLinkValue(value)
+	case "media_track":
+		return profileWorkbenchMediaTrackValue(value)
+	case "linked_data_field":
+		return profileWorkbenchLinkedDataValue(value)
 	case "textfield_attr", "textarea_attr":
 		return profileAttributeJSON(value, "value", "attr0")
 	case "part_detail":
@@ -682,6 +737,172 @@ func profileWorkbenchValue(field spec.Field, resolved profile.ResolvedField, val
 	default:
 		return "", fmt.Errorf("drupal source type %q has no explicit Workbench cell encoding", resolved.SourceType)
 	}
+}
+
+func profileWorkbenchCreatedCell(record *hubv1.Record, field spec.Field, resolved profile.ResolvedField, raw any, delimiter string) (string, error) {
+	for _, date := range record.GetDates() {
+		if date == nil || date.GetType() != hubv1.DateType_DATE_TYPE_CREATED || strings.TrimSpace(date.GetRaw()) == "" {
+			continue
+		}
+		return validateWorkbenchCreatedTimestamp(date.GetRaw())
+	}
+	cell, err := profileWorkbenchCell(field, resolved, raw, delimiter)
+	if err != nil {
+		return "", err
+	}
+	return validateWorkbenchCreatedTimestamp(cell)
+}
+
+func validateWorkbenchCreatedTimestamp(value string) (string, error) {
+	value = strings.TrimSpace(value)
+	if !workbenchCreatedPattern.MatchString(value) {
+		return "", fmt.Errorf("created value %q must use Workbench timestamp grammar YYYY-MM-DDTHH:MM:SS+HH:MM", value)
+	}
+	if _, err := time.Parse(time.RFC3339, value); err != nil {
+		return "", fmt.Errorf("created value %q is not a valid RFC 3339 timestamp: %w", value, err)
+	}
+	return value, nil
+}
+
+func profileWorkbenchGeolocationValue(value map[string]any) (string, error) {
+	if raw, ok, err := profileWorkbenchRawValue(value); ok || err != nil {
+		return raw, err
+	}
+	if err := requireProfileAttributes(value, "geolocation", "lat", "lng"); err != nil {
+		return "", err
+	}
+	latitude, err := requiredProfileString(value, "lat")
+	if err != nil {
+		return "", err
+	}
+	longitude, err := requiredProfileString(value, "lng")
+	if err != nil {
+		return "", err
+	}
+	return latitude + "," + longitude, nil
+}
+
+func profileWorkbenchAuthorityLinkValue(value map[string]any) (string, error) {
+	if raw, ok, err := profileWorkbenchRawValue(value); ok || err != nil {
+		return raw, err
+	}
+	if err := requireProfileAttributes(value, "authority link", "source", "uri", "title"); err != nil {
+		return "", err
+	}
+	source, err := requiredProfileString(value, "source")
+	if err != nil {
+		return "", err
+	}
+	uri, err := requiredProfileString(value, "uri")
+	if err != nil {
+		return "", err
+	}
+	title, err := optionalProfileString(value, "title")
+	if err != nil {
+		return "", err
+	}
+	result := source + "%%" + uri
+	if title != "" {
+		result += "%%" + title
+	}
+	return result, nil
+}
+
+func profileWorkbenchMediaTrackValue(value map[string]any) (string, error) {
+	if raw, ok, err := profileWorkbenchRawValue(value); ok || err != nil {
+		return raw, err
+	}
+	if err := requireProfileAttributes(value, "media track", "label", "kind", "srclang", "file_path", "url"); err != nil {
+		return "", err
+	}
+	label, err := requiredProfileString(value, "label")
+	if err != nil {
+		return "", err
+	}
+	kind, err := requiredProfileString(value, "kind")
+	if err != nil {
+		return "", err
+	}
+	language, err := requiredProfileString(value, "srclang")
+	if err != nil {
+		return "", err
+	}
+	filePath, err := optionalProfileString(value, "file_path")
+	if err != nil {
+		return "", err
+	}
+	if filePath == "" {
+		filePath, err = requiredProfileString(value, "url")
+		if err != nil {
+			return "", err
+		}
+		filePath = path.Base(filePath)
+	}
+	return strings.Join([]string{label, kind, language, filePath}, ":"), nil
+}
+
+func profileWorkbenchLinkedDataValue(value map[string]any) (string, error) {
+	if raw, ok, err := profileWorkbenchRawValue(value); ok || err != nil {
+		return raw, err
+	}
+	if err := requireProfileAttributes(value, "linked data", "url", "value"); err != nil {
+		return "", err
+	}
+	url, err := requiredProfileString(value, "url")
+	if err != nil {
+		return "", err
+	}
+	label, err := optionalProfileString(value, "value")
+	if err != nil {
+		return "", err
+	}
+	if label == "" {
+		return url, nil
+	}
+	return url + "%%" + label, nil
+}
+
+func profileWorkbenchRawValue(value map[string]any) (string, bool, error) {
+	raw, exists := value["value"]
+	if !exists || len(value) != 1 {
+		return "", false, nil
+	}
+	text, err := profileScalarString(raw)
+	return text, true, err
+}
+
+func requireProfileAttributes(value map[string]any, label string, allowed ...string) error {
+	permitted := make(map[string]struct{}, len(allowed))
+	for _, attribute := range allowed {
+		permitted[attribute] = struct{}{}
+	}
+	for attribute := range value {
+		if _, ok := permitted[attribute]; !ok {
+			return fmt.Errorf("%s has unsupported attribute %q", label, attribute)
+		}
+	}
+	return nil
+}
+
+func profileWorkbenchLinkValue(value map[string]any) (string, error) {
+	allowed := map[string]struct{}{"uri": {}, "title": {}}
+	for key := range value {
+		if _, exists := allowed[key]; !exists {
+			return "", fmt.Errorf("link value has unsupported attribute %q", key)
+		}
+	}
+	uri, err := requiredProfileString(value, "uri")
+	if err != nil {
+		return "", err
+	}
+	title, err := optionalProfileString(value, "title")
+	if err != nil {
+		return "", err
+	}
+	if title == "" {
+		return uri, nil
+	}
+	return uri + "%%" + title, nil
 }
 
 func profileSelectedAttribute(value map[string]any, selected string, allowed ...string) (string, error) {
@@ -712,7 +933,7 @@ func profileScalarAttribute(value map[string]any, attribute string) (string, err
 	return profileScalarString(raw)
 }
 
-func profileTypedRelation(value map[string]any, resolved profile.ResolvedField) (string, error) {
+func profileTypedRelation(value map[string]any, resolved profile.ResolvedField, bundleHint string) (string, error) {
 	allowed := map[string]struct{}{"target_id": {}, "target_type": {}, "rel_type": {}}
 	for key := range value {
 		if _, exists := allowed[key]; !exists {
@@ -723,16 +944,19 @@ func profileTypedRelation(value map[string]any, resolved profile.ResolvedField) 
 	if err != nil {
 		return "", err
 	}
-	_, err = requiredProfileString(value, "target_type")
+	targetType, err := requiredProfileString(value, "target_type")
 	if err != nil {
 		return "", err
 	}
-	if resolved.Reference == nil || len(resolved.Reference.Bundles) != 1 {
-		return "", fmt.Errorf("typed relation requires exactly one profile reference bundle for deterministic Workbench encoding")
+	if resolved.Reference == nil || len(resolved.Reference.Bundles) == 0 {
+		return "", fmt.Errorf("typed relation requires model-declared profile reference bundles")
 	}
-	targetBundle := resolved.Reference.Bundles[0]
-	if strings.TrimSpace(targetBundle) == "" {
-		return "", fmt.Errorf("typed relation profile reference bundle is empty")
+	if expected := strings.TrimSpace(resolved.Reference.EntityType); expected != "" && targetType != expected {
+		return "", fmt.Errorf("typed relation target type %q does not match model entity type %q", targetType, expected)
+	}
+	targetBundle, targetValue, err := profileTypedRelationTarget(targetID, bundleHint, resolved.Reference.Bundles)
+	if err != nil {
+		return "", err
 	}
 	role, err := optionalProfileString(value, "rel_type")
 	if err != nil {
@@ -742,8 +966,106 @@ func profileTypedRelation(value map[string]any, resolved profile.ResolvedField) 
 	if role != "" {
 		parts = append(parts, role)
 	}
-	parts = append(parts, targetBundle, targetID)
+	parts = append(parts, targetBundle, targetValue)
 	return strings.Join(parts, ":"), nil
+}
+
+func profileTypedRelationTarget(targetID, bundleHint string, bundles []string) (string, string, error) {
+	allowed := make(map[string]struct{}, len(bundles))
+	ordered := make([]string, 0, len(bundles))
+	for _, bundle := range bundles {
+		bundle = strings.TrimSpace(bundle)
+		if bundle == "" {
+			return "", "", fmt.Errorf("typed relation profile reference bundle is empty")
+		}
+		if _, exists := allowed[bundle]; exists {
+			continue
+		}
+		allowed[bundle] = struct{}{}
+		ordered = append(ordered, bundle)
+	}
+	for _, bundle := range ordered {
+		if target, found := strings.CutPrefix(targetID, bundle+":"); found {
+			if strings.TrimSpace(target) == "" {
+				return "", "", fmt.Errorf("typed relation target for bundle %q is empty", bundle)
+			}
+			return bundle, target, nil
+		}
+	}
+	if prefix, _, found := strings.Cut(targetID, ":"); found && isWorkbenchContributorBundle(prefix) {
+		return "", "", fmt.Errorf("typed relation bundle %q is outside model-declared bundles %s", prefix, strings.Join(ordered, ", "))
+	}
+	if bundleHint = strings.TrimSpace(bundleHint); bundleHint != "" {
+		if _, exists := allowed[bundleHint]; !exists {
+			return "", "", fmt.Errorf("typed relation bundle %q is outside model-declared bundles %s", bundleHint, strings.Join(ordered, ", "))
+		}
+		return bundleHint, targetID, nil
+	}
+	if len(ordered) == 1 {
+		return ordered[0], targetID, nil
+	}
+	return "", "", fmt.Errorf("typed relation target %q does not identify one of model-declared bundles %s", targetID, strings.Join(ordered, ", "))
+}
+
+func isWorkbenchContributorBundle(value string) bool {
+	switch strings.TrimSpace(value) {
+	case "person", "family", "corporate_body", "organization":
+		return true
+	default:
+		return false
+	}
+}
+
+func profileTypedRelationBundleHint(record *hubv1.Record, field spec.Field, resolved profile.ResolvedField, index int) (string, error) {
+	if record == nil || !strings.EqualFold(strings.TrimSpace(resolved.SourceType), "typed_relation") {
+		return "", nil
+	}
+	base, _, _ := strings.Cut(field.Hub, ".")
+	if base != "Contributors" || index < 0 || index >= len(record.GetContributors()) {
+		return "", nil
+	}
+	contributor := record.GetContributors()[index]
+	if contributor == nil {
+		return "", fmt.Errorf("typed relation contributor is nil")
+	}
+	if resolved.Reference == nil {
+		return "", nil
+	}
+	allowed := make(map[string]struct{}, len(resolved.Reference.Bundles))
+	for _, bundle := range resolved.Reference.Bundles {
+		allowed[bundle] = struct{}{}
+	}
+	choose := func(candidates ...string) string {
+		for _, candidate := range candidates {
+			if _, ok := allowed[candidate]; ok {
+				return candidate
+			}
+		}
+		return ""
+	}
+	switch contributor.GetType() {
+	case hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON:
+		if bundle := choose("person"); bundle != "" {
+			return bundle, nil
+		}
+		return "person", nil
+	case hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION:
+		if bundle := choose("corporate_body", "organization"); bundle != "" {
+			return bundle, nil
+		}
+		organizationBundles := make([]string, 0, len(allowed))
+		for bundle := range allowed {
+			if bundle != "person" {
+				organizationBundles = append(organizationBundles, bundle)
+			}
+		}
+		if len(organizationBundles) == 1 {
+			return organizationBundles[0], nil
+		}
+		return "corporate_body", nil
+	default:
+		return "", nil
+	}
 }
 
 func profileAttributeJSON(value map[string]any, valueAttribute, discriminatorAttribute string) (string, error) {
@@ -858,6 +1180,17 @@ func drupalFieldBase(name string) string {
 // recordToColumns converts a hub record to a map of workbench column values
 // and a slice of agent rows (one per contributor with extended metadata).
 func recordToColumns(record *hubv1.Record, delimiter string) (map[string]string, [][]string, error) {
+	if err := validateSupplementalFileCardinality(record); err != nil {
+		return nil, nil, err
+	}
+	return projectRecordToColumns(record, delimiter)
+}
+
+// projectRecordToColumns builds the canonical intermediate projection used
+// while artifact routing is still deciding how to split supplemental media.
+// It must not be emitted directly because Workbench accepts one supplemental
+// path per parent row.
+func projectRecordToColumns(record *hubv1.Record, delimiter string) (map[string]string, [][]string, error) {
 	cols := make(map[string]string)
 	var agents [][]string
 

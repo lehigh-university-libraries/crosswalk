@@ -2,11 +2,13 @@ site_name: Crosswalk
 site_description: Convert scholarly metadata through a validated hub
 repo_url: https://github.com/lehigh-university-libraries/crosswalk
 site_url: !ENV [ SITE_URL, "https://lehigh-university-libraries.github.io/crosswalk/" ]
-docs_dir: .
-edit_uri: edit/main/docs/
+docs_dir: content
+site_dir: site
+edit_uri: edit/main/docs/content/
 
 theme:
   name: material
+  custom_dir: overrides
   features:
     - navigation.footer
     - navigation.indexes
@@ -64,9 +66,13 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Architecture: architecture.md
+  - Hub records and datasets: hub-dataset.md
   - Profiles and models: profiles.md
+  - Transformation specifications: specifications.md
+  - Acquisition and network safety: acquisition.md
   - Existing-item reconciliation: reconciliation.md
   - Islandora Workbench: workbench.md
   - HTTP service: http-service.md
   - Format support: formats.md
+  - Boundaries and migration: limitations.md
   - Contributing: contributing.md

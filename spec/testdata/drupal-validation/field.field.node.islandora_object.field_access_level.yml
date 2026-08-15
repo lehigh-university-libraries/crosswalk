@@ -1,0 +1,9 @@
+id: node.islandora_object.field_access_level
+field_name: field_access_level
+entity_type: node
+bundle: islandora_object
+label: 'Access Level'
+description: 'Who may access the object.'
+required: false
+settings: { }
+field_type: list_string

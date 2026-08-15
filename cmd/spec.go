@@ -123,6 +123,7 @@ func newSpecCompileDrupalCmd() *cobra.Command {
 	var configPath string
 	var bundle string
 	var profileName string
+	var allowNewTaxonomyTerms bool
 	var outputPath string
 	var outputFormat string
 	command := &cobra.Command{
@@ -147,7 +148,7 @@ The command performs no network access and never extracts archive members.`,
 				if loadErr != nil {
 					return fmt.Errorf("loading Drupal profile %q: %w", profileName, loadErr)
 				}
-				transformation, err = transformationspec.CompileDrupalProfile(stored.Model, stored.Compiled, transformationspec.DrupalCompileOptions{})
+				transformation, err = transformationspec.CompileDrupalProfile(stored.Model, stored.Compiled, transformationspec.DrupalCompileOptions{AllowNewTaxonomyTerms: allowNewTaxonomyTerms})
 			} else {
 				if strings.TrimSpace(configPath) == "" {
 					return fmt.Errorf("--config is required when --profile is not supplied")
@@ -155,7 +156,7 @@ The command performs no network access and never extracts archive members.`,
 				if strings.TrimSpace(bundle) == "" {
 					return fmt.Errorf("--bundle is required when --profile is not supplied")
 				}
-				transformation, err = compileDrupalPath(configPath, transformationspec.DrupalCompileOptions{Bundle: bundle})
+				transformation, err = compileDrupalPath(configPath, transformationspec.DrupalCompileOptions{Bundle: bundle, AllowNewTaxonomyTerms: allowNewTaxonomyTerms})
 			}
 			if err != nil {
 				return err
@@ -167,6 +168,7 @@ The command performs no network access and never extracts archive members.`,
 	command.Flags().StringVar(&configPath, "config", "", "Drupal config/sync directory or config-export .tar.gz")
 	command.Flags().StringVar(&bundle, "bundle", "", "Drupal node bundle, such as islandora_object")
 	command.Flags().StringVar(&profileName, "profile", "", "published Drupal profile to bind to the Workbench transformation")
+	command.Flags().BoolVar(&allowNewTaxonomyTerms, "allow-new-taxonomy-terms", false, "allow missing plain taxonomy names for Workbench creation; IDs and URIs must still resolve")
 	command.Flags().StringVarP(&outputPath, "output", "o", "-", "output path, or - for stdout")
 	command.Flags().StringVar(&outputFormat, "format", "", "output format: json or yaml (inferred from --output, default yaml)")
 	return command

@@ -10,18 +10,18 @@ func FabricatorWorkbench() *Transformation {
 	media := []Operation{OperationCreate, OperationAddMedia}
 
 	fields := []Field{
-		{Name: "id", Label: "Upload ID", Hub: "Extra.id", Codec: "unsigned", Cardinality: 1, Operations: createOnly},
+		{Name: "id", Label: "Upload ID", Hub: "Extra.id", Codec: "unsigned", Cardinality: 1, RequiredFor: createOnly, Operations: createOnly},
 		{Name: "parent_id", Label: "Page/Item Parent ID", Hub: "Extra.parent_id", Codec: "unsigned", Cardinality: 1, Operations: createOnly},
 		{Name: "field_weight", Label: "Child Sort Order", Hub: "Extra.field_weight", Codec: "integer", Cardinality: 1, Operations: createUpdate},
-		{Name: "node_id", Label: "Node ID", Aliases: []string{"nid"}, Hub: "Extra.node_id", Codec: "unsigned", Cardinality: 1, Operations: []Operation{OperationUpdate, OperationAddMedia}},
-		{Name: "field_member_of", Label: "Parent Collection", Hub: "Relations.member_of", Codec: "multi", Operations: createUpdate},
+		{Name: "node_id", Label: "Node ID", Aliases: []string{"nid"}, Hub: "Extra.node_id", Codec: "unsigned", Cardinality: 1, Operations: []Operation{OperationUpdate, OperationAddMedia}, Validations: []Validation{{Rule: ValidationContextNodeExists, Phase: ValidationPhaseContext}}},
+		{Name: "field_member_of", Label: "Parent Collection", Hub: "Relations.member_of", Codec: "unsigned", Operations: createUpdate, Validations: []Validation{{Rule: ValidationContextNodeExists, Phase: ValidationPhaseContext}}},
 		{Name: "field_model", Label: "Object Model", Hub: "ObjectModel", Cardinality: 1, RequiredFor: createOnly, Operations: createUpdate},
-		{Name: "file", Label: "File Path", Hub: "Files.primary", Codec: "file", Cardinality: 1, Operations: media},
-		{Name: "field_add_coverpage", Label: "Add Coverpage (Y/N)", Hub: "AddCoverpage", Codec: "boolean", Cardinality: 1, Operations: createUpdate},
-		{Name: "title", Label: "Title", Hub: "Title", Cardinality: 1, RequiredFor: createOnly, Operations: createUpdate},
+		{Name: "file", Label: "File Path", Hub: "Files.primary", Codec: "file", Cardinality: 1, Operations: media, Validations: []Validation{{Rule: ValidationMediaExtension, MediaTypes: fabricatorMediaExtensionPolicies()}, {Rule: ValidationContextFileReadable, Phase: ValidationPhaseContext}}},
+		{Name: "field_add_coverpage", Label: "Add Coverpage (Y/N)", Hub: "AddCoverpage", Codec: "boolean", Cardinality: 1, Operations: createUpdate, Validations: []Validation{{Rule: ValidationEnum, Values: []string{"Yes", "No"}}}},
+		{Name: "title", Label: "Title", Hub: "Title", Cardinality: 1, RequiredFor: createOnly, Operations: createUpdate, Validations: []Validation{{Rule: ValidationMaximumRunes, Limit: 255}}},
 		{Name: "field_full_title", Label: "Full Title", Hub: "FullTitle", Cardinality: 1, RequiredFor: createOnly, Operations: createUpdate},
-		{Name: "published", Label: "Make Public (Y/N)", Hub: "IsPublic", Codec: "boolean", Cardinality: 1, Operations: createUpdate},
-		{Name: "field_linked_agent.name", Label: "Creator/Contributor Name 1", Aliases: []string{"Contributor Name 1", "Contributor"}, Hub: "Contributors.Name", Codec: "contributors", Operations: createUpdate},
+		{Name: "published", Label: "Make Public (Y/N)", Hub: "IsPublic", Codec: "boolean", Cardinality: 1, Operations: createUpdate, Validations: []Validation{{Rule: ValidationEnum, Values: []string{"Yes", "No"}}}},
+		{Name: "field_linked_agent.name", Label: "Creator/Contributor Name 1", Aliases: []string{"Contributor Name 1", "Contributor"}, Hub: "Contributors.Name", Codec: "contributors", Operations: createUpdate, Validations: []Validation{{Rule: ValidationContributor}}},
 		{Name: "field_linked_agent.rel_type", Label: "Contributor Relator 1", Hub: "Contributors.RoleCode", Codec: "contributors", Operations: createUpdate},
 		{Name: "field_linked_agent.vid", Label: "Contributor Type 1", Hub: "Contributors.Type", Codec: "contributors", Operations: createUpdate},
 		{Name: "field_linked_agent.entity.field_identifier.attr0=orcid", Label: "ORCID Number 1", Hub: "Contributors.ORCID", Codec: "contributors", Operations: createUpdate},
@@ -29,7 +29,7 @@ func FabricatorWorkbench() *Transformation {
 		{Name: "field_linked_agent.entity.field_email", Label: "Contributor Email 1", Hub: "Contributors.Email", Codec: "contributors", Operations: createUpdate},
 		{Name: "field_linked_agent.entity.field_relationships", Label: "Contributor Institution 1", Hub: "Contributors.Affiliation", Codec: "contributors", Operations: createUpdate},
 		{Name: "field_department_name", Label: "Related Department", Hub: "Departments", Codec: "multi", Operations: createUpdate},
-		{Name: "field_resource_type", Label: "Resource Type", Hub: "ResourceType", Cardinality: 1, OptionalForObjectModels: []string{"Page", "Sub-Collection"}, Operations: createUpdate},
+		{Name: "field_resource_type", Label: "Resource Type", Hub: "ResourceType", Cardinality: 1, RequiredFor: createOnly, OptionalForObjectModels: []string{"Page", "Sub-Collection"}, Operations: createUpdate},
 		{Name: "field_genre", Label: "Genre (Getty AAT)", Aliases: []string{"Genre __(Getty AAT)__"}, Hub: "Genre", Codec: "multi", Operations: createUpdate},
 		{Name: "field_edtf_date_issued", Label: "Creation Date", Hub: "Dates.issued", Codec: "edtf", Operations: createUpdate},
 		{Name: "field_date_season", Label: "Season", Hub: "Extra.date_season", Cardinality: 1, Operations: createUpdate},
@@ -60,20 +60,25 @@ func FabricatorWorkbench() *Transformation {
 		{Name: "field_subjects_name", Label: "Subject Name (LCNAF)", Aliases: []string{"Subject Name __(LCNAF)__"}, Hub: "Subjects.lcnaf", Codec: "multi", Operations: createUpdate},
 		{Name: "field_geographic_subject.vid=geographic_naf", Label: "Subject Geographic (LCNAF)", Aliases: []string{"Subject Geographic __(LCNAF)__"}, Hub: "Subjects.geographic_naf", Codec: "multi", Operations: createUpdate},
 		{Name: "field_geographic_subject.vid=geographic_local", Label: "Subject Geographic (Local)", Aliases: []string{"Subject Geographic __(Local)__"}, Hub: "Subjects.geographic_local", Codec: "multi", Operations: createUpdate},
-		{Name: "field_subject_hierarchical_geo", Label: "Hierarchical Geographic (Getty TGN)", Aliases: []string{"Hierarchical Geographic __(Getty TGN)__"}, Hub: "Subjects.getty_tgn", Codec: "multi", Operations: createUpdate},
+		{Name: "field_subject_hierarchical_geo", Label: "Hierarchical Geographic (Getty TGN)", Aliases: []string{"Hierarchical Geographic __(Getty TGN)__"}, Hub: "Subjects.getty_tgn", Codec: "multi", Operations: createUpdate, Validations: []Validation{{Rule: ValidationGettyTGN}, {Rule: ValidationContextTGNResolves, Phase: ValidationPhaseContext}}},
 		{Name: "field_related_item.title", Label: "Source Publication Title", Hub: "Publication.Title", Cardinality: 1, Operations: createUpdate},
 		{Name: "field_related_item.identifier_type=issn", Label: "Source Publication L-ISSN", Hub: "Publication.LIssn", Cardinality: 1, Operations: createUpdate},
 		{Name: "field_part_detail.attr0=volume", Label: "Volume Number", Aliases: []string{"field_part_detail.attr0=voume"}, Hub: "Publication.Volume", Cardinality: 1, Operations: createUpdate},
 		{Name: "field_part_detail.attr0=issue", Label: "Issue Number", Hub: "Publication.Issue", Cardinality: 1, Operations: createUpdate},
 		{Name: "field_part_detail.attr0=page", Label: "Page Numbers", Hub: "Publication.Pages", Cardinality: 1, Operations: createUpdate},
-		{Name: "field_identifier.attr0=doi", Label: "DOI", Hub: "Identifiers.doi", Codec: "multi", Operations: createUpdate},
-		{Name: "field_identifier.attr0=uri", Label: "Catalog or ArchivesSpace URL", Hub: "Identifiers.url", Codec: "multi", Operations: createUpdate},
+		{Name: "field_identifier.attr0=doi", Label: "DOI", Hub: "Identifiers.doi", Codec: "multi", Operations: createUpdate, Validations: []Validation{{Rule: ValidationDOI}}},
+		{Name: "field_identifier.attr0=uri", Label: "Catalog or ArchivesSpace URL", Hub: "Identifiers.url", Codec: "multi", Operations: createUpdate, Validations: []Validation{{Rule: ValidationAbsoluteHTTPURL}}},
 		{Name: "field_identifier.attr0=call-number", Label: "Call Number", Hub: "Identifiers.call_number", Codec: "multi", Operations: createUpdate},
 		{Name: "field_identifier.attr0=report-number", Label: "Report Number (included only on ATLSS and Fritz Lab spreadsheet)", Hub: "Identifiers.report_number", Codec: "multi", Operations: createUpdate},
-		{Name: "field_rights", Label: "Rights Statement", Hub: "Rights", Codec: "multi", Operations: createUpdate},
+		{Name: "field_rights", Label: "Rights Statement", Hub: "Rights", Codec: "multi", Operations: createUpdate, Validations: []Validation{{Rule: ValidationRightsStatement}}},
 		{Name: "field_access", Label: "Access", Hub: "AccessCondition", Cardinality: 1, Operations: createUpdate},
-		{Name: "supplemental_file", Label: "Supplemental File", Hub: "Files.supplemental", Codec: "file", Operations: createUpdate},
-		{Name: "unpublished_supplemental_file", Label: "Unpublished Supplemental Files", Hub: "Files.unpublished_supplemental", Codec: "file", Operations: []Operation{OperationUnpublishedSupplemental}},
+		{Name: "supplemental_file", Label: "Supplemental File", Hub: "Files.supplemental", Codec: "file", Operations: createUpdate, Validations: []Validation{{Rule: ValidationMediaExtension, MediaTypes: fabricatorMediaExtensionPolicies()}, {Rule: ValidationContextFileReadable, Phase: ValidationPhaseContext}}},
+		{Name: "unpublished_supplemental_file", Label: "Unpublished Supplemental Files", Hub: "Files.unpublished_supplemental", Codec: "file", Operations: []Operation{OperationCreate, OperationUpdate, OperationUnpublishedSupplemental}, Validations: []Validation{{Rule: ValidationMediaExtension, MediaTypes: fabricatorMediaExtensionPolicies()}, {Rule: ValidationContextFileReadable, Phase: ValidationPhaseContext}}},
+	}
+	for index := range fields {
+		if workbenchSourceRejectsLineBreaks(fields[index]) {
+			fields[index].Validations = append(fields[index].Validations, Validation{Rule: ValidationNoLineBreaks})
+		}
 	}
 
 	targetFields := []Field{
@@ -130,6 +135,36 @@ func FabricatorWorkbench() *Transformation {
 			HumanHeaderRow:      1,
 			MultiValueSeparator: " ; ",
 			Fields:              fields,
+			Validations: []Validation{
+				{Rule: ValidationUnique, Fields: []string{"id"}, Operations: createOnly},
+				{Rule: ValidationPrecedingReference, Fields: []string{"parent_id", "id"}, Operations: createOnly},
+				{Rule: ValidationDifferent, Fields: []string{"parent_id", "id"}, Operations: createOnly},
+				{
+					Rule:       ValidationRequiredAny,
+					Fields:     []string{"field_member_of", "parent_id"},
+					Operations: createOnly,
+					When: &ValidationWhen{
+						Field: "field_model", Operator: ValidationOperatorIn,
+						Values: []string{"Page", "Paged Content"},
+					},
+				},
+				{
+					Rule:       ValidationRequiredWhen,
+					Fields:     []string{"id"},
+					Operations: createOnly,
+					When: &ValidationWhen{
+						Field: "supplemental_file", Operator: ValidationOperatorValueCountGreaterThan, Count: 1,
+					},
+				},
+				{
+					Rule:       ValidationRequiredWhen,
+					Fields:     []string{"id"},
+					Operations: createOnly,
+					When: &ValidationWhen{
+						Field: "unpublished_supplemental_file", Operator: ValidationOperatorValueCountGreaterThan, Count: 1,
+					},
+				},
+			},
 		},
 		Target: Table{
 			Format:              "islandora-workbench",
@@ -148,4 +183,15 @@ func FabricatorWorkbench() *Transformation {
 	}
 	_ = transformation.SealFingerprint()
 	return transformation
+}
+
+func workbenchSourceRejectsLineBreaks(field Field) bool {
+	if field.Codec == "multi" || field.Codec == "contributors" || (field.Codec == "file" && field.Cardinality != 1) {
+		return true
+	}
+	switch field.Hub {
+	case "ObjectModel", "ResourceType", "Departments", "Genre", "PhysicalForm", "Rights":
+		return true
+	}
+	return false
 }

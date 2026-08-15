@@ -479,6 +479,11 @@ func TestModuleValueCodecsRejectAmbiguousOrLossyConversions(t *testing.T) {
 			codec: "boolean", base: "Extra", want: "expected true, false, 1, or 0",
 		},
 		{
+			name:  "resource passed to numeric codec",
+			value: valueObject{typeName: "resource:item", resourceID: 42, displayTitle: "Forty-two"},
+			codec: "integer", base: "Extra", want: `resource value type "resource:item" cannot be decoded by a scalar codec`,
+		},
+		{
 			name:  "opaque semantic target",
 			value: valueObject{typeName: "custom:rating", raw: json.RawMessage(`{"type":"custom:rating","property_id":11,"@value":7}`)},
 			codec: "opaque", base: "Title", want: "can only be mapped to Hub Extra",
@@ -493,6 +498,16 @@ func TestModuleValueCodecsRejectAmbiguousOrLossyConversions(t *testing.T) {
 				t.Fatalf("decode error = %v, want %q", err, test.want)
 			}
 		})
+	}
+}
+
+func TestDecodeTermValuesChecksEmptySnapshotModel(t *testing.T) {
+	t.Parallel()
+
+	model := &schemaModel{propertiesByID: map[int64]property{}, propertiesByTerm: map[string]property{}}
+	_, err := decodeTermValues("dcterms:title", json.RawMessage(`[{"type":"literal","property_id":1,"@value":"Title"}]`), model)
+	if err == nil || !strings.Contains(err.Error(), `property term "dcterms:title" is missing from the snapshot model`) {
+		t.Fatalf("decodeTermValues() error = %v", err)
 	}
 }
 

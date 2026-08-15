@@ -64,10 +64,24 @@ func TestCompileDrupalDirectoryReconcilesBundle(t *testing.T) {
 	if !ok || rating.Cardinality != 3 || rating.Codec != "integer" {
 		t.Fatalf("generic bounded field = %#v, found = %v", rating, ok)
 	}
+	assertFieldValidation(t, rating, ValidationNumericRange, func(validation Validation) bool {
+		return validation.Minimum != nil && *validation.Minimum == 1 && validation.Maximum != nil && *validation.Maximum == 5
+	})
 	localCode, ok := transformation.SourceField("field_local_code")
 	if !ok || localCode.Cardinality != 1 || localCode.Codec != "string" || localCode.Hub != "Extra.drupal.field_local_code" {
 		t.Fatalf("generic scalar field = %#v, found = %v", localCode, ok)
 	}
+	assertFieldValidation(t, localCode, ValidationMaximumRunes, func(validation Validation) bool {
+		return validation.Limit == 32
+	})
+	tags, ok = transformation.SourceField("field_custom_tags")
+	if !ok {
+		t.Fatal("compiled source omitted field_custom_tags")
+	}
+	assertFieldValidation(t, tags, ValidationMaximumRunes, func(validation Validation) bool {
+		return validation.Limit == 128
+	})
+	assertFieldValidation(t, tags, ValidationNoLineBreaks, nil)
 	if len(transformation.Defaults) != 0 {
 		t.Fatalf("compiled transformation guessed institution-specific Workbench defaults: %#v", transformation.Defaults)
 	}
@@ -97,6 +111,65 @@ func TestCompileDrupalDirectoryReconcilesBundle(t *testing.T) {
 	if !bytes.Equal(firstJSON, secondJSON) {
 		t.Fatal("identical Drupal directory produced nondeterministic specification output")
 	}
+}
+
+func TestCompileDrupalDirectoryDerivesFieldValidationRules(t *testing.T) {
+	transformation, err := CompileDrupalDirectory(filepath.Join("testdata", "drupal-validation"), DrupalCompileOptions{Bundle: "islandora_object"})
+	if err != nil {
+		t.Fatalf("CompileDrupalDirectory() error = %v", err)
+	}
+
+	accessLevel, ok := transformation.SourceField("field_access_level")
+	if !ok {
+		t.Fatal("compiled source omitted field_access_level")
+	}
+	assertFieldValidation(t, accessLevel, ValidationEnum, func(validation Validation) bool {
+		return equalStrings(validation.Values, []string{"public", "staff"})
+	})
+	externalLink, ok := transformation.SourceField("field_external_link")
+	if !ok {
+		t.Fatal("compiled source omitted field_external_link")
+	}
+	assertFieldValidation(t, externalLink, ValidationWorkbenchLink, nil)
+	rating, ok := transformation.SourceField("field_rating")
+	if !ok {
+		t.Fatal("compiled source omitted field_rating")
+	}
+	assertFieldValidation(t, rating, ValidationNumericRange, func(validation Validation) bool {
+		return validation.Minimum != nil && *validation.Minimum == 1 && validation.Maximum != nil && *validation.Maximum == 5
+	})
+	collection, ok := transformation.SourceField("field_collection")
+	if !ok {
+		t.Fatal("compiled source omitted field_collection")
+	}
+	if collection.Settings["target_type"] != "taxonomy_term" {
+		t.Fatalf("reference storage metadata = %#v", collection.Settings)
+	}
+	handlerSettings, ok := collection.InstanceSettings["handler_settings"].(map[string]any)
+	if !ok {
+		t.Fatalf("reference handler metadata = %#v", collection.InstanceSettings)
+	}
+	targetBundles, ok := handlerSettings["target_bundles"].(map[string]any)
+	if !ok || targetBundles["collection"] != "collection" {
+		t.Fatalf("reference vocabulary metadata = %#v", handlerSettings)
+	}
+	if err := transformation.Validate(); err != nil {
+		t.Fatalf("compiled transformation Validate() error = %v", err)
+	}
+}
+
+func assertFieldValidation(t *testing.T, field Field, rule ValidationRule, matches func(Validation) bool) {
+	t.Helper()
+	for _, validation := range field.Validations {
+		if validation.Rule != rule {
+			continue
+		}
+		if matches != nil && !matches(validation) {
+			t.Fatalf("field %q validation %q = %#v", field.Name, rule, validation)
+		}
+		return
+	}
+	t.Fatalf("field %q has no validation %q: %#v", field.Name, rule, field.Validations)
 }
 
 func equalStrings(left, right []string) bool {

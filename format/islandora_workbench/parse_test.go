@@ -58,23 +58,23 @@ func TestParseWorkbenchLinkedAgent(t *testing.T) {
 	}{
 		{
 			name:     "person with role",
-			input:    "relators:cre:person:Qin, Tian",
-			wantName: "Qin, Tian",
+			input:    "relators:cre:person:Example, Avery",
+			wantName: "Example, Avery",
 			wantRole: "relators:cre",
 			wantType: hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 		},
 		{
 			name:            "person with role and institution",
-			input:           "relators:cre:person:Qin, Tian - Lehigh University",
-			wantName:        "Qin, Tian",
+			input:           "relators:cre:person:Example, Avery - Example University",
+			wantName:        "Example, Avery",
 			wantRole:        "relators:cre",
 			wantType:        hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantInstitution: "Lehigh University",
+			wantInstitution: "Example University",
 		},
 		{
 			name:     "corporate body",
-			input:    "relators:pbl:corporate_body:Lehigh University Press",
-			wantName: "Lehigh University Press",
+			input:    "relators:pbl:corporate_body:Example University Press",
+			wantName: "Example University Press",
 			wantRole: "relators:pbl",
 			wantType: hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION,
 		},
@@ -155,7 +155,7 @@ func TestIslandoraModelToResourceType(t *testing.T) {
 
 func TestParse_StandardColumns(t *testing.T) {
 	csvInput := "id,title,field_model,field_language,field_rights,field_linked_agent,field_edtf_date_issued,field_identifier\n" +
-		`1,A Study of Something,Digital Document,en,http://rightsstatements.org/vocab/InC/1.0/,"relators:cre:person:Qin, Tian|relators:ths:person:Huang, Wei-Min",2024,"{""value"":""10.1234/example"",""attr0"":""doi""}"` + "\n"
+		`1,A Study of Something,Digital Document,en,http://rightsstatements.org/vocab/InC/1.0/,"relators:cre:person:Example, Avery|relators:ths:person:Sample, Morgan",2024,"{""value"":""10.1234/example"",""attr0"":""doi""}"` + "\n"
 
 	f := &Format{}
 	opts := format.NewParseOptions()
@@ -184,10 +184,10 @@ func TestParse_StandardColumns(t *testing.T) {
 	if len(r.Contributors) != 2 {
 		t.Fatalf("expected 2 contributors, got %d", len(r.Contributors))
 	}
-	if r.Contributors[0].Name != "Qin, Tian" || r.Contributors[0].RoleCode != "relators:cre" {
+	if r.Contributors[0].Name != "Example, Avery" || r.Contributors[0].RoleCode != "relators:cre" {
 		t.Errorf("contributor[0] = %+v", r.Contributors[0])
 	}
-	if r.Contributors[1].Name != "Huang, Wei-Min" || r.Contributors[1].RoleCode != "relators:ths" {
+	if r.Contributors[1].Name != "Sample, Morgan" || r.Contributors[1].RoleCode != "relators:ths" {
 		t.Errorf("contributor[1] = %+v", r.Contributors[1])
 	}
 	if len(r.Identifiers) != 1 || r.Identifiers[0].Value != "10.1234/example" {

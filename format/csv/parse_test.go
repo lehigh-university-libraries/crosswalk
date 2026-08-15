@@ -17,24 +17,24 @@ func TestParseNamePrefix(t *testing.T) {
 	}{
 		{
 			name:         "full prefix with relators namespace",
-			input:        "relators:cre:person:Qin, Tian",
+			input:        "relators:cre:person:Example, Avery",
 			wantRoleCode: "relators:cre",
 			wantType:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantName:     "Qin, Tian",
+			wantName:     "Example, Avery",
 		},
 		{
 			name:         "thesis advisor",
-			input:        "relators:ths:person:Huang, Wei-Min",
+			input:        "relators:ths:person:Sample, Morgan",
 			wantRoleCode: "relators:ths",
 			wantType:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantName:     "Huang, Wei-Min",
+			wantName:     "Sample, Morgan",
 		},
 		{
 			name:         "organization type",
-			input:        "relators:pbl:organization:Lehigh University Press",
+			input:        "relators:pbl:organization:Example University Press",
 			wantRoleCode: "relators:pbl",
 			wantType:     hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION,
-			wantName:     "Lehigh University Press",
+			wantName:     "Example University Press",
 		},
 		{
 			name:         "type prefix without role",
@@ -99,28 +99,28 @@ func TestParseContributor(t *testing.T) {
 	}{
 		{
 			name:         "plain Islandora workbench format",
-			input:        "relators:cre:person:Qin, Tian",
-			wantName:     "Qin, Tian",
+			input:        "relators:cre:person:Example, Avery",
+			wantName:     "Example, Avery",
 			wantRoleCode: "relators:cre",
 			wantType:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 		},
 		{
 			name:            "rich JSON format",
-			input:           `{"name":"relators:cre:person:Qin, Tian","institution":"Lehigh University","email":"test@example.com","status":"Graduate Student"}`,
-			wantName:        "Qin, Tian",
+			input:           `{"name":"relators:cre:person:Example, Avery","institution":"Example University","email":"test@example.com","status":"Graduate Student"}`,
+			wantName:        "Example, Avery",
 			wantRoleCode:    "relators:cre",
 			wantType:        hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantInstitution: "Lehigh University",
+			wantInstitution: "Example University",
 			wantEmail:       "test@example.com",
 			wantStatus:      "Graduate Student",
 		},
 		{
 			name:            "JSON with ORCID",
-			input:           `{"name":"relators:ths:person:Huang, Wei-Min","institution":"Lehigh University","status":"Faculty"}`,
-			wantName:        "Huang, Wei-Min",
+			input:           `{"name":"relators:ths:person:Sample, Morgan","institution":"Example University","status":"Faculty"}`,
+			wantName:        "Sample, Morgan",
 			wantRoleCode:    "relators:ths",
 			wantType:        hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-			wantInstitution: "Lehigh University",
+			wantInstitution: "Example University",
 			wantStatus:      "Faculty",
 		},
 		{
@@ -192,7 +192,7 @@ func TestRoundTrip(t *testing.T) {
 	}{
 		{
 			name:  "two contributors with institution",
-			input: `{"name":"relators:cre:person:Qin, Tian","institution":"Lehigh University","email":"bojack212324@gmail.com","status":"Graduate Student"} ; {"name":"relators:ths:person:Huang, Wei-Min","institution":"Lehigh University","status":"Faculty"}`,
+			input: `{"name":"relators:cre:person:Example, Avery","institution":"Example University","email":"contributor@example.invalid","status":"Graduate Student"} ; {"name":"relators:ths:person:Sample, Morgan","institution":"Example University","status":"Faculty"}`,
 		},
 	}
 
@@ -211,16 +211,16 @@ func TestRoundTrip(t *testing.T) {
 			}
 
 			c1 := contribs[0]
-			if c1.Name != "Qin, Tian" {
-				t.Errorf("c1.Name = %q, want %q", c1.Name, "Qin, Tian")
+			if c1.Name != "Example, Avery" {
+				t.Errorf("c1.Name = %q, want %q", c1.Name, "Example, Avery")
 			}
 			if c1.RoleCode != "relators:cre" {
 				t.Errorf("c1.RoleCode = %q, want %q", c1.RoleCode, "relators:cre")
 			}
-			if len(c1.Affiliations) == 0 || c1.Affiliations[0].Name != "Lehigh University" {
-				t.Errorf("c1.Affiliations = %v, want Lehigh University", c1.Affiliations)
+			if len(c1.Affiliations) == 0 || c1.Affiliations[0].Name != "Example University" {
+				t.Errorf("c1.Affiliations = %v, want Example University", c1.Affiliations)
 			}
-			if c1.Email != "bojack212324@gmail.com" {
+			if c1.Email != "contributor@example.invalid" {
 				t.Errorf("c1.Email = %q", c1.Email)
 			}
 			if c1.Status != "Graduate Student" {
@@ -228,8 +228,8 @@ func TestRoundTrip(t *testing.T) {
 			}
 
 			c2 := contribs[1]
-			if c2.Name != "Huang, Wei-Min" {
-				t.Errorf("c2.Name = %q, want %q", c2.Name, "Huang, Wei-Min")
+			if c2.Name != "Sample, Morgan" {
+				t.Errorf("c2.Name = %q, want %q", c2.Name, "Sample, Morgan")
 			}
 			if c2.RoleCode != "relators:ths" {
 				t.Errorf("c2.RoleCode = %q, want %q", c2.RoleCode, "relators:ths")

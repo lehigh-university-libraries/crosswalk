@@ -159,6 +159,53 @@ settings: { local: true }
 	}
 }
 
+func TestCompileRejectsReferenceFieldsWithoutTargetType(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name             string
+		fieldType        string
+		targetType       string
+		instanceSettings string
+		want             string
+	}{
+		{name: "entity reference missing target", fieldType: "entity_reference", want: "requires a valid target_type"},
+		{name: "typed relation missing target", fieldType: "typed_relation", want: "requires a valid target_type"},
+		{name: "invalid target machine name", fieldType: "entity_reference", targetType: "Taxonomy Term", want: "requires a valid target_type"},
+		{
+			name: "invalid target bundle", fieldType: "entity_reference", targetType: "node",
+			instanceSettings: "settings:\n  handler_settings:\n    target_bundles:\n      'Bad Bundle': article\n",
+			want:             "has invalid target bundle",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			settings := "settings: {}\n"
+			if test.targetType != "" {
+				settings = "settings:\n  target_type: '" + test.targetType + "'\n"
+			}
+			instanceSettings := test.instanceSettings
+			if instanceSettings == "" {
+				instanceSettings = "settings: {}\n"
+			}
+			configs := []ConfigFile{
+				{
+					Name: "field.storage.node.field_broken.yml",
+					Data: []byte("id: node.field_broken\nfield_name: field_broken\nentity_type: node\ntype: " + test.fieldType + "\ncardinality: 1\n" + settings),
+				},
+				{
+					Name: "field.field.node.article.field_broken.yml",
+					Data: []byte("id: node.article.field_broken\nfield_name: field_broken\nentity_type: node\nbundle: article\nfield_type: " + test.fieldType + "\n" + instanceSettings),
+				},
+			}
+			_, err := Compile(configs, CompileOptions{})
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("Compile() error = %v, want substring %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestCompileIncludesNonNodeEntitiesAndIgnoresUnrelatedConfig(t *testing.T) {
 	configs := []ConfigFile{
 		{Name: "core.extension.yml", Data: []byte("module: { system: 0 }\n")},

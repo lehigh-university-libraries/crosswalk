@@ -1,0 +1,3 @@
+term_name,field_contributor_status,field_relationships,field_email,field_identifier
+"Example, Alex - Example University",Graduate Student,schema:worksFor:corporate_body:Example University,alex@example.invalid,"{""attr0"":""orcid"",""value"":""0000-0000-0000-0000""}"
+"Reviewer, Riley - Example University",Faculty,schema:worksFor:corporate_body:Example University,,

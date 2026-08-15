@@ -1,4 +1,4 @@
-import mermaid from "https://unpkg.com/mermaid@11.13.0/dist/mermaid.esm.min.mjs";
+const mermaid = globalThis.mermaid;
 
 mermaid.initialize({
   startOnLoad: false,

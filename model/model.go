@@ -209,6 +209,13 @@ func (s *Snapshot) Validate() error {
 			if field.Cardinality == 0 || field.Cardinality < -1 {
 				return fmt.Errorf("model entity %s/%s field %q has invalid cardinality %d", entity.EntityType, entity.Bundle, field.Path, field.Cardinality)
 			}
+			referenceKind := field.Kind == ValueReference || field.Kind == ValueTypedReference
+			if referenceKind && field.Reference == nil {
+				return fmt.Errorf("model entity %s/%s field %q requires a reference target", entity.EntityType, entity.Bundle, field.Path)
+			}
+			if !referenceKind && field.Reference != nil {
+				return fmt.Errorf("model entity %s/%s field %q has a reference target for non-reference kind %q", entity.EntityType, entity.Bundle, field.Path, field.Kind)
+			}
 			if field.Reference != nil {
 				if !validRequiredIdentity(field.Reference.EntityType) {
 					return fmt.Errorf("model entity %s/%s field %q has a reference without entity_type", entity.EntityType, entity.Bundle, field.Path)

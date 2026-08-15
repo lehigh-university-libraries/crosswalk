@@ -143,6 +143,110 @@ func TestReviewCSVWritesNewRecordWithoutCandidate(t *testing.T) {
 	}
 }
 
+func TestReviewCSVRowAlignsValuesWithNamedColumns(t *testing.T) {
+	t.Parallel()
+	report := Report{
+		Version:       "report-v",
+		PolicyVersion: "policy-v",
+		Provenance: ReportProvenance{
+			IdentifierRegistryVersion: "registry-v",
+			IdentifierRegistryDigest:  "registry-digest",
+			System:                    "system",
+			ProfileName:               "profile",
+			ProfileFingerprint:        "profile-fingerprint",
+			ModelFingerprint:          "model-fingerprint",
+		},
+	}
+	result := Result{
+		InputKey:   "input-key",
+		InputIndex: 7,
+		Verdict:    VerdictReview,
+		Input: Snapshot{
+			Title:       "input-short-title",
+			FullTitle:   "input-full-title",
+			Authors:     []string{"Input One", "Input Two"},
+			Year:        2023,
+			Identifiers: []IdentifierKey{{Scheme: "doi", Value: "10.1234/input"}},
+		},
+	}
+	match := Match{
+		Kind:       MatchHeuristic,
+		Score:      87,
+		Confidence: "medium",
+		Candidate: CandidateRef{
+			Kind:         CandidateRepository,
+			Key:          "candidate-key",
+			RepositoryID: "repository-id",
+			UUID:         "candidate-uuid",
+			URL:          "https://example.org/candidate",
+			Metadata: Snapshot{
+				Title:       "candidate-short-title",
+				FullTitle:   "candidate-full-title",
+				Authors:     []string{"Candidate One", "Candidate Two"},
+				Year:        2022,
+				Identifiers: []IdentifierKey{{Scheme: "doi", Value: "10.1234/candidate"}},
+			},
+		},
+		Evidence:    []Evidence{{Code: "title", Incoming: "input", Existing: "candidate"}},
+		Differences: []Difference{{Field: "title", Incoming: "input", Existing: "candidate", Kind: DifferenceChanged}},
+	}
+
+	wants := map[string]string{
+		"report_version":              report.Version,
+		"policy_version":              report.PolicyVersion,
+		"identifier_registry_version": report.Provenance.IdentifierRegistryVersion,
+		"identifier_registry_digest":  report.Provenance.IdentifierRegistryDigest,
+		"system":                      report.Provenance.System,
+		"profile_name":                report.Provenance.ProfileName,
+		"profile_fingerprint":         report.Provenance.ProfileFingerprint,
+		"model_fingerprint":           report.Provenance.ModelFingerprint,
+		"mode":                        string(ModeHold),
+		"input_key":                   result.InputKey,
+		"input_index":                 "7",
+		"verdict":                     string(VerdictReview),
+		"match_kind":                  string(match.Kind),
+		"score":                       "87",
+		"confidence":                  match.Confidence,
+		"candidate_kind":              string(match.Candidate.Kind),
+		"candidate_key":               match.Candidate.Key,
+		"repository_id":               match.Candidate.RepositoryID,
+		"uuid":                        match.Candidate.UUID,
+		"url":                         match.Candidate.URL,
+		"input_title":                 result.Input.FullTitle,
+		"candidate_title":             match.Candidate.Metadata.FullTitle,
+		"input_authors":               "Input One; Input Two",
+		"candidate_authors":           "Candidate One; Candidate Two",
+		"input_year":                  "2023",
+		"candidate_year":              "2022",
+		"input_identifiers":           "doi:10.1234/input",
+		"candidate_identifiers":       "doi:10.1234/candidate",
+		"evidence":                    mustJSON(match.Evidence),
+		"differences":                 mustJSON(match.Differences),
+		"recommended_action":          "review existing item; update it or force new",
+	}
+	row := reviewCSVRow(report, ModeHold, result, &match)
+	if len(row) != len(reviewCSVHeader) || len(wants) != len(reviewCSVHeader) {
+		t.Fatalf("row/header/want lengths = %d/%d/%d", len(row), len(reviewCSVHeader), len(wants))
+	}
+	seen := make(map[string]struct{}, len(reviewCSVHeader))
+	for index, column := range reviewCSVHeader {
+		if _, exists := seen[column]; exists {
+			t.Fatalf("duplicate header column %q", column)
+		}
+		seen[column] = struct{}{}
+		want, exists := wants[column]
+		if !exists {
+			t.Fatalf("unexpected header column %q", column)
+		}
+		if row[index] != want {
+			t.Errorf("column %q at index %d = %q, want %q", column, index, row[index], want)
+		}
+	}
+	if len(seen) != len(wants) {
+		t.Fatalf("header contains %d unique columns, want %d", len(seen), len(wants))
+	}
+}
+
 func TestWriteReviewCSVReportsWriterFailure(t *testing.T) {
 	t.Parallel()
 	err := WriteReviewCSV(errorWriter{}, Report{Version: ReportVersion, PolicyVersion: PolicyVersion1, Provenance: testReportProvenance(), Mode: ModeHold})

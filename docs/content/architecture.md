@@ -41,8 +41,10 @@ Crosswalk may acquire scholarly discovery metadata from bounded public/vendor
 APIs, but repository discovery and mutation remain outside the metadata model.
 For Drupal/Islandora, sitectl acquires active `config/sync` and supplies the
 resolved JSON:API endpoint; Crosswalk compiles the model, mappings, identity
-rules, and output contract. Sitectl-isle validates and executes the resulting
-Workbench artifact bundle.
+rules, and output contract. Sitectl-isle owns the narrow context-aware
+Workbench operations it documents, including media preflight, supplemental
+reconciliation, guarded retry, and rollback. It does not currently provide a
+general create/update artifact-bundle executor.
 
 ## Models, profiles, and specifications
 
@@ -60,6 +62,11 @@ Models and profiles are needed when an external system's schema varies by
 installation. Drupal fields come from `config/sync`; Omeka S properties and
 resource templates come from an acquisition snapshot. Static standards such as
 BibTeX and DataCite do not need an installation profile.
+
+See [Hub records and datasets](hub-dataset.md) for canonical record, hierarchy,
+diagnostic, and provenance semantics, and
+[Transformation specifications](specifications.md) for the directional mapping
+and validation schema.
 
 ## Crossref has two distinct adapters
 

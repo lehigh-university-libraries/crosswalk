@@ -188,31 +188,14 @@ func TestConvertWithCompiledSpecPreservesCustomField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	previousSpec := transformationSpecFile
-	previousInput := inputFile
-	previousOutput := outputFile
-	previousSourceProfile := sourceProfileName
-	previousTargetProfile := targetProfileName
-	previousColumns := columns
-	t.Cleanup(func() {
-		transformationSpecFile = previousSpec
-		inputFile = previousInput
-		outputFile = previousOutput
-		sourceProfileName = previousSourceProfile
-		targetProfileName = previousTargetProfile
-		columns = previousColumns
-	})
-	transformationSpecFile = specPath
-	inputFile = ""
-	outputFile = ""
-	sourceProfileName = ""
-	targetProfileName = ""
-	columns = nil
+	options := defaultConvertOptions()
+	options.transformationSpecPath = specPath
 
 	var output bytes.Buffer
-	convertCmd.SetIn(strings.NewReader("Machine Name,title,field_full_title,field_identifier.attr0=doi,field_local_code\nHuman Name,Title,Complete Title,DOI,Local Code\n,Example,Example full,10.1234/example,ABC-123\n"))
-	convertCmd.SetOut(&output)
-	if err := runConvert(convertCmd, []string{"csv", "islandora-workbench"}); err != nil {
+	command := newConvertCmd()
+	command.SetIn(strings.NewReader("id,title,field_full_title,field_identifier.attr0=doi,field_local_code\nUpload ID,Title,Complete Title,DOI,Local Code\n1,Example,Example full,10.1234/example,ABC-123\n"))
+	command.SetOut(&output)
+	if err := runConvert(command, []string{"csv", "islandora-workbench"}, options); err != nil {
 		t.Fatalf("runConvert() error = %v", err)
 	}
 	if !strings.Contains(output.String(), "field_local_code") || !strings.Contains(output.String(), "ABC-123") {
@@ -221,8 +204,6 @@ func TestConvertWithCompiledSpecPreservesCustomField(t *testing.T) {
 }
 
 func TestConvertWithProfileBoundSpecHonorsEditedTargetMapping(t *testing.T) {
-	state := captureConvertState()
-	t.Cleanup(state.restore)
 	useProfileCommandConfig(t)
 	snapshot, definition := publishCommandProfile(t, "converted-profile")
 	for index := range definition.Mappings {
@@ -254,15 +235,14 @@ func TestConvertWithProfileBoundSpecHonorsEditedTargetMapping(t *testing.T) {
 	if err := os.WriteFile(specPath, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	transformationSpecFile = specPath
-	targetProfileName = definition.Name
-	sourceProfileName = ""
-	inputFile, outputFile = "", ""
-	columns = nil
-	convertCmd.SetIn(strings.NewReader("title,field_full_title,field_identifier.attr0=doi,field_custom_tags\nExample,Example,10.1234/example,alpha ; beta\n"))
+	options := defaultConvertOptions()
+	options.transformationSpecPath = specPath
+	options.targetProfileName = definition.Name
+	command := newConvertCmd()
+	command.SetIn(strings.NewReader("id,title,field_full_title,field_identifier.attr0=doi,field_custom_tags\n1,Example,Example,10.1234/example,alpha ; beta\n"))
 	var output bytes.Buffer
-	convertCmd.SetOut(&output)
-	if err := runConvert(convertCmd, []string{"csv", "islandora-workbench"}); err != nil {
+	command.SetOut(&output)
+	if err := runConvert(command, []string{"csv", "islandora-workbench"}, options); err != nil {
 		t.Fatalf("runConvert() error = %v", err)
 	}
 	if !strings.Contains(output.String(), "field_custom_tags") || !strings.Contains(output.String(), "alpha|beta") {
@@ -271,8 +251,6 @@ func TestConvertWithProfileBoundSpecHonorsEditedTargetMapping(t *testing.T) {
 }
 
 func TestConvertProfileBoundSpecRequiresTargetProfile(t *testing.T) {
-	state := captureConvertState()
-	t.Cleanup(state.restore)
 	useProfileCommandConfig(t)
 	snapshot, definition := publishCommandProfile(t, "converted-profile-required")
 	stored, err := profile.LoadStored(definition.Name)
@@ -291,13 +269,11 @@ func TestConvertProfileBoundSpecRequiresTargetProfile(t *testing.T) {
 	if err := os.WriteFile(specPath, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	transformationSpecFile = specPath
-	targetProfileName = ""
-	sourceProfileName = ""
-	inputFile, outputFile = "", ""
-	columns = nil
-	convertCmd.SetIn(strings.NewReader("title\nExample\n"))
-	err = runConvert(convertCmd, []string{"csv", "islandora-workbench"})
+	options := defaultConvertOptions()
+	options.transformationSpecPath = specPath
+	command := newConvertCmd()
+	command.SetIn(strings.NewReader("title\nExample\n"))
+	err = runConvert(command, []string{"csv", "islandora-workbench"}, options)
 	if err == nil || !strings.Contains(err.Error(), "requires the exact --target-profile") {
 		t.Fatalf("runConvert() error = %v", err)
 	}

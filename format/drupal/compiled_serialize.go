@@ -665,7 +665,9 @@ func drupalIntegerValue(value any) (int64, error) {
 	case int64:
 		return typed, nil
 	case float64:
-		if math.IsNaN(typed) || math.IsInf(typed, 0) || math.Trunc(typed) != typed || typed < math.MinInt64 || typed > math.MaxInt64 {
+		// MaxInt64 rounds to 2^63 as a float64, so the upper bound must be
+		// inclusive to reject that unrepresentable int64 value before conversion.
+		if math.IsNaN(typed) || math.IsInf(typed, 0) || math.Trunc(typed) != typed || typed < math.MinInt64 || typed >= math.MaxInt64 {
 			return 0, fmt.Errorf("decimal %v is not an integer", typed)
 		}
 		return int64(typed), nil
@@ -765,7 +767,8 @@ func linkDrupalValue(value any, selector profile.FieldSelector) (map[string]any,
 	uri, title := "", ""
 	switch typed := value.(type) {
 	case string:
-		uri = typed
+		uri, title, _ = strings.Cut(typed, "%%")
+		uri = strings.TrimSpace(uri)
 	case *hubv1.Rights:
 		uri, title = typed.GetUri(), typed.GetStatement()
 	case *hubv1.Subject:
@@ -853,6 +856,21 @@ func referenceDrupalValue(value any, entry compiledDrupalMapping) (map[string]an
 }
 
 func typedRelationDrupalValue(value any, entry compiledDrupalMapping) (map[string]any, error) {
+	if encoded, ok := value.(string); ok {
+		if reference := entry.mapping.Field.Reference; reference != nil {
+			role, targetID, parsed := splitTypedRelationString(encoded, reference.Bundles)
+			if parsed {
+				result := map[string]any{"target_id": targetID, "target_type": reference.EntityType}
+				if role != "" {
+					result["rel_type"] = role
+				}
+				if err := applyDrupalPredicate(result, entry.mapping.Field.Selector); err != nil {
+					return nil, err
+				}
+				return result, nil
+			}
+		}
+	}
 	result, err := referenceDrupalValue(value, entry)
 	if err != nil {
 		return nil, err
@@ -870,7 +888,44 @@ func typedRelationDrupalValue(value any, entry compiledDrupalMapping) (map[strin
 	if role != "" {
 		result["rel_type"] = role
 	}
+	if err := applyDrupalPredicate(result, entry.mapping.Field.Selector); err != nil {
+		return nil, err
+	}
 	return result, nil
+}
+
+func splitTypedRelationString(encoded string, bundles []string) (string, string, bool) {
+	encoded = strings.TrimSpace(encoded)
+	for _, bundle := range bundles {
+		bundle = strings.TrimSpace(bundle)
+		if bundle == "" {
+			continue
+		}
+		markers := []string{bundle}
+		switch bundle {
+		case "corporate_body":
+			markers = append(markers, "organization")
+		case "organization":
+			markers = append(markers, "corporate_body")
+		}
+		for _, markerBundle := range markers {
+			if target, found := strings.CutPrefix(encoded, markerBundle+":"); found {
+				target = strings.TrimSpace(target)
+				if target != "" {
+					return "", target, true
+				}
+			}
+			marker := ":" + markerBundle + ":"
+			if index := strings.Index(encoded, marker); index > 0 {
+				role := strings.TrimSpace(encoded[:index])
+				target := strings.TrimSpace(encoded[index+len(marker):])
+				if role != "" && target != "" {
+					return role, target, true
+				}
+			}
+		}
+	}
+	return "", "", false
 }
 
 func fileDrupalValue(value any, selector profile.FieldSelector) (map[string]any, error) {

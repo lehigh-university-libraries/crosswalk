@@ -109,6 +109,28 @@ func TestPlanArtifactsDeterministicNamedOutputs(t *testing.T) {
 	}
 }
 
+func TestPlanArtifactsRoutesTargetMetadataWithoutSourceColumnsToUpdate(t *testing.T) {
+	record := &hubv1.Record{
+		Publisher: "Updated publisher",
+		Files:     []*hubv1.File{{Path: "replacement.pdf", Role: "primary"}},
+	}
+	hub.SetExtra(record, "node_id", "200")
+
+	plan, err := PlanArtifacts([]*hubv1.Record{record}, &format.SerializeOptions{
+		Spec:          spec.FabricatorWorkbench(),
+		IncludeHeader: true,
+	})
+	if err != nil {
+		t.Fatalf("PlanArtifacts() error = %v", err)
+	}
+	if got, want := artifactNames(plan.Artifacts), []string{"target.update.csv", ArtifactManifestName}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("artifact names = %v, want %v", got, want)
+	}
+	rows := readArtifactCSV(t, plan.Artifacts[0].Data)
+	assertCSVValue(t, rows, "node_id", "200")
+	assertCSVValue(t, rows, "field_publisher", "Updated publisher")
+}
+
 func TestPlanArtifactsMergesExistingNodeSupplementalOverflowIntoAddMedia(t *testing.T) {
 	record := &hubv1.Record{Files: []*hubv1.File{
 		{Path: "primary.pdf", Role: "primary"},

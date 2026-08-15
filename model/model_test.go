@@ -177,3 +177,59 @@ func TestValidateRejectsUnsafeProvenance(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateRejectsMalformedReferenceContracts(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		field Field
+		want  string
+	}{
+		{
+			name:  "reference kind without target",
+			field: Field{Path: "field_parent", SourceType: "entity_reference", Kind: ValueReference, Cardinality: 1},
+			want:  "requires a reference target",
+		},
+		{
+			name:  "typed reference kind without target",
+			field: Field{Path: "field_agent", SourceType: "typed_relation", Kind: ValueTypedReference, Cardinality: -1},
+			want:  "requires a reference target",
+		},
+		{
+			name: "reference without entity type",
+			field: Field{
+				Path: "field_parent", SourceType: "entity_reference", Kind: ValueReference, Cardinality: 1,
+				Reference: &Reference{Bundles: []string{"collection"}},
+			},
+			want: "reference without entity_type",
+		},
+		{
+			name: "target on non-reference kind",
+			field: Field{
+				Path: "title", SourceType: "string", Kind: ValueText, Cardinality: 1,
+				Reference: &Reference{EntityType: "node"},
+			},
+			want: "reference target for non-reference kind",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			snapshot := &Snapshot{
+				Version: CurrentVersion,
+				System:  "drupal",
+				Entities: []Entity{{
+					EntityType: "node", Bundle: "article", Fields: []Field{test.field},
+				}},
+			}
+			if err := snapshot.SealFingerprint(); err != nil {
+				t.Fatal(err)
+			}
+			if err := snapshot.Validate(); err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("Validate() error = %v, want substring %q", err, test.want)
+			}
+		})
+	}
+}

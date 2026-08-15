@@ -235,7 +235,9 @@ type Difference struct {
 }
 
 // Match is one reportable candidate. RequiresReview is set when even an exact
-// identifier has contradictory metadata, such as a grossly different title.
+// identifier has serious contradictory metadata, such as a grossly different
+// title or publisher, disjoint authors, a materially different year, or a
+// different resource type.
 type Match struct {
 	Kind           MatchKind    `json:"kind"`
 	Candidate      CandidateRef `json:"candidate"`

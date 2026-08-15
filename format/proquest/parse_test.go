@@ -18,12 +18,12 @@ func TestParse(t *testing.T) {
   <DISS_authorship>
     <DISS_author type="primary">
       <DISS_name>
-        <DISS_surname>Qin</DISS_surname>
-        <DISS_fname>Tian</DISS_fname>
+        <DISS_surname>Example</DISS_surname>
+        <DISS_fname>Avery</DISS_fname>
         <DISS_middle>M</DISS_middle>
       </DISS_name>
       <DISS_contact type="future">
-        <DISS_email>tian@example.edu</DISS_email>
+        <DISS_email>avery@example.invalid</DISS_email>
       </DISS_contact>
       <DISS_orcid>0000-0002-1825-0097</DISS_orcid>
     </DISS_author>
@@ -32,13 +32,13 @@ func TestParse(t *testing.T) {
     <DISS_title>An Investigation of Polymer Networks</DISS_title>
     <DISS_degree>Ph.D.</DISS_degree>
     <DISS_institution>
-      <DISS_inst_name>Lehigh University</DISS_inst_name>
+      <DISS_inst_name>Example University</DISS_inst_name>
       <DISS_inst_contact>Department of Chemistry</DISS_inst_contact>
     </DISS_institution>
     <DISS_advisor>
       <DISS_name>
-        <DISS_surname>Huang</DISS_surname>
-        <DISS_fname>Wei-Min</DISS_fname>
+        <DISS_surname>Sample</DISS_surname>
+        <DISS_fname>Morgan</DISS_fname>
       </DISS_name>
     </DISS_advisor>
     <DISS_categorization>
@@ -56,7 +56,7 @@ func TestParse(t *testing.T) {
       <DISS_para>This dissertation investigates polymer networks.</DISS_para>
       <DISS_para>Results show improved properties.</DISS_para>
     </DISS_abstract>
-    <DISS_binary type="PDF">qin-dissertation.pdf</DISS_binary>
+    <DISS_binary type="PDF">example-dissertation.pdf</DISS_binary>
   </DISS_content>
 </DISS_submission>`
 
@@ -105,7 +105,7 @@ func TestParse(t *testing.T) {
 	var foundAuthor bool
 	for _, c := range r.Contributors {
 		if c.Role == "author" && c.ParsedName != nil {
-			if c.ParsedName.Family == "Qin" && c.ParsedName.Given == "Tian" {
+			if c.ParsedName.Family == "Example" && c.ParsedName.Given == "Avery" {
 				foundAuthor = true
 				if c.ParsedName.Middle != "M" {
 					t.Errorf("Author middle name: got %q, want %q", c.ParsedName.Middle, "M")
@@ -113,10 +113,10 @@ func TestParse(t *testing.T) {
 				if c.RoleCode != "relators:cre" {
 					t.Errorf("Author role code: got %q", c.RoleCode)
 				}
-				if c.Email != "tian@example.edu" || c.Status != "Graduate Student" {
+				if c.Email != "avery@example.invalid" || c.Status != "Graduate Student" {
 					t.Errorf("Author contact/status: got email=%q status=%q", c.Email, c.Status)
 				}
-				if c.Affiliation != "Lehigh University" {
+				if c.Affiliation != "Example University" {
 					t.Errorf("Author affiliation: got %q", c.Affiliation)
 				}
 				// Check ORCID
@@ -133,14 +133,14 @@ func TestParse(t *testing.T) {
 		}
 	}
 	if !foundAuthor {
-		t.Error("Author Qin, Tian not found in contributors")
+		t.Error("Author Example, Avery not found in contributors")
 	}
 
 	// Find the advisor
 	var foundAdvisor bool
 	for _, c := range r.Contributors {
 		if c.Role == "advisor" && c.ParsedName != nil {
-			if c.ParsedName.Family == "Huang" && c.ParsedName.Given == "Wei-Min" {
+			if c.ParsedName.Family == "Sample" && c.ParsedName.Given == "Morgan" {
 				foundAdvisor = true
 				if c.RoleCode != "relators:ths" || c.Status != "Faculty" {
 					t.Errorf("Advisor role/status: got %q %q", c.RoleCode, c.Status)
@@ -149,7 +149,7 @@ func TestParse(t *testing.T) {
 		}
 	}
 	if !foundAdvisor {
-		t.Error("Advisor Huang, Wei-Min not found in contributors")
+		t.Error("Advisor Sample, Morgan not found in contributors")
 	}
 
 	// Abstract should contain both paragraphs
@@ -170,8 +170,8 @@ func TestParse(t *testing.T) {
 	if r.DegreeInfo.DegreeName != "Ph.D." {
 		t.Errorf("DegreeInfo.DegreeName: got %q, want %q", r.DegreeInfo.DegreeName, "Ph.D.")
 	}
-	if r.DegreeInfo.Institution != "Lehigh University" {
-		t.Errorf("DegreeInfo.Institution: got %q, want %q", r.DegreeInfo.Institution, "Lehigh University")
+	if r.DegreeInfo.Institution != "Example University" {
+		t.Errorf("DegreeInfo.Institution: got %q, want %q", r.DegreeInfo.Institution, "Example University")
 	}
 	if len(r.Departments) != 1 || r.Departments[0] != "Department of Chemistry" {
 		t.Errorf("Departments: got %q, want institution department", r.Departments)
@@ -236,7 +236,7 @@ func TestParse(t *testing.T) {
 		t.Error("24-month embargo date not found")
 	}
 
-	if len(r.Files) != 1 || r.Files[0].Path != "qin-dissertation.pdf" || r.Files[0].MimeType != "application/pdf" {
+	if len(r.Files) != 1 || r.Files[0].Path != "example-dissertation.pdf" || r.Files[0].MimeType != "application/pdf" {
 		t.Errorf("files: %#v", r.Files)
 	}
 }

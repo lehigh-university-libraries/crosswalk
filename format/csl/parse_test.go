@@ -103,7 +103,7 @@ func TestParseDOIResolvedCSLAcceptsIdentifierArrays(t *testing.T) {
 	if got := identifiers[hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN]; !equalStrings(got, []string{"0028-0836", "1476-4687"}) {
 		t.Errorf("ISSNs = %#v", got)
 	}
-	if got := identifiers[hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN]; !equalStrings(got, []string{"978-1-4028-9462-6", "1-4028-9462-7"}) {
+	if got := identifiers[hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN]; !equalStrings(got, []string{"9781402894626", "1402894627"}) {
 		t.Errorf("ISBNs = %#v", got)
 	}
 	if records[0].Publication == nil || records[0].Publication.Issn != "0028-0836" {

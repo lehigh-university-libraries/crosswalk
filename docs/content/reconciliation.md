@@ -50,13 +50,19 @@ Reconciliation evaluates evidence in this order:
 3. Compare every returned candidate in the Hub, not merely its search hit.
 4. If no exact candidate resolves and a title is available, run the profile's
    ordered, bounded metadata lookup strategies.
-5. Compare title, contributors, and date and record field-level differences.
+5. Compare title, contributors, dates, identifiers, publisher, language,
+   resource type, and abstract and record field-level differences.
 
 Metadata-only evidence never becomes an automatic duplicate under policy
 version 1. One metadata candidate produces `review`; several produce
 `ambiguous`. Several exact identifier candidates are also ambiguous. Even one
 exact identifier match can require review when the identity level does not
-permit an automatic duplicate decision.
+permit an automatic duplicate decision. Serious contradictory metadata can
+also downgrade an otherwise exact identifier match to review. Policy version 1
+treats a gross title or publisher conflict, disjoint authors, a materially
+different year, or a conflicting resource type as serious; the evidence and
+complete differences remain in the report rather than being hidden by the
+identifier hit.
 
 Each incoming record is also compared with earlier records in the same batch.
 That check remains active in `assume-new` mode.

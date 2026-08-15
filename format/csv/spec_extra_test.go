@@ -32,7 +32,7 @@ func TestCompiledDrupalGenericExtraRoundTrip(t *testing.T) {
 	if err := transformation.SealFingerprint(); err != nil {
 		t.Fatal(err)
 	}
-	input := strings.NewReader("Machine Name,title,field_full_title,field_identifier.attr0=doi,field_custom_tags,field_rating,field_local_date,field_local_code\nHuman Name,Title,Complete Title,DOI,Local Tags,Rating,Local Date,Local Code\n,Example,Example full,10.1234/example,alpha ; beta,1 ; 2,2025-08,ABC-123\n")
+	input := strings.NewReader("id,title,field_full_title,field_identifier.attr0=doi,field_custom_tags,field_rating,field_local_date,field_local_code\nUpload ID,Title,Complete Title,DOI,Local Tags,Rating,Local Date,Local Code\n1,Example,Example full,10.1234/example,alpha ; beta,1 ; 2,2025-08,ABC-123\n")
 	records, err := (&csvformat.Format{}).Parse(input, &format.ParseOptions{Spec: transformation, Strict: true})
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
@@ -106,7 +106,7 @@ func TestCompiledDrupalRequiredAggregateGroupPreservesUpdateSemantics(t *testing
 		t.Fatal(err)
 	}
 
-	_, err = (&csvformat.Format{}).Parse(strings.NewReader("title,field_full_title,field_identifier.attr0=doi\nExample,Example full,\n"), &format.ParseOptions{
+	_, err = (&csvformat.Format{}).Parse(strings.NewReader("id,title,field_full_title,field_identifier.attr0=doi\n1,Example,Example full,\n"), &format.ParseOptions{
 		Spec:       transformation,
 		Strict:     true,
 		SourceName: "create.csv",
@@ -117,7 +117,7 @@ func TestCompiledDrupalRequiredAggregateGroupPreservesUpdateSemantics(t *testing
 	}
 	foundGroup := false
 	for _, diagnostic := range diagnostics.Diagnostics {
-		if diagnostic.Code == "required_group" && diagnostic.Row == 2 && diagnostic.Column == 3 && strings.Contains(diagnostic.Message, "field_identifier") {
+		if diagnostic.Code == "required_group" && diagnostic.Row == 2 && diagnostic.Column == 4 && strings.Contains(diagnostic.Message, "field_identifier") {
 			foundGroup = true
 		}
 	}
@@ -125,7 +125,7 @@ func TestCompiledDrupalRequiredAggregateGroupPreservesUpdateSemantics(t *testing
 		t.Fatalf("required aggregate diagnostics = %+v", diagnostics.Diagnostics)
 	}
 
-	createRecords, err := (&csvformat.Format{}).Parse(strings.NewReader("title,field_full_title,field_identifier.attr0=doi\nExample,Example full,10.1234/example\n"), &format.ParseOptions{
+	createRecords, err := (&csvformat.Format{}).Parse(strings.NewReader("id,title,field_full_title,field_identifier.attr0=doi\n1,Example,Example full,10.1234/example\n"), &format.ParseOptions{
 		Spec:   transformation,
 		Strict: true,
 	})

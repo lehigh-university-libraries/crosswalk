@@ -16,60 +16,71 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/server/googleauth"
 	"github.com/lehigh-university-libraries/crosswalk/server/httpapi"
 	drupalsource "github.com/lehigh-university-libraries/crosswalk/source/drupal"
+	"github.com/lehigh-university-libraries/crosswalk/spec"
+	"github.com/lehigh-university-libraries/crosswalk/validationcontext"
+	"github.com/lehigh-university-libraries/crosswalk/validationcontext/getty"
+	"github.com/lehigh-university-libraries/crosswalk/validationcontext/localfs"
 	"github.com/spf13/cobra"
 )
 
 const (
-	googleAudienceEnv      = "CROSSWALK_GOOGLE_AUDIENCE"
-	googleHostedDomainEnv  = "CROSSWALK_GOOGLE_HOSTED_DOMAIN"
-	googleAllowedEmailsEnv = "CROSSWALK_GOOGLE_ALLOWED_EMAILS"
+	googleAudienceEnv                  = "CROSSWALK_GOOGLE_AUDIENCE"
+	googleHostedDomainEnv              = "CROSSWALK_GOOGLE_HOSTED_DOMAIN"
+	googleAllowedEmailsEnv             = "CROSSWALK_GOOGLE_ALLOWED_EMAILS"
+	workbenchStagingRootEnv            = "CROSSWALK_WORKBENCH_STAGING_ROOT"
+	workbenchAllowedAbsoluteRootsEnv   = "CROSSWALK_WORKBENCH_ALLOWED_ABSOLUTE_ROOTS"
+	defaultWorkbenchValidationFileRoot = "/mnt/islandora_staging"
 )
 
 type serveOptions struct {
-	address             string
-	sharedSecretEnv     string
-	maxBodyBytes        int64
-	maxOutputBytes      int64
-	maxRows             int
-	maxCells            int64
-	maxConcurrent       int
-	requestTimeout      time.Duration
-	readHeaderTimeout   time.Duration
-	readTimeout         time.Duration
-	writeTimeout        time.Duration
-	idleTimeout         time.Duration
-	shutdownTimeout     time.Duration
-	maxHeaderBytes      int
-	specPath            string
-	googleAudience      string
-	googleHostedDomain  string
-	googleAllowedEmails string
-	drupalJSONAPI       string
-	drupalProfile       string
-	drupalTokenEnv      string
-	drupalUsernameEnv   string
-	drupalPasswordEnv   string
-	allowPublicHTTP     bool
+	address               string
+	sharedSecretEnv       string
+	maxBodyBytes          int64
+	maxOutputBytes        int64
+	maxRows               int
+	maxCells              int64
+	maxConcurrent         int
+	requestTimeout        time.Duration
+	readHeaderTimeout     time.Duration
+	readTimeout           time.Duration
+	writeTimeout          time.Duration
+	idleTimeout           time.Duration
+	shutdownTimeout       time.Duration
+	maxHeaderBytes        int
+	specPath              string
+	googleAudience        string
+	googleHostedDomain    string
+	googleAllowedEmails   string
+	workbenchStagingRoot  string
+	workbenchAllowedRoots string
+	drupalJSONAPI         string
+	drupalProfile         string
+	drupalTokenEnv        string
+	drupalUsernameEnv     string
+	drupalPasswordEnv     string
+	allowNewTaxonomyTerms bool
+	allowPublicHTTP       bool
 }
 
 type googleVerifierFactory func(context.Context, googleauth.Config) (httpapi.BearerVerifier, error)
 
 func newServeCmd() *cobra.Command {
 	options := &serveOptions{
-		address:           "127.0.0.1:8080",
-		sharedSecretEnv:   "SHARED_SECRET",
-		maxBodyBytes:      16 << 20,
-		maxOutputBytes:    64 << 20,
-		maxRows:           100_000,
-		maxCells:          1_000_000,
-		maxConcurrent:     8,
-		requestTimeout:    90 * time.Second,
-		readHeaderTimeout: 5 * time.Second,
-		readTimeout:       30 * time.Second,
-		writeTimeout:      2 * time.Minute,
-		idleTimeout:       time.Minute,
-		shutdownTimeout:   10 * time.Second,
-		maxHeaderBytes:    1 << 20,
+		address:               "127.0.0.1:8080",
+		sharedSecretEnv:       "SHARED_SECRET",
+		maxBodyBytes:          16 << 20,
+		maxOutputBytes:        64 << 20,
+		maxRows:               100_000,
+		maxCells:              1_000_000,
+		maxConcurrent:         8,
+		requestTimeout:        90 * time.Second,
+		readHeaderTimeout:     5 * time.Second,
+		readTimeout:           30 * time.Second,
+		writeTimeout:          2 * time.Minute,
+		idleTimeout:           time.Minute,
+		shutdownTimeout:       10 * time.Second,
+		maxHeaderBytes:        1 << 20,
+		allowNewTaxonomyTerms: true,
 	}
 
 	command := &cobra.Command{
@@ -110,11 +121,14 @@ or writes shared temporary files.`,
 	flags.DurationVar(&options.shutdownTimeout, "shutdown-timeout", options.shutdownTimeout, "maximum graceful shutdown time")
 	flags.IntVar(&options.maxHeaderBytes, "max-header-bytes", options.maxHeaderBytes, "maximum request header size in bytes")
 	flags.StringVar(&options.specPath, "spec", "", "transformation specification JSON/YAML (default built-in Fabricator contract)")
+	flags.StringVar(&options.workbenchStagingRoot, "workbench-staging-root", "", "trusted local Workbench staging root for live file checks (default /mnt/islandora_staging or CROSSWALK_WORKBENCH_STAGING_ROOT)")
+	flags.StringVar(&options.workbenchAllowedRoots, "workbench-allowed-absolute-roots", "", "pipe-delimited additional absolute roots for live file checks (or CROSSWALK_WORKBENCH_ALLOWED_ABSOLUTE_ROOTS)")
 	flags.StringVar(&options.drupalJSONAPI, "drupal-jsonapi", "", "Drupal JSON:API root used for read-only existing-item lookup")
 	flags.StringVar(&options.drupalProfile, "drupal-profile", "", "stored Drupal profile defining repository fields and existing-item policy")
 	flags.StringVar(&options.drupalTokenEnv, "drupal-token-env", "DRUPAL_JSONAPI_TOKEN", "environment variable containing an optional Drupal bearer token")
 	flags.StringVar(&options.drupalUsernameEnv, "drupal-username-env", "DRUPAL_JSONAPI_USERNAME", "environment variable containing an optional Drupal Basic username")
 	flags.StringVar(&options.drupalPasswordEnv, "drupal-password-env", "DRUPAL_JSONAPI_PASSWORD", "environment variable containing the Drupal Basic password")
+	flags.BoolVar(&options.allowNewTaxonomyTerms, "workbench-allow-new-taxonomy-terms", options.allowNewTaxonomyTerms, "allow missing plain taxonomy names for the Workbench task; IDs and URIs must still resolve")
 	return command
 }
 
@@ -125,7 +139,11 @@ func (o *serveOptions) run(command *cobra.Command) error {
 	var systemProfile *drupalReconciliationProfile
 	if strings.TrimSpace(o.drupalProfile) != "" {
 		var err error
-		systemProfile, err = loadDrupalReconciliationProfile(o.drupalProfile, strings.TrimSpace(o.drupalJSONAPI) != "")
+		systemProfile, err = loadDrupalReconciliationProfile(
+			o.drupalProfile,
+			strings.TrimSpace(o.drupalJSONAPI) != "",
+			spec.DrupalCompileOptions{AllowNewTaxonomyTerms: o.allowNewTaxonomyTerms},
+		)
 		if err != nil {
 			return err
 		}
@@ -140,39 +158,38 @@ func (o *serveOptions) run(command *cobra.Command) error {
 		return err
 	}
 
-	engine := httpapi.NewCrosswalkEngine()
+	transformation := spec.FabricatorWorkbench()
 	if systemProfile != nil {
-		engine, err = httpapi.NewCrosswalkEngineWithSpec(systemProfile.transformation)
-		if err != nil {
-			return fmt.Errorf("configuring profile-bound transformation: %w", err)
-		}
+		transformation = systemProfile.transformation
 	}
 	if o.specPath != "" {
-		transformation, loadErr := loadTransformationSpec(o.specPath, "csv", "islandora-workbench")
+		loadedTransformation, loadErr := loadTransformationSpec(o.specPath, "csv", "islandora-workbench")
 		if loadErr != nil {
 			return loadErr
 		}
-		if transformation.Fingerprint.Profile != "" && systemProfile == nil {
+		if loadedTransformation.Fingerprint.Profile != "" && systemProfile == nil {
 			return fmt.Errorf("profile-bound --spec requires the exact --drupal-profile")
 		}
-		if transformation.Fingerprint.Profile == "" && systemProfile != nil {
+		if loadedTransformation.Fingerprint.Profile == "" && systemProfile != nil {
 			return fmt.Errorf("unbound --spec cannot be combined with --drupal-profile")
 		}
 		if systemProfile != nil {
-			if transformation.Fingerprint.Model != systemProfile.compiled.ModelFingerprint() {
+			if loadedTransformation.Fingerprint.Model != systemProfile.compiled.ModelFingerprint() {
 				return fmt.Errorf("transformation model fingerprint does not match Drupal profile model")
 			}
-			if transformation.Fingerprint.Profile != systemProfile.compiled.Fingerprint() {
+			if loadedTransformation.Fingerprint.Profile != systemProfile.compiled.Fingerprint() {
 				return fmt.Errorf("transformation profile fingerprint does not match Drupal profile")
 			}
 		}
-		engine, err = httpapi.NewCrosswalkEngineWithSpec(transformation)
+		transformation = loadedTransformation
+	}
+	var finder *drupalsource.Client
+	var fileValidationRoots []string
+	if strings.TrimSpace(o.drupalJSONAPI) != "" {
+		transformation, fileValidationRoots, err = o.withValidationFileDefaults(transformation)
 		if err != nil {
 			return err
 		}
-	}
-	var finder *drupalsource.Client
-	if strings.TrimSpace(o.drupalJSONAPI) != "" {
 		finder = drupalsource.NewClient(o.drupalJSONAPI)
 		finder.SystemProfile = systemProfile.compiled
 		token := strings.TrimSpace(os.Getenv(o.drupalTokenEnv))
@@ -187,6 +204,29 @@ func (o *serveOptions) run(command *cobra.Command) error {
 			finder.Auth = drupalsource.BasicAuth{Username: username, Password: password}
 		case password != "":
 			return fmt.Errorf("drupal password is configured without a username")
+		}
+		if err := finder.ConfigureValidationModel(systemProfile.snapshot); err != nil {
+			return fmt.Errorf("configuring Drupal validation context: %w", err)
+		}
+	}
+	engine, err := httpapi.NewCrosswalkEngineWithSpec(transformation)
+	if err != nil {
+		return fmt.Errorf("configuring Workbench transformation: %w", err)
+	}
+	if finder != nil {
+		fileResolver, fileErr := localfs.New(fileValidationRoots)
+		if fileErr != nil {
+			return fmt.Errorf("configuring Workbench file validation: %w", fileErr)
+		}
+		if err := engine.ConfigureValidationContext(validationcontext.Composite{
+			NodeExistenceResolver:        finder,
+			EntityReferenceResolver:      finder,
+			AllowedValueResolver:         finder,
+			FileReadabilityResolver:      fileResolver,
+			TGNResolver:                  getty.NewClient(),
+			URLAliasAvailabilityResolver: finder,
+		}); err != nil {
+			return fmt.Errorf("configuring live validation context: %w", err)
 		}
 	}
 	if systemProfile != nil {
@@ -293,6 +333,47 @@ func optionOrEnvironment(optionValue, environmentName string) string {
 		return value
 	}
 	return strings.TrimSpace(os.Getenv(environmentName))
+}
+
+func (o *serveOptions) withValidationFileDefaults(input *spec.Transformation) (*spec.Transformation, []string, error) {
+	if input == nil {
+		return nil, nil, errors.New("configuring Workbench file validation: transformation is nil")
+	}
+	stagingRoot := optionOrEnvironment(o.workbenchStagingRoot, workbenchStagingRootEnv)
+	if stagingRoot == "" {
+		stagingRoot = strings.TrimSpace(input.Default(spec.FileStagingRootDefault))
+	}
+	if stagingRoot == "" {
+		stagingRoot = defaultWorkbenchValidationFileRoot
+	}
+	allowedRoots := optionOrEnvironment(o.workbenchAllowedRoots, workbenchAllowedAbsoluteRootsEnv)
+	if allowedRoots == "" {
+		allowedRoots = strings.TrimSpace(input.Default(spec.FileAllowedAbsoluteRootsDefault))
+	}
+
+	owned := *input
+	owned.Defaults = make(map[string]string, len(input.Defaults)+2)
+	for name, value := range input.Defaults {
+		owned.Defaults[name] = value
+	}
+	owned.Defaults[spec.FileStagingRootDefault] = stagingRoot
+	if allowedRoots != "" {
+		owned.Defaults[spec.FileAllowedAbsoluteRootsDefault] = allowedRoots
+	} else {
+		delete(owned.Defaults, spec.FileAllowedAbsoluteRootsDefault)
+	}
+	if err := owned.SealFingerprint(); err != nil {
+		return nil, nil, fmt.Errorf("sealing Workbench file validation defaults: %w", err)
+	}
+	if err := owned.Validate(); err != nil {
+		return nil, nil, fmt.Errorf("validating Workbench file validation defaults: %w", err)
+	}
+
+	roots := []string{stagingRoot}
+	if allowedRoots != "" {
+		roots = append(roots, strings.Split(allowedRoots, "|")...)
+	}
+	return &owned, roots, nil
 }
 
 func commaSeparatedValues(value string) []string {

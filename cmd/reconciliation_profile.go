@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lehigh-university-libraries/crosswalk/model"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
 	"github.com/lehigh-university-libraries/crosswalk/reconcile"
 	"github.com/lehigh-university-libraries/crosswalk/spec"
@@ -11,6 +12,10 @@ import (
 
 type drupalReconciliationProfile struct {
 	compiled *profile.Compiled
+	// snapshot is the canonical defensive copy bound to compiled and to the
+	// generated transformation. Live validation uses this exact model rather
+	// than re-reading mutable config/sync state.
+	snapshot *model.Snapshot
 	// transformation is compiled from the exact immutable model paired with
 	// compiled. It prevents output from claiming this profile while silently
 	// falling back to an unrelated built-in Workbench schema.
@@ -19,7 +24,7 @@ type drupalReconciliationProfile struct {
 	provenance     reconcile.ReportProvenance
 }
 
-func loadDrupalReconciliationProfile(name string, requireLookup bool) (*drupalReconciliationProfile, error) {
+func loadDrupalReconciliationProfile(name string, requireLookup bool, options ...spec.DrupalCompileOptions) (*drupalReconciliationProfile, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, fmt.Errorf("drupal profile name is required")
@@ -46,12 +51,22 @@ func loadDrupalReconciliationProfile(name string, requireLookup bool) (*drupalRe
 	if err != nil {
 		return nil, fmt.Errorf("building Workbench transformation from Drupal profile %q: %w", name, err)
 	}
-	transformation, err := spec.CompileDrupalProfile(stored.Model, compiled, spec.DrupalCompileOptions{Bundle: bundle})
+	compileOptions := spec.DrupalCompileOptions{Bundle: bundle}
+	if len(options) > 0 {
+		compileOptions = options[0]
+		compileOptions.Bundle = bundle
+	}
+	transformation, err := spec.CompileDrupalProfile(stored.Model, compiled, compileOptions)
 	if err != nil {
 		return nil, fmt.Errorf("building Workbench transformation from Drupal profile %q: %w", name, err)
 	}
+	canonicalModel, err := stored.Model.Canonical()
+	if err != nil {
+		return nil, fmt.Errorf("canonicalizing Drupal model for profile %q: %w", name, err)
+	}
 	return &drupalReconciliationProfile{
 		compiled:       compiled,
+		snapshot:       canonicalModel,
 		transformation: transformation,
 		policy:         policy,
 		provenance: reconcile.ReportProvenance{

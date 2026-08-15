@@ -354,7 +354,11 @@ func operationForRecord(record *hubv1.Record, opts *format.SerializeOptions) (sp
 	if hub.GetExtraString(record, "node_id") == "" {
 		return spec.OperationCreate, nil
 	}
-	if hasUpdateMetadata(record, opts.Spec) {
+	hasMetadata, err := hasUpdateMetadata(record, opts)
+	if err != nil {
+		return "", fmt.Errorf("detecting update metadata: %w", err)
+	}
+	if hasMetadata {
 		return spec.OperationUpdate, nil
 	}
 	if hasPublishableFile(record) {
@@ -363,26 +367,53 @@ func operationForRecord(record *hubv1.Record, opts *format.SerializeOptions) (sp
 	return spec.OperationUpdate, nil
 }
 
-func hasUpdateMetadata(record *hubv1.Record, transformation *spec.Transformation) bool {
+func hasUpdateMetadata(record *hubv1.Record, opts *format.SerializeOptions) (bool, error) {
+	transformation := opts.Spec
 	if sourceColumns := hub.GetExtraString(record, "_source_columns"); sourceColumns != "" {
 		for _, name := range strings.Split(sourceColumns, "|") {
 			field, ok := transformation.SourceField(name)
 			if !ok || !field.AppliesTo(spec.OperationUpdate) {
 				continue
 			}
-			switch field.Name {
-			case "node_id", "file", "id", "parent_id":
+			switch field.Hub {
+			case "Extra.node_id", "Files.primary", "Extra.id", "Extra.parent_id":
 				continue
 			default:
-				return true
+				return true, nil
 			}
 		}
-		return false
+		return false, nil
 	}
-	return record.Title != "" || record.FullTitle != "" || record.Abstract != "" ||
-		record.Description != "" || record.ObjectModel != "" || record.ResourceType != nil ||
-		len(record.Contributors) > 0 || len(record.Dates) > 0 || len(record.Subjects) > 0 ||
-		len(record.Rights) > 0 || len(record.Identifiers) > 0 || len(record.Relations) > 0
+
+	delimiter := targetMultiValueSeparator(opts)
+	canonical, _, err := projectRecordToColumns(record, delimiter)
+	if err != nil {
+		return false, err
+	}
+	var profileColumns map[string]string
+	if opts.SystemProfile != nil {
+		profileColumns, err = recordToProfileColumns(record, opts.SystemProfile, transformation, delimiter)
+		if err != nil {
+			return false, err
+		}
+	}
+	for _, field := range transformation.Target.Fields {
+		if field.Codec == "ignore" || !field.AppliesTo(spec.OperationUpdate) {
+			continue
+		}
+		switch field.Hub {
+		case "Extra.node_id", "Files.primary", "Extra.id", "Extra.parent_id":
+			continue
+		}
+		value, valueErr := serializedTargetFieldValue(record, field, canonical, profileColumns, delimiter)
+		if valueErr != nil {
+			return false, fmt.Errorf("target field %q: %w", field.Name, valueErr)
+		}
+		if value != "" {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func hasPublishableFile(record *hubv1.Record) bool {
@@ -413,7 +444,7 @@ func planAgentsArtifact(records []*hubv1.Record, delimiter string) (Artifact, bo
 	hasAgents := false
 	seen := make(map[string]struct{})
 	for _, record := range records {
-		_, agentRows, err := recordToColumns(record, delimiter)
+		_, agentRows, err := projectRecordToColumns(record, delimiter)
 		if err != nil {
 			return Artifact{}, false, fmt.Errorf("preparing agents artifact: %w", err)
 		}

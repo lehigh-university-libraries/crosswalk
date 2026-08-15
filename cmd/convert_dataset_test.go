@@ -6,34 +6,18 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
 func TestConvertArchivesSpaceSnapshotPreservesWorkbenchHierarchy(t *testing.T) {
-	state := captureConvertState()
-	t.Cleanup(state.restore)
-
-	inputFile = filepath.Join("..", "format", "archivesspace", "testdata", "snapshot.json")
-	outputFile = ""
-	sourceProfileName = ""
-	targetProfileName = ""
-	taxonomyFile = ""
-	columns = nil
-	multiValueSep = "|"
-	stripHTML = true
-	pretty = false
-	baseURL = ""
-	referenceDOIs = nil
-	skipReferenceDOIValidation = false
-	transformationSpecFile = ""
+	options := defaultConvertOptions()
+	options.inputPath = filepath.Join("..", "format", "archivesspace", "testdata", "snapshot.json")
 
 	var output bytes.Buffer
 	var diagnostics bytes.Buffer
-	command := &cobra.Command{}
+	command := newConvertCmd()
 	command.SetOut(&output)
 	command.SetErr(&diagnostics)
-	if err := runConvert(command, []string{"archivesspace", "islandora-workbench"}); err != nil {
+	if err := runConvert(command, []string{"archivesspace", "islandora-workbench"}, options); err != nil {
 		t.Fatalf("runConvert() error = %v", err)
 	}
 	if !strings.Contains(diagnostics.String(), "Parsed 5 records") {
@@ -67,49 +51,27 @@ func TestConvertArchivesSpaceSnapshotPreservesWorkbenchHierarchy(t *testing.T) {
 	}
 }
 
-type convertState struct {
-	inputFile                  string
-	outputFile                 string
-	sourceProfileName          string
-	targetProfileName          string
-	taxonomyFile               string
-	columns                    []string
-	multiValueSep              string
-	stripHTML                  bool
-	pretty                     bool
-	baseURL                    string
-	referenceDOIs              []string
-	skipReferenceDOIValidation bool
-	transformationSpecFile     string
-}
-
-func captureConvertState() convertState {
-	return convertState{
-		inputFile: inputFile, outputFile: outputFile,
-		sourceProfileName: sourceProfileName, targetProfileName: targetProfileName,
-		taxonomyFile: taxonomyFile, columns: append([]string(nil), columns...),
-		multiValueSep: multiValueSep, stripHTML: stripHTML, pretty: pretty,
-		baseURL:                    baseURL,
-		referenceDOIs:              append([]string(nil), referenceDOIs...),
-		skipReferenceDOIValidation: skipReferenceDOIValidation,
-		transformationSpecFile:     transformationSpecFile,
+func TestNewConvertCmdKeepsFlagStatePerCommand(t *testing.T) {
+	first := newConvertCmd()
+	if err := first.Flags().Set("separator", ";"); err != nil {
+		t.Fatal(err)
 	}
-}
+	if err := first.Flags().Set("input", "first.json"); err != nil {
+		t.Fatal(err)
+	}
 
-func (state convertState) restore() {
-	inputFile = state.inputFile
-	outputFile = state.outputFile
-	sourceProfileName = state.sourceProfileName
-	targetProfileName = state.targetProfileName
-	taxonomyFile = state.taxonomyFile
-	columns = state.columns
-	multiValueSep = state.multiValueSep
-	stripHTML = state.stripHTML
-	pretty = state.pretty
-	baseURL = state.baseURL
-	referenceDOIs = state.referenceDOIs
-	skipReferenceDOIValidation = state.skipReferenceDOIValidation
-	transformationSpecFile = state.transformationSpecFile
+	second := newConvertCmd()
+	separator, err := second.Flags().GetString("separator")
+	if err != nil {
+		t.Fatal(err)
+	}
+	input, err := second.Flags().GetString("input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if separator != "|" || input != "" {
+		t.Fatalf("fresh convert command inherited separator %q or input %q", separator, input)
+	}
 }
 
 func commandCSVValue(t *testing.T, header, row []string, column string) string {

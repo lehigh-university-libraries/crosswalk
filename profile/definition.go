@@ -23,13 +23,14 @@ const (
 	CurrentDefinitionVersion = "1"
 	// CurrentIdentityVersion is the identifier and duplicate-lookup policy
 	// contract understood by this release.
-	CurrentIdentityVersion = "1"
-	maxDefinitionBytes     = int64(8 << 20)
-	maxProfileMappings     = 4096
-	maxIdentifierRules     = 128
-	maxMetadataLookups     = 32
-	maxLookupFields        = 32
-	maxLookupVariants      = 16
+	CurrentIdentityVersion    = "1"
+	maxDefinitionBytes        = int64(8 << 20)
+	maxProfileMappings        = 4096
+	maxIdentifierRules        = 128
+	maxIdentifierPatternBytes = 4096
+	maxMetadataLookups        = 32
+	maxLookupFields           = 32
+	maxLookupVariants         = 16
 )
 
 var (
@@ -444,6 +445,9 @@ func validateIdentity(identity IdentityPolicy) error {
 		}
 		if rule.Pattern == "" || !strings.HasPrefix(rule.Pattern, "^") || !strings.HasSuffix(rule.Pattern, "$") {
 			return fmt.Errorf("identity identifier %q pattern must be fully anchored", rule.Name)
+		}
+		if len(rule.Pattern) > maxIdentifierPatternBytes {
+			return fmt.Errorf("identity identifier %q pattern exceeds %d bytes", rule.Name, maxIdentifierPatternBytes)
 		}
 		if _, err := regexp.Compile(rule.Pattern); err != nil {
 			return fmt.Errorf("identity identifier %q has invalid pattern: %w", rule.Name, err)

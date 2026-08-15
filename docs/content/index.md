@@ -34,9 +34,13 @@ crosswalk convert drupal csv \
 
 - [Getting started](getting-started.md) covers installation and basic conversion.
 - [Architecture](architecture.md) explains the Hub, adapters, profiles, specs, and ownership boundaries.
+- [Hub records and datasets](hub-dataset.md) documents canonical record, hierarchy, and provenance contracts.
 - [Profiles and models](profiles.md) covers Drupal and Omeka S profile lifecycles.
+- [Transformation specifications](specifications.md) is the mapping and validation-rule reference.
+- [Acquisition and network safety](acquisition.md) covers fetch commands, protected HTTP, and delivery bundles.
 - [Existing-item reconciliation](reconciliation.md) explains identifier-first duplicate detection and review.
 - [Islandora Workbench](workbench.md) covers profile-bound specifications, artifacts, and the sitectl contract.
 - [HTTP service](http-service.md) documents authentication and service endpoints.
 - [Format support](formats.md) lists parse and serialization capabilities.
+- [Boundaries, migration, and integration status](limitations.md) records intentional omissions and rollout checks.
 - [Contributing](contributing.md) covers repository and documentation workflows.

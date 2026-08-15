@@ -227,6 +227,9 @@ func compiledToDrupalDecodeMapping(item profile.CompiledMapping, codec string) (
 }
 
 func specializedDrupalSourceType(sourceType string) string {
+	// These composite shapes have dedicated parser/serializer contracts. Other
+	// model-defined source types deliberately fall back to the codec's generic
+	// decoding path instead of being treated as a shape this package understands.
 	switch sourceType {
 	case "typed_relation", "related_item", "part_detail", "textfield_attr", "textarea_attr":
 		return sourceType

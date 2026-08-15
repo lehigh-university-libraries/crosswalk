@@ -12,6 +12,8 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/model"
 )
 
+const archivesSpaceSystem = "archivesspace"
+
 // ResolvedField is a selector joined to immutable model metadata. Values
 // returned by Compiled methods are defensive copies.
 type ResolvedField struct {
@@ -272,7 +274,7 @@ func validateExecutableMapping(system string, field ResolvedField, mapping Mappi
 			return fmt.Errorf("%s codec %q for model kind %q: %w", direction.name, direction.codec, field.Kind, err)
 		}
 	}
-	if system == "archivesspace" {
+	if system == archivesSpaceSystem {
 		return fmt.Errorf("ArchivesSpace profiles are not executable; use its API adapter without a system profile")
 	}
 	return nil

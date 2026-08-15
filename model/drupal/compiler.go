@@ -400,6 +400,16 @@ func compileEntity(key entityKey, configured map[string]fieldConfig, rdf rdfConf
 			InstanceSettings:   cloneMap(instance.Settings),
 		}
 		field.Reference = referenceFor(field.Kind, storage.Settings, instance.Settings)
+		if field.Kind == model.ValueReference || field.Kind == model.ValueTypedReference {
+			if field.Reference == nil || !validMachineName(field.Reference.EntityType) {
+				return model.Entity{}, fmt.Errorf("drupal field %s.%s.%s requires a valid target_type", key.entityType, key.bundle, name)
+			}
+			for _, bundle := range field.Reference.Bundles {
+				if !validMachineName(bundle) {
+					return model.Entity{}, fmt.Errorf("drupal field %s.%s.%s has invalid target bundle %q", key.entityType, key.bundle, name, bundle)
+				}
+			}
+		}
 		entity.Fields = append(entity.Fields, field)
 	}
 	return entity, nil

@@ -33,9 +33,9 @@ type Artifact struct {
 }
 
 // Engine owns metadata validation and transformation. Implementations must be
-// safe for concurrent use by HTTP handlers. Network access and mutation are not
-// part of this interface; callers that need site data must supply it before a
-// request reaches the engine.
+// safe for concurrent use by HTTP handlers. Mutation is not part of this
+// interface. A concrete engine may consult an explicitly configured read-only
+// validation context; the spreadsheet never selects its network endpoints.
 type Engine interface {
 	Check(ctx context.Context, rows [][]string) (CheckResult, error)
 	Transform(ctx context.Context, input io.Reader) ([]Artifact, error)

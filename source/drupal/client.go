@@ -18,6 +18,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	drupalformat "github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	"github.com/lehigh-university-libraries/crosswalk/internal/provenanceuri"
+	"github.com/lehigh-university-libraries/crosswalk/model"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
 	"github.com/lehigh-university-libraries/crosswalk/reconcile"
 	acquisition "github.com/lehigh-university-libraries/crosswalk/source"
@@ -78,6 +79,10 @@ type Client struct {
 	MaxResponseBytes int64
 	MaxCandidates    int
 	PageSize         int
+	// validationModel is the canonical immutable model paired with
+	// SystemProfile. It is configured before the client is shared and is used
+	// only to constrain deployment-aware validation queries.
+	validationModel *model.Snapshot
 }
 
 // NewClient returns a JSON:API candidate client with safe defaults.

@@ -36,6 +36,9 @@ func TestLoadDrupalReconciliationProfileBindsPolicyAndProvenance(t *testing.T) {
 	if loaded.transformation == nil || loaded.transformation.Fingerprint.Model != snapshot.Fingerprint.Value || loaded.transformation.Fingerprint.Bundle != "islandora_object" {
 		t.Fatalf("profile-bound transformation = %#v", loaded.transformation)
 	}
+	if loaded.snapshot == nil || loaded.snapshot == snapshot || loaded.snapshot.Fingerprint.Value != snapshot.Fingerprint.Value {
+		t.Fatalf("profile-bound canonical model = %#v", loaded.snapshot)
+	}
 	registry, err := hub.NewIdentifierRegistry(loaded.policy.IdentifierRegistry)
 	if err != nil {
 		t.Fatal(err)

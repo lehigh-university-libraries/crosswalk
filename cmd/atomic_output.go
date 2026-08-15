@@ -10,9 +10,13 @@ import (
 )
 
 func writeOutputFile(path string, write func(io.Writer) error) (err error) {
-	absolute, err := filepath.Abs(strings.TrimSpace(path))
-	if err != nil || strings.TrimSpace(path) == "" {
+	path = strings.TrimSpace(path)
+	if path == "" {
 		return fmt.Errorf("resolving output path: output path is required")
+	}
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("resolving output path: %w", err)
 	}
 	directory := filepath.Dir(absolute)
 	temporary, err := os.CreateTemp(directory, ".crosswalk-output-*")
@@ -62,9 +66,13 @@ func writeOutputFile(path string, write func(io.Writer) error) (err error) {
 // them with atomic no-clobber semantics. Concurrent writers cannot replace one
 // another and readers never observe a partially written report.
 func writeNewFile(path string, data []byte) (err error) {
-	absolute, err := filepath.Abs(strings.TrimSpace(path))
-	if err != nil || strings.TrimSpace(path) == "" {
+	path = strings.TrimSpace(path)
+	if path == "" {
 		return fmt.Errorf("resolving new output path: output path is required")
+	}
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("resolving new output path: %w", err)
 	}
 	temporary, err := os.CreateTemp(filepath.Dir(absolute), ".crosswalk-new-output-*")
 	if err != nil {
@@ -105,9 +113,13 @@ type namedOutput struct {
 }
 
 func writeOutputDirectory(destination string, outputs []namedOutput) (err error) {
-	absolute, err := filepath.Abs(strings.TrimSpace(destination))
-	if err != nil || strings.TrimSpace(destination) == "" {
+	destination = strings.TrimSpace(destination)
+	if destination == "" {
 		return fmt.Errorf("resolving output directory: output directory is required")
+	}
+	absolute, err := filepath.Abs(destination)
+	if err != nil {
+		return fmt.Errorf("resolving output directory: %w", err)
 	}
 	if _, err := os.Lstat(absolute); err == nil {
 		return fmt.Errorf("output directory already exists: %s", absolute)

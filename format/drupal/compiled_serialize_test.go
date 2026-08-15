@@ -3,6 +3,7 @@ package drupal
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"strings"
 	"testing"
 
@@ -12,6 +13,33 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/model"
 	"github.com/lehigh-university-libraries/crosswalk/profile"
 )
+
+func TestEncodeEntityWithProfileRejectsNilInputs(t *testing.T) {
+	compiled := compileDrupalEncodingProfile(t, []model.Field{{
+		Path: "field_title", SourceType: "string", Kind: model.ValueText, Cardinality: 1,
+	}}, []profile.Mapping{{
+		Field: profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_title"},
+		Hub:   "Title", Decode: "text", Encode: "text", Merge: profile.MergeFirstNonempty,
+	}}, nil)
+
+	tests := []struct {
+		name     string
+		record   *hubv1.Record
+		compiled *profile.Compiled
+		want     string
+	}{
+		{name: "nil record", compiled: compiled, want: "encoding Drupal entity: record is nil"},
+		{name: "nil compiled profile", record: &hubv1.Record{}, want: "encoding Drupal entity: compiled profile is required"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := EncodeEntityWithProfile(test.record, test.compiled)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("EncodeEntityWithProfile() error = %v, want containing %q", err, test.want)
+			}
+		})
+	}
+}
 
 func TestCompiledProfileEncoderAppliesOrderedTargetMerges(t *testing.T) {
 	fields := []model.Field{
@@ -117,6 +145,171 @@ func TestCompiledProfileEncoderUsesDeclaredCodecs(t *testing.T) {
 	}
 	if len(parsed[0].GetFiles()) != 1 || parsed[0].GetFiles()[0].GetRole() != "supplemental" || parsed[0].GetFiles()[0].GetSizeBytes() != 128 {
 		t.Fatalf("round-tripped files = %#v", parsed[0].GetFiles())
+	}
+}
+
+func TestCompiledProfileEncoderRejectsInvalidNumericAndBooleanValues(t *testing.T) {
+	fields := []model.Field{
+		{Path: "field_integer", SourceType: "integer", Kind: model.ValueInteger, Cardinality: 1},
+		{Path: "field_decimal", SourceType: "decimal", Kind: model.ValueDecimal, Cardinality: 1},
+		{Path: "field_boolean", SourceType: "boolean", Kind: model.ValueBoolean, Cardinality: 1},
+	}
+	selector := func(path string) profile.FieldSelector {
+		return profile.FieldSelector{EntityType: "node", Bundle: "article", Path: path}
+	}
+	compiled := compileDrupalEncodingProfile(t, fields, []profile.Mapping{
+		{Field: selector("field_integer"), Hub: "Extra.integer", Decode: "integer", Encode: "integer", Merge: profile.MergeFirstNonempty},
+		{Field: selector("field_decimal"), Hub: "Extra.decimal", Decode: "decimal", Encode: "decimal", Merge: profile.MergeFirstNonempty},
+		{Field: selector("field_boolean"), Hub: "Extra.boolean", Decode: "boolean", Encode: "boolean", Merge: profile.MergeFirstNonempty},
+	}, nil)
+
+	tests := []struct {
+		name  string
+		key   string
+		value any
+		want  string
+	}{
+		{name: "malformed integer", key: "integer", value: "twelve", want: `parsing integer "twelve"`},
+		{name: "integer string above maximum", key: "integer", value: "9223372036854775808", want: "value out of range"},
+		{name: "integer string below minimum", key: "integer", value: "-9223372036854775809", want: "value out of range"},
+		{name: "floating integer above maximum", key: "integer", value: math.Exp2(63), want: "is not an integer"},
+		{name: "fractional integer", key: "integer", value: 1.5, want: "decimal 1.5 is not an integer"},
+		{name: "malformed decimal", key: "decimal", value: "one point five", want: `parsing decimal "one point five"`},
+		{name: "decimal NaN", key: "decimal", value: math.NaN(), want: "decimal NaN is not finite"},
+		{name: "decimal positive infinity", key: "decimal", value: math.Inf(1), want: "decimal +Inf is not finite"},
+		{name: "decimal negative infinity", key: "decimal", value: math.Inf(-1), want: "decimal -Inf is not finite"},
+		{name: "malformed boolean string", key: "boolean", value: "yes", want: "expected a boolean Hub value, got string(yes)"},
+		{name: "boolean integer outside domain", key: "boolean", value: 2, want: "expected a boolean Hub value, got float64(2)"},
+		{name: "boolean decimal outside domain", key: "boolean", value: 0.5, want: "expected a boolean Hub value, got float64(0.5)"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			record := &hubv1.Record{}
+			hub.SetExtra(record, test.key, test.value)
+			var output bytes.Buffer
+			err := (&Format{}).Serialize(&output, []*hubv1.Record{record}, &format.SerializeOptions{SystemProfile: compiled})
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("Serialize() error = %v, want containing %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestCompiledProfileEncoderRejectsSelectorPredicateConflicts(t *testing.T) {
+	tests := []struct {
+		name       string
+		field      model.Field
+		selector   profile.FieldSelector
+		codec      string
+		hub        string
+		extraValue any
+		record     func() *hubv1.Record
+		want       string
+	}{
+		{
+			name:     "scalar attribute conflicts",
+			field:    model.Field{Path: "field_text", SourceType: "string", Kind: model.ValueText, Cardinality: 1},
+			selector: profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_text", Attribute: "value", Where: &profile.FieldPredicate{Attribute: "value", Equals: "required"}},
+			codec:    "text", extraValue: "actual",
+			want: `selector predicate value="required" conflicts with encoded value "actual"`,
+		},
+		{
+			name:     "composite attribute conflicts",
+			field:    model.Field{Path: "field_composite", SourceType: "textfield_attr", Kind: model.ValueComposite, Cardinality: 1},
+			selector: profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_composite", Where: &profile.FieldPredicate{Attribute: "attr0", Equals: "doi"}},
+			codec:    "composite", extraValue: map[string]any{"attr0": "isbn", "value": "9781234567897"},
+			want: `selector predicate attr0="doi" conflicts with encoded value "isbn"`,
+		},
+		{
+			name: "typed relation string role conflicts",
+			field: model.Field{
+				Path: "field_agent", SourceType: "typed_relation", Kind: model.ValueTypedReference, Cardinality: 1,
+				Reference: &model.Reference{EntityType: "taxonomy_term", Bundles: []string{"person", "corporate_body"}},
+			},
+			selector:   profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_agent", Where: &profile.FieldPredicate{Attribute: "rel_type", Equals: "relators:aut"}},
+			codec:      "typed-relation",
+			extraValue: "relators:cre:person:Example, Alex",
+			want:       `selector predicate rel_type="relators:aut" conflicts with encoded value "relators:cre"`,
+		},
+		{
+			name: "typed relation contributor role conflicts",
+			field: model.Field{
+				Path: "field_agent", SourceType: "typed_relation", Kind: model.ValueTypedReference, Cardinality: 1,
+				Reference: &model.Reference{EntityType: "taxonomy_term", Bundles: []string{"person", "corporate_body"}},
+			},
+			selector: profile.FieldSelector{EntityType: "node", Bundle: "article", Path: "field_agent", Where: &profile.FieldPredicate{Attribute: "rel_type", Equals: "relators:aut"}},
+			codec:    "typed-relation",
+			hub:      "Contributors",
+			record: func() *hubv1.Record {
+				return &hubv1.Record{Contributors: []*hubv1.Contributor{{
+					Name: "Example, Alex", SourceId: "person:Example, Alex", RoleCode: "relators:cre",
+				}}}
+			},
+			want: `selector predicate rel_type="relators:aut" conflicts with encoded value "relators:cre"`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			hubPath := test.hub
+			if hubPath == "" {
+				hubPath = "Extra.value"
+			}
+			compiled := compileDrupalEncodingProfile(t, []model.Field{test.field}, []profile.Mapping{{
+				Field: test.selector, Hub: hubPath, Decode: test.codec, Encode: test.codec, Merge: profile.MergeFirstNonempty,
+			}}, nil)
+			record := &hubv1.Record{}
+			if test.record != nil {
+				record = test.record()
+			} else {
+				hub.SetExtra(record, "value", test.extraValue)
+			}
+			var output bytes.Buffer
+			err := (&Format{}).Serialize(&output, []*hubv1.Record{record}, &format.SerializeOptions{SystemProfile: compiled})
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("Serialize() error = %v, want containing %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestCompiledProfileEncoderParsesTypedRelationPrefixes(t *testing.T) {
+	field := model.Field{
+		Path: "field_linked_agent", SourceType: "typed_relation", Kind: model.ValueTypedReference, Cardinality: -1,
+		Reference: &model.Reference{EntityType: "taxonomy_term", Bundles: []string{"person", "corporate_body"}},
+	}
+	selector := profile.FieldSelector{EntityType: "node", Bundle: "article", Path: field.Path}
+	compiled := compileDrupalEncodingProfile(t, []model.Field{field}, []profile.Mapping{{
+		Field: selector, Hub: "Extra.agent", Decode: "typed-relation", Encode: "typed-relation", Merge: profile.MergeAppend,
+	}}, nil)
+
+	tests := []struct {
+		name       string
+		encoded    string
+		wantTarget string
+		wantRole   string
+	}{
+		{name: "namespaced person role", encoded: "relators:cre:person:Example, Avery", wantTarget: "Example, Avery", wantRole: "relators:cre"},
+		{name: "namespaced corporate body role", encoded: "relators:pbl:corporate_body:Example University Press", wantTarget: "Example University Press", wantRole: "relators:pbl"},
+		{name: "namespaced organization alias", encoded: "relators:pbl:organization:Example University Press", wantTarget: "Example University Press", wantRole: "relators:pbl"},
+		{name: "unnamespaced role", encoded: "creator:person:Jane Doe", wantTarget: "Jane Doe", wantRole: "creator"},
+		{name: "no role", encoded: "person:Jane Doe", wantTarget: "Jane Doe"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			record := &hubv1.Record{}
+			hub.SetExtra(record, "agent", test.encoded)
+			entity := serializeCompiledEntity(t, record, compiled)
+			var values []map[string]any
+			if err := json.Unmarshal(entity[field.Path], &values); err != nil {
+				t.Fatal(err)
+			}
+			if len(values) != 1 || values[0]["target_id"] != test.wantTarget || values[0]["target_type"] != "taxonomy_term" {
+				t.Fatalf("typed relation = %#v, want target %q", values, test.wantTarget)
+			}
+			if role, _ := values[0]["rel_type"].(string); role != test.wantRole {
+				t.Errorf("rel_type = %q, want %q", role, test.wantRole)
+			}
+		})
 	}
 }
 

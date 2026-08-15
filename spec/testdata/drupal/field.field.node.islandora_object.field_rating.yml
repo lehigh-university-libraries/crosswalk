@@ -5,5 +5,7 @@ bundle: islandora_object
 label: Rating
 description: 'One or more ratings.'
 required: false
-settings: { }
+settings:
+  min: 1
+  max: 5
 field_type: integer

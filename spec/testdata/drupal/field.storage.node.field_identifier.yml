@@ -2,5 +2,6 @@ id: node.field_identifier
 field_name: field_identifier
 entity_type: node
 type: typed_relation
-settings: { }
+settings:
+  target_type: taxonomy_term
 cardinality: -1

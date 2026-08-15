@@ -214,7 +214,7 @@ func TestParseDissertation(t *testing.T) {
         <month>5</month>
       </approval_date>
       <institution>
-        <institution_name>Lehigh University</institution_name>
+        <institution_name>Example University</institution_name>
         <institution_department>Computer Science</institution_department>
       </institution>
       <degree>PhD</degree>
@@ -276,8 +276,8 @@ func TestParseDissertation(t *testing.T) {
 	if r.DegreeInfo == nil {
 		t.Fatal("DegreeInfo is nil")
 	}
-	if r.DegreeInfo.Institution != "Lehigh University" {
-		t.Errorf("institution: got %q, want %q", r.DegreeInfo.Institution, "Lehigh University")
+	if r.DegreeInfo.Institution != "Example University" {
+		t.Errorf("institution: got %q, want %q", r.DegreeInfo.Institution, "Example University")
 	}
 	if r.DegreeInfo.Department != "Computer Science" {
 		t.Errorf("department: got %q, want %q", r.DegreeInfo.Department, "Computer Science")

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"sort"
 	"strconv"
 	"strings"
@@ -202,7 +203,7 @@ func (*Format) Parse(reader io.Reader, options *format.ParseOptions) ([]*hubv1.R
 	if err := json.Unmarshal(raw, &marker); err != nil {
 		return nil, fmt.Errorf("parsing Zenodo JSON: %w", err)
 	}
-	values := make([]record, 0)
+	var values []record
 	if _, isPage := marker["hits"]; isPage {
 		var page searchResponse
 		if err := decodeJSON(raw, &page); err != nil {
@@ -300,25 +301,33 @@ func toHub(value *record, options *format.ParseOptions) (*hubv1.Record, error) {
 	}
 
 	for _, creator := range value.Metadata.Creators {
-		record.Contributors = append(record.Contributors, zenodoContributor(creator, "creator"))
+		if contributor := zenodoContributor(creator, "creator"); contributor != nil {
+			record.Contributors = append(record.Contributors, contributor)
+		}
 	}
 	for _, contributor := range value.Metadata.Contributors {
 		role := machineValue(contributor.Role)
 		if role == "" {
 			role = "contributor"
 		}
-		record.Contributors = append(record.Contributors, zenodoContributor(contributor, role))
+		if parsed := zenodoContributor(contributor, role); parsed != nil {
+			record.Contributors = append(record.Contributors, parsed)
+		}
 	}
-	if published := parseDate(value.Metadata.PublicationDate, hubv1.DateType_DATE_TYPE_PUBLISHED); published != nil {
+	if published := parseZenodoDate(value.Metadata.PublicationDate, hubv1.DateType_DATE_TYPE_PUBLISHED, "metadata.publication_date", recordID); published != nil {
 		record.Dates = append(record.Dates, published)
 	}
+	malformedDateCount := 0
 	for _, item := range value.Metadata.Dates {
 		if parsed := parseDate(item.Date, zenodoDateType(machineValue(item.Type))); parsed != nil {
 			record.Dates = append(record.Dates, parsed)
+		} else if strings.TrimSpace(item.Date) != "" {
+			malformedDateCount++
 		}
 	}
-	appendDateIfDistinct(record, value.Created, hubv1.DateType_DATE_TYPE_CREATED)
-	appendDateIfDistinct(record, firstNonempty(value.Modified, value.Updated), hubv1.DateType_DATE_TYPE_MODIFIED)
+	warnMalformedZenodoDates("metadata.dates.date", recordID, malformedDateCount)
+	appendDateIfDistinct(record, value.Created, hubv1.DateType_DATE_TYPE_CREATED, "created", recordID)
+	appendDateIfDistinct(record, firstNonempty(value.Modified, value.Updated), hubv1.DateType_DATE_TYPE_MODIFIED, "modified", recordID)
 	for _, keyword := range compact(value.Metadata.Keywords) {
 		record.Subjects = append(record.Subjects, &hubv1.Subject{Value: keyword, Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_KEYWORDS})
 	}
@@ -425,6 +434,9 @@ func zenodoContributor(value credit, role string) *hubv1.Contributor {
 			contributor.Identifiers = append(contributor.Identifiers, identifier)
 		}
 	}
+	if contributor.GetName() == "" && len(contributor.GetAffiliations()) == 0 && len(contributor.GetIdentifiers()) == 0 {
+		return nil
+	}
 	return contributor
 }
 
@@ -465,16 +477,18 @@ func zenodoRelation(value related) *hubv1.Relation {
 		return nil
 	}
 	identifierType := hub.DetectIdentifierType(identifier)
-	normalized := hub.NormalizeIdentifier(identifier, identifierType)
+	targetIdentifier := hub.NewIdentifier(identifier, identifierType)
 	relation := &hubv1.Relation{
-		Type: zenodoRelationType(machineValue(value.Relation)), TargetId: normalized, TargetIdType: identifierType,
+		Type: zenodoRelationType(machineValue(value.Relation)), TargetId: targetIdentifier.GetValue(), TargetIdType: identifierType,
 		TargetResourceType: zenodoStructuredResourceType(value.ResourceType),
 	}
 	switch identifierType {
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_URL:
-		relation.TargetUri = identifier
-	case hubv1.IdentifierType_IDENTIFIER_TYPE_DOI:
-		relation.TargetUri = "https://doi.org/" + normalized
+	case hubv1.IdentifierType_IDENTIFIER_TYPE_URL,
+		hubv1.IdentifierType_IDENTIFIER_TYPE_DOI,
+		hubv1.IdentifierType_IDENTIFIER_TYPE_HANDLE,
+		hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN,
+		hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN:
+		relation.TargetUri = hub.IdentifierURI(targetIdentifier)
 	}
 	return relation
 }
@@ -504,8 +518,8 @@ func appendLicense(record *hubv1.Record, value license) {
 	record.Rights = append(record.Rights, &hubv1.Rights{Statement: strings.TrimSpace(value.Title), Uri: strings.TrimSpace(value.URL), License: strings.TrimSpace(value.ID)})
 }
 
-func appendDateIfDistinct(record *hubv1.Record, value string, dateType hubv1.DateType) {
-	parsed := parseDate(value, dateType)
+func appendDateIfDistinct(record *hubv1.Record, value string, dateType hubv1.DateType, field, sourceID string) {
+	parsed := parseZenodoDate(value, dateType, field, sourceID)
 	if parsed == nil {
 		return
 	}
@@ -515,6 +529,25 @@ func appendDateIfDistinct(record *hubv1.Record, value string, dateType hubv1.Dat
 		}
 	}
 	record.Dates = append(record.Dates, parsed)
+}
+
+func parseZenodoDate(value string, dateType hubv1.DateType, field, sourceID string) *hubv1.DateValue {
+	parsed := parseDate(value, dateType)
+	if parsed == nil && strings.TrimSpace(value) != "" {
+		warnMalformedZenodoDates(field, sourceID, 1)
+	}
+	return parsed
+}
+
+func warnMalformedZenodoDates(field, sourceID string, count int) {
+	if count == 0 {
+		return
+	}
+	attributes := []any{"field", field, "count", count}
+	if safeSourceID := numericString(json.Number(sourceID)); safeSourceID != "" {
+		attributes = append(attributes, "source_id", safeSourceID)
+	}
+	slog.Warn("ignoring malformed Zenodo date", attributes...)
 }
 
 func parseDate(value string, dateType hubv1.DateType) *hubv1.DateValue {
@@ -747,8 +780,9 @@ func localized(values map[string]string) string {
 }
 
 func identifierScheme(value string) string {
-	if hub.DetectIdentifierType(value) == hubv1.IdentifierType_IDENTIFIER_TYPE_DOI {
-		return "doi"
+	switch scheme := hub.DetectIdentifierScheme(value); scheme {
+	case "doi", "ror", "isni", "gnd":
+		return scheme
 	}
 	return ""
 }

@@ -212,6 +212,197 @@ func TestCompareExactIdentifierWithConflictingStrongIdentifierRequiresReview(t *
 	}
 }
 
+func TestCompareExactIdentifierWithSeriousMetadataConflictRequiresReview(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name      string
+		configure func(*hubv1.Record, *hubv1.Record)
+		evidence  string
+	}{
+		{
+			name: "materially different year",
+			configure: func(_, existing *hubv1.Record) {
+				existing.Dates[0].Year = 2021
+			},
+			evidence: "year_conflict",
+		},
+		{
+			name: "disjoint authors",
+			configure: func(_, existing *hubv1.Record) {
+				existing.Contributors = []*hubv1.Contributor{{Name: "Smith, Alex", Role: "author"}}
+			},
+			evidence: "author_conflict",
+		},
+		{
+			name: "grossly different publisher",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.Publisher = "Northwestern University Press"
+				existing.Publisher = "Elsevier"
+			},
+			evidence: "publisher_conflict",
+		},
+		{
+			name: "different resource type",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.ResourceType = &hubv1.ResourceType{Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE}
+				existing.ResourceType = &hubv1.ResourceType{Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET}
+			},
+			evidence: "resource_type_conflict",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			incoming, existing := exactMetadataPair()
+			test.configure(incoming, existing)
+
+			match, reportable, err := Compare(incoming, Candidate{RepositoryID: "metadata-conflict", Record: existing}, PolicyV1())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reportable || !match.RequiresReview || match.Score != 95 || match.Confidence != "conflict" {
+				t.Fatalf("serious metadata conflict = (%#v, %v), want score-95 review", match, reportable)
+			}
+			evidence, ok := evidenceByCode(match.Evidence, test.evidence)
+			if !ok || evidence.Weight != -5 {
+				t.Fatalf("%s evidence = (%#v, %v), want weight -5 in %#v", test.evidence, evidence, ok, match.Evidence)
+			}
+		})
+	}
+}
+
+func TestCompareExactIdentifierIgnoresNonSeriousMetadataDifferences(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		configure  func(*hubv1.Record, *hubv1.Record)
+		evidence   string
+		difference string
+	}{
+		{
+			name: "one-sided values",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.Publisher = "Northwestern University Press"
+				incoming.ResourceType = &hubv1.ResourceType{Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE}
+				existing.Contributors = nil
+				existing.Dates = nil
+			},
+		},
+		{
+			name: "adjacent publication years",
+			configure: func(_, existing *hubv1.Record) {
+				existing.Dates[0].Year = 2023
+			},
+			evidence: "year_conflict",
+		},
+		{
+			name: "similar normalized publishers",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.Publisher = "The University of Chicago Press"
+				existing.Publisher = "University of Chicago Press"
+			},
+			difference: "publisher",
+		},
+		{
+			name: "overlapping authors",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.Contributors = []*hubv1.Contributor{
+					{Name: "Doe, Jane", Role: "author"},
+					{Name: "Jones, Pat", Role: "author"},
+				}
+				existing.Contributors = []*hubv1.Contributor{
+					{Name: "Jane Doe", Role: "creator"},
+					{Name: "Smith, Alex", Role: "author"},
+				}
+			},
+			difference: "authors",
+		},
+		{
+			name: "same canonical resource type",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.ResourceType = &hubv1.ResourceType{
+					Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, Original: "Journal Article",
+				}
+				existing.ResourceType = &hubv1.ResourceType{
+					Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE, Original: "Article",
+				}
+			},
+			difference: "resource_type",
+		},
+		{
+			name: "language and abstract changes",
+			configure: func(incoming, existing *hubv1.Record) {
+				incoming.Language, existing.Language = "en", "fr"
+				incoming.Abstract, existing.Abstract = "incoming abstract", "existing abstract"
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			incoming, existing := exactMetadataPair()
+			test.configure(incoming, existing)
+
+			match, reportable, err := Compare(incoming, Candidate{RepositoryID: "benign-difference", Record: existing}, PolicyV1())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reportable || match.RequiresReview || match.Score != 100 || match.Confidence != "exact" {
+				t.Fatalf("non-serious metadata difference = (%#v, %v), want review-free exact match", match, reportable)
+			}
+			if test.evidence != "" {
+				evidence, ok := evidenceByCode(match.Evidence, test.evidence)
+				if !ok || evidence.Weight != 0 {
+					t.Fatalf("%s evidence = (%#v, %v), want zero-weight evidence", test.evidence, evidence, ok)
+				}
+			}
+			if test.difference != "" && !hasDifference(match.Differences, test.difference) {
+				t.Fatalf("missing exercised %s difference in %#v", test.difference, match.Differences)
+			}
+		})
+	}
+}
+
+func TestCompareExactIdentifierConflictClassesHaveIndependentPenalties(t *testing.T) {
+	t.Parallel()
+	incoming := testRecord(
+		"Quantum dynamics in nanoscale systems", 2024, []string{"Doe, Jane"},
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_DOI, "10.1000/shared"),
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_WOS, "WOS:000111111111"),
+	)
+	incoming.Publisher = "Northwestern University Press"
+	incoming.ResourceType = &hubv1.ResourceType{Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_ARTICLE}
+	existing := testRecord(
+		"A field guide to Appalachian wildflowers", 1990, []string{"Smith, Alex"},
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_DOI, "10.1000/shared"),
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_WOS, "WOS:000222222222"),
+	)
+	existing.Publisher = "Elsevier"
+	existing.ResourceType = &hubv1.ResourceType{Type: hubv1.ResourceTypeValue_RESOURCE_TYPE_DATASET}
+
+	match, reportable, err := Compare(incoming, Candidate{RepositoryID: "combined-conflict", Record: existing}, PolicyV1())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reportable || !match.RequiresReview || match.Score != 85 || match.Confidence != "conflict" {
+		t.Fatalf("combined exact conflict = (%#v, %v), want three class penalties", match, reportable)
+	}
+	wantWeights := map[string]int{
+		"identifier_conflict":    -5,
+		"title_conflict":         -5,
+		"author_conflict":        -5,
+		"year_conflict":          0,
+		"publisher_conflict":     0,
+		"resource_type_conflict": 0,
+	}
+	for code, wantWeight := range wantWeights {
+		evidence, ok := evidenceByCode(match.Evidence, code)
+		if !ok || evidence.Weight != wantWeight {
+			t.Errorf("%s evidence = (%#v, %v), want weight %d", code, evidence, ok, wantWeight)
+		}
+	}
+}
+
 func TestCompareMetadataSignalsAreReviewOnly(t *testing.T) {
 	t.Parallel()
 	incoming := testRecord(
@@ -313,10 +504,36 @@ func TestCompareRejectsUnsupportedPolicy(t *testing.T) {
 }
 
 func hasEvidence(values []Evidence, code string) bool {
+	_, ok := evidenceByCode(values, code)
+	return ok
+}
+
+func evidenceByCode(values []Evidence, code string) (Evidence, bool) {
 	for _, value := range values {
 		if value.Code == code {
+			return value, true
+		}
+	}
+	return Evidence{}, false
+}
+
+func hasDifference(values []Difference, field string) bool {
+	for _, value := range values {
+		if value.Field == field {
 			return true
 		}
 	}
 	return false
+}
+
+func exactMetadataPair() (*hubv1.Record, *hubv1.Record) {
+	incoming := testRecord(
+		"Reliable duplicate detection for scholarly repositories", 2024, []string{"Doe, Jane"},
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_DOI, "10.1234/shared"),
+	)
+	existing := testRecord(
+		"Reliable duplicate detection for scholarly repositories", 2024, []string{"Jane Doe"},
+		identifier(hubv1.IdentifierType_IDENTIFIER_TYPE_DOI, "10.1234/shared"),
+	)
+	return incoming, existing
 }

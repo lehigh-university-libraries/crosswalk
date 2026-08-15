@@ -29,6 +29,7 @@ func parseRowsWithSpec(rows [][]string, opts *format.ParseOptions) ([]*hubv1.Rec
 	if len(diagnostics) > 0 {
 		return nil, &format.DiagnosticsError{Diagnostics: diagnostics}
 	}
+	diagnostics = append(diagnostics, validateSpecTableRows(rows, dataStart, columns, opts)...)
 
 	records := make([]*hubv1.Record, 0, len(rows)-dataStart)
 	for rowIndex := dataStart; rowIndex < len(rows); rowIndex++ {
@@ -218,7 +219,8 @@ func emptyRow(row []string) bool {
 }
 
 type contributorParts struct {
-	values map[string][]string
+	values        map[string][]string
+	bundleAliases map[string]string
 }
 
 func specRowToRecord(row []string, rowNumber int, columns []specColumn, opts *format.ParseOptions) (*hubv1.Record, []format.Diagnostic) {
@@ -248,9 +250,10 @@ func specRowToRecord(row []string, rowNumber int, columns []specColumn, opts *fo
 		}
 
 		values := specValues(raw, column.field, opts.Spec.Source.MultiValueSeparator)
-		if column.field.Cardinality > 0 && len(values) > column.field.Cardinality {
+		encodedValues := specCardinalityValues(raw, column.field, opts.Spec.Source.MultiValueSeparator)
+		if column.field.Cardinality > 0 && len(encodedValues) > column.field.Cardinality {
 			diagnostics = append(diagnostics, cellDiagnostic(opts, rowNumber, column, "cardinality",
-				fmt.Sprintf("got %d values; maximum is %d", len(values), column.field.Cardinality)))
+				fmt.Sprintf("got %d values; maximum is %d", len(encodedValues), column.field.Cardinality)))
 			continue
 		}
 		sourceColumns = append(sourceColumns, column.field.Name)
@@ -259,6 +262,9 @@ func specRowToRecord(row []string, rowNumber int, columns []specColumn, opts *fo
 		if strings.HasPrefix(column.field.Hub, "Contributors.") {
 			component := strings.TrimPrefix(column.field.Hub, "Contributors.")
 			contributors.values[component] = append(contributors.values[component], values...)
+			if component == "Type" {
+				contributors.bundleAliases = contributorBundleAliases(column.field)
+			}
 			continue
 		}
 		for _, value := range values {
@@ -284,14 +290,25 @@ func specRowToRecord(row []string, rowNumber int, columns []specColumn, opts *fo
 	if len(sourceColumns) > 0 {
 		hub.SetExtra(record, "_source_columns", strings.Join(sourceColumns, "|"))
 	}
-	operation := inferSourceOperation(record, sourceColumns, opts.Spec)
+	// Determine the task from declared canonical fields, including cells whose
+	// value failed conversion. That prevents one bad cell from cascading into
+	// unrelated operation diagnostics.
+	operation := newSpecRowView(row, columns, opts.Spec.Source.MultiValueSeparator).operation()
+	for _, column := range columns {
+		if column.field.Codec == "ignore" || strings.TrimSpace(row[column.index]) == "" || column.field.AppliesTo(operation) {
+			continue
+		}
+		diagnostics = append(diagnostics, cellDiagnostic(opts, rowNumber, column, "operation",
+			fmt.Sprintf("field does not apply to %s operations", operation)))
+	}
+	diagnostics = append(diagnostics, validateSpecRow(row, rowNumber, columns, record, operation, opts)...)
 	for _, field := range opts.Spec.Source.Fields {
 		if field.Codec == "ignore" {
 			continue
 		}
 		key := strings.ToLower(field.Name)
 		if field.IsRequiredFor(operation, record.ObjectModel) && !present[key] {
-			message := fmt.Sprintf("value is required for %s operations", operation)
+			message := fmt.Sprintf("%s is required for %s operations", specFieldDescription(opts.Spec, field.Name), operation)
 			if column, ok := declared[key]; ok {
 				diagnostics = append(diagnostics, cellDiagnostic(opts, rowNumber, column, "required", message))
 			} else {
@@ -366,8 +383,8 @@ func inferSourceOperation(record *hubv1.Record, sourceColumns []string, transfor
 		if !ok || !field.AppliesTo(spec.OperationUpdate) {
 			continue
 		}
-		switch field.Name {
-		case "node_id", "file", "id", "parent_id":
+		switch field.Hub {
+		case "Extra.node_id", "Files.primary", "Extra.id", "Extra.parent_id":
 			continue
 		default:
 			return spec.OperationUpdate
@@ -402,7 +419,7 @@ func cellDiagnostic(opts *format.ParseOptions, row int, column specColumn, code,
 func specValues(raw string, field spec.Field, separator string) []string {
 	if field.Cardinality != 1 {
 		switch field.Codec {
-		case "multi", "file", "contributors", "boolean", "integer", "unsigned", "edtf", "string", "":
+		case "multi", "file", "contributors", "boolean", "integer", "unsigned", "edtf", "string", "profile_identifier", "":
 			if separator == "" {
 				separator = "|"
 			}
@@ -418,6 +435,22 @@ func specValues(raw string, field spec.Field, separator string) []string {
 	default:
 		return []string{strings.TrimSpace(raw)}
 	}
+}
+
+// specCardinalityValues interprets the declared source encoding independently
+// of the Hub codec. A scalar Drupal codec can still contain multiple values in
+// one source cell when the configured separator is present. Workbench treats
+// its canonical title machine field as scalar text because titles may contain
+// the separator; the exception is intentionally keyed to Field.Name, never a
+// human-facing label or alias.
+func specCardinalityValues(raw string, field spec.Field, separator string) []string {
+	if strings.EqualFold(strings.TrimSpace(field.Name), "title") {
+		return []string{strings.TrimSpace(raw)}
+	}
+	if separator == "" {
+		separator = "|"
+	}
+	return splitMultiValue(raw, separator)
 }
 
 func assignSpecValue(record *hubv1.Record, field spec.Field, value string, opts *format.ParseOptions) error {
@@ -447,7 +480,7 @@ func assignSpecValue(record *hubv1.Record, field spec.Field, value string, opts 
 	case "edtf":
 		dateType := dateTypeFromString(strings.TrimPrefix(field.Hub, "Dates."))
 		date, err := helpers.ParseEDTF(value, dateType)
-		if err != nil || date.Year == 0 || date.Month > 12 || date.Day > 31 {
+		if err != nil || date.Year < 1000 || date.Month > 12 || date.Day > 31 {
 			return fmt.Errorf("must be a valid EDTF date: %q", value)
 		}
 		if strings.HasPrefix(field.Hub, "Extra.") {
@@ -743,20 +776,31 @@ func (parts contributorParts) apply(record *hubv1.Record) error {
 			contributor.RoleCode = strings.TrimSpace(strings.SplitN(role, "|", 2)[0])
 			contributor.Role = helpers.RelatorLabel(contributor.RoleCode)
 		}
-		if kind := strings.ToLower(contributorValue(parts.values["Type"], index)); kind != "" {
-			if strings.Contains(kind, "corporate") || strings.Contains(kind, "organization") {
-				contributor.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
-			} else if strings.Contains(kind, "person") {
-				contributor.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
-			} else {
-				return fmt.Errorf("contributor %d has unsupported type %q", index+1, kind)
+		if kind := contributorValue(parts.values["Type"], index); kind != "" {
+			bundle, contributorType, err := contributorBundle(kind, parts.bundleAliases)
+			if err != nil {
+				return fmt.Errorf("contributor %d: %w", index+1, err)
 			}
+			contributor.Type = contributorType
+			// Hub's ContributorType intentionally has only person/organization.
+			// Preserve the exact Drupal vocabulary in SourceId so profile-bound
+			// Workbench serialization can distinguish family from corporate_body
+			// without guessing from a human-facing label.
+			contributor.SourceId = bundle + ":" + contributor.Name
 		}
 		if orcid := contributorValue(parts.values["ORCID"], index); orcid != "" {
 			contributor.Identifiers = append(contributor.Identifiers, hub.NewIdentifier(orcid, hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID))
 		}
-		contributor.Status = contributorValue(parts.values["Status"], index)
-		contributor.Email = contributorValue(parts.values["Email"], index)
+		// A combined Contributor JSON cell already carries these optional
+		// properties. Separate template columns override them only when they
+		// contain a value; an absent companion column must not erase the JSON
+		// metadata produced by the ETD converter.
+		if status := contributorValue(parts.values["Status"], index); status != "" {
+			contributor.Status = status
+		}
+		if email := contributorValue(parts.values["Email"], index); email != "" {
+			contributor.Email = email
+		}
 		if affiliation := contributorValue(parts.values["Affiliation"], index); affiliation != "" {
 			affiliation = strings.TrimPrefix(affiliation, "schema:worksFor:corporate_body:")
 			contributor.Affiliations = append(contributor.Affiliations, &hubv1.Affiliation{Name: affiliation})
@@ -764,6 +808,98 @@ func (parts contributorParts) apply(record *hubv1.Record) error {
 		record.Contributors = append(record.Contributors, contributor)
 	}
 	return nil
+}
+
+func contributorBundle(raw string, aliases map[string]string) (string, hubv1.ContributorType, error) {
+	normalized := normalizeContributorBundle(raw)
+	if normalized == "" {
+		return "", hubv1.ContributorType_CONTRIBUTOR_TYPE_UNSPECIFIED, fmt.Errorf("contributor type is empty")
+	}
+	if len(aliases) == 0 {
+		aliases = map[string]string{
+			"person":         "person",
+			"family":         "family",
+			"corporate_body": "corporate_body",
+			"organization":   "corporate_body",
+		}
+	}
+	bundle, exists := aliases[normalized]
+	if !exists && normalized == "organization" {
+		bundle, exists = aliases["corporate_body"]
+	}
+	if !exists {
+		return "", hubv1.ContributorType_CONTRIBUTOR_TYPE_UNSPECIFIED,
+			fmt.Errorf("contributor type %q is not a model-declared Drupal bundle", raw)
+	}
+	contributorType := hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
+	if bundle == "person" {
+		contributorType = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
+	}
+	return bundle, contributorType, nil
+}
+
+func contributorBundleAliases(field spec.Field) map[string]string {
+	for _, validation := range field.Validations {
+		if validation.Rule != spec.ValidationTypedRelation || len(validation.Bundles) == 0 {
+			continue
+		}
+		return contributorBundleNames(validation.Bundles)
+	}
+	handler, ok := field.InstanceSettings["handler_settings"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	targets, ok := handler["target_bundles"]
+	if !ok {
+		return nil
+	}
+	result := make(map[string]string)
+	add := func(bundle string) {
+		bundle = strings.TrimSpace(bundle)
+		if bundle == "" {
+			return
+		}
+		result[normalizeContributorBundle(bundle)] = bundle
+	}
+	switch typed := targets.(type) {
+	case map[string]any:
+		for bundle := range typed {
+			add(bundle)
+		}
+	case map[string]string:
+		for bundle := range typed {
+			add(bundle)
+		}
+	case []any:
+		for _, bundle := range typed {
+			add(fmt.Sprint(bundle))
+		}
+	case []string:
+		for _, bundle := range typed {
+			add(bundle)
+		}
+	case string:
+		add(typed)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func contributorBundleNames(bundles []string) map[string]string {
+	result := make(map[string]string, len(bundles))
+	for _, bundle := range bundles {
+		bundle = strings.TrimSpace(bundle)
+		if bundle != "" {
+			result[normalizeContributorBundle(bundle)] = bundle
+		}
+	}
+	return result
+}
+
+func normalizeContributorBundle(value string) string {
+	return strings.NewReplacer("-", "_", " ", "_").Replace(strings.ToLower(strings.TrimSpace(value)))
 }
 
 func contributorValue(values []string, index int) string {

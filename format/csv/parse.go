@@ -270,11 +270,17 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			// Contributors always use " ; " as multi-value separator to match serialization
 			entries := splitMultiValue(value, " ; ")
 			for _, entry := range entries {
-				if strings.HasPrefix(strings.TrimSpace(entry), "{") && !json.Valid([]byte(entry)) {
-					return nil, &cellError{column: i, code: "invalid_contributor", message: "contributor JSON is invalid"}
+				entry = strings.TrimSpace(entry)
+				if strings.HasPrefix(entry, "{") {
+					var object map[string]any
+					if err := json.Unmarshal([]byte(entry), &object); err != nil {
+						return nil, &cellError{column: i, code: "invalid_contributor", message: "contributor JSON is invalid"}
+					}
+					record.Contributors = append(record.Contributors, parseContributorFromJSON(object))
+					continue
 				}
-				if c := parseContributor(entry); c != nil {
-					record.Contributors = append(record.Contributors, c)
+				if entry != "" {
+					record.Contributors = append(record.Contributors, parseContributorFromString(entry))
 				}
 			}
 
@@ -474,9 +480,9 @@ func cleanValue(value string, opts *format.ParseOptions) string {
 
 // parseContributor parses a contributor from either JSON format or a plain prefixed string.
 //
-// JSON format: {"name":"relators:cre:person:Qin, Tian","institution":"...","orcid":"..."}
-// Plain format: "relators:cre:person:Qin, Tian" (Islandora workbench style)
-// Simple format: "Qin, Tian"
+// JSON format: {"name":"relators:cre:person:Example, Avery","institution":"...","orcid":"..."}
+// Plain format: "relators:cre:person:Example, Avery" (Islandora workbench style)
+// Simple format: "Example, Avery"
 func parseContributor(s string) *hubv1.Contributor {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -494,7 +500,7 @@ func parseContributor(s string) *hubv1.Contributor {
 }
 
 // parseContributorFromString parses a plain or prefixed contributor string.
-// Prefixed format: "relators:cre:person:Qin, Tian" (role_code:type:name)
+// Prefixed format: "relators:cre:person:Example, Avery" (role_code:type:name)
 func parseContributorFromString(s string) *hubv1.Contributor {
 	roleCode, contribType, name := parseNamePrefix(s)
 	c := &hubv1.Contributor{
@@ -568,18 +574,19 @@ func parseContributorFromJSON(obj map[string]any) *hubv1.Contributor {
 }
 
 // parseNamePrefix extracts role code, contributor type, and name from a prefixed string.
-// Format: "[roleCode:]type:name" where type is "person" or "organization".
-// Example: "relators:cre:person:Qin, Tian" → ("relators:cre", PERSON, "Qin, Tian")
+// Format: "[roleCode:]type:name" where type is "person", "organization", or
+// Workbench's canonical "corporate_body" spelling.
+// Example: "relators:cre:person:Example, Avery" → ("relators:cre", PERSON, "Example, Avery")
 func parseNamePrefix(s string) (roleCode string, contribType hubv1.ContributorType, name string) {
 	contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
 
-	for _, keyword := range []string{"person", "organization"} {
+	for _, keyword := range []string{"person", "organization", "corporate_body"} {
 		// Look for ":keyword:" in the middle of the string
 		marker := ":" + keyword + ":"
 		if idx := strings.Index(s, marker); idx >= 0 {
 			roleCode = s[:idx]
 			name = s[idx+len(marker):]
-			if keyword == "organization" {
+			if keyword != "person" {
 				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
 			}
 			return
@@ -587,7 +594,7 @@ func parseNamePrefix(s string) (roleCode string, contribType hubv1.ContributorTy
 		// Look for "keyword:" at the start (no role prefix)
 		if strings.HasPrefix(s, keyword+":") {
 			name = s[len(keyword)+1:]
-			if keyword == "organization" {
+			if keyword != "person" {
 				contribType = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
 			}
 			return

@@ -4,6 +4,11 @@ Crosswalk registers formats by stable command-line name. Parsing maps a source
 document into Hub records; serialization maps Hub records to a target document.
 Not every format needs both directions.
 
+The registry is deterministic and safe for concurrent readers. Registration
+fails explicitly when two adapters claim the same name, and automatic format
+detection fails rather than choosing arbitrarily when more than one adapter
+matches an input.
+
 | Name | Description | Parse | Serialize |
 |---|---|:---:|:---:|
 | `archivesspace` | ArchivesSpace JSONModel snapshot/resource data | Yes | No |

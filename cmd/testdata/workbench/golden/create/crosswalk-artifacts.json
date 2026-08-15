@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "spec": {
+    "name": "fabricator-workbench",
+    "version": "1",
+    "fingerprint": "512baedbd9ed12ffb74284ddca77e26e0506c1aa135b7254bec7fabb48f3cc32"
+  },
+  "policy": {
+    "path_mode": "staged-posix",
+    "staging_root": "/mnt/islandora_staging",
+    "allowed_absolute_roots": [
+      "/home",
+      "/mnt"
+    ],
+    "supplemental_media_use_tid": "151326",
+    "pending_supplemental_published": "1",
+    "unpublished_supplemental_media_use_tid": "151326",
+    "unpublished_supplemental_published": "0"
+  },
+  "artifacts": [
+    {
+      "path": "target.csv",
+      "media_type": "text/csv; charset=utf-8",
+      "sha256": "abb641f7cbfbec36b8ba91517d6e042c4097a974f016f7b61d384e782b75733c",
+      "bytes": 896,
+      "csv_rows": 2
+    }
+  ]
+}

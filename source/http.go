@@ -65,7 +65,10 @@ var nonPublicMetadataPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("ff00::/8"),
 }
 
-// HTTPDoer is implemented by http.Client and test transports.
+// HTTPDoer is implemented by http.Client and test transports. Client and
+// Downloader-style APIs in this module protect supplied *http.Client values,
+// but use other implementations verbatim. A non-*http.Client implementation
+// must therefore enforce any required destination and redirect policy itself.
 type HTTPDoer interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -154,6 +157,13 @@ func (err *HTTPStatusError) Error() string {
 
 // Client retrieves bounded metadata responses with request cancellation.
 type Client struct {
+	// HTTP optionally supplies client-level settings. Supplied *http.Client
+	// values retain positive timeouts, cookie jars, and stricter redirect
+	// decisions, but their transports are replaced so DNS pinning, destination
+	// filtering, and the no-proxy policy cannot be bypassed. Other HTTPDoer
+	// implementations are used verbatim and are responsible for equivalent
+	// protections; that escape hatch is primarily intended for tests and
+	// in-process adapters.
 	HTTP             HTTPDoer
 	UserAgent        string
 	MaxResponseBytes int64
@@ -274,29 +284,15 @@ func (c *Client) FetchRequest(ctx context.Context, options Request) (*Document, 
 }
 
 func (c *Client) httpClient(policy RedirectPolicy) HTTPDoer {
-	if c != nil {
-		if c.HTTP != nil {
-			if provided, ok := c.HTTP.(*http.Client); ok {
-				copy := *provided
-				prior := copy.CheckRedirect
-				copy.CheckRedirect = func(request *http.Request, via []*http.Request) error {
-					if len(via) >= 10 {
-						return fmt.Errorf("too many redirects")
-					}
-					if len(via) > 0 && !safeMetadataRedirect(via[0].URL, request.URL, policy) {
-						return fmt.Errorf("refusing unsafe metadata redirect")
-					}
-					if prior != nil {
-						return prior(request, via)
-					}
-					return nil
-				}
-				return &copy
-			}
-			return c.HTTP
+	allowPrivate := c != nil && c.AllowPrivate
+	allowLoopback := c != nil && c.AllowLoopback
+	if c != nil && c.HTTP != nil {
+		if provided, ok := c.HTTP.(*http.Client); ok {
+			return CloneProtectedHTTPClient(provided, allowPrivate, allowLoopback, policy)
 		}
+		return c.HTTP
 	}
-	return defaultHTTPClient(c != nil && c.AllowPrivate, c != nil && c.AllowLoopback, policy)
+	return defaultHTTPClient(allowPrivate, allowLoopback, policy)
 }
 
 // NewProtectedHTTPClient returns an HTTP client that resolves and dials each
@@ -311,6 +307,24 @@ func NewProtectedHTTPClient(allowPrivate, allowLoopback bool, policy RedirectPol
 	return defaultHTTPClient(allowPrivate, allowLoopback, policy)
 }
 
+// CloneProtectedHTTPClient returns a protected client derived from provided.
+// Positive timeouts, cookie jars, and stricter redirect decisions are retained.
+// The transport is deliberately replaced: custom transports, including proxy
+// settings, cannot preserve local DNS pinning and destination validation.
+// A nil client returns the same safe defaults as NewProtectedHTTPClient.
+func CloneProtectedHTTPClient(provided *http.Client, allowPrivate, allowLoopback bool, policy RedirectPolicy) *http.Client {
+	client := defaultHTTPClient(allowPrivate, allowLoopback, policy)
+	if provided == nil {
+		return client
+	}
+	if provided.Timeout > 0 {
+		client.Timeout = provided.Timeout
+	}
+	client.Jar = provided.Jar
+	client.CheckRedirect = protectedRedirectPolicy(policy, provided.CheckRedirect)
+	return client
+}
+
 func defaultHTTPClient(allowPrivate, allowLoopback bool, policy RedirectPolicy) *http.Client {
 	dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
 	transport := &http.Transport{
@@ -322,9 +336,8 @@ func defaultHTTPClient(allowPrivate, allowLoopback bool, policy RedirectPolicy) 
 		ResponseHeaderTimeout:  defaultTimeout,
 		MaxResponseHeaderBytes: 1 << 20,
 	}
-	// Environment-configured proxies resolve and fetch the target themselves,
-	// bypassing the address validation in DialContext. Callers that require a
-	// proxy must inject an explicitly configured HTTP client.
+	// Proxies resolve and fetch the target themselves, bypassing the address
+	// validation in DialContext, so protected clients never use one.
 	transport.Proxy = nil
 	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(address)
@@ -353,15 +366,32 @@ func defaultHTTPClient(allowPrivate, allowLoopback bool, policy RedirectPolicy) 
 	}
 	return &http.Client{
 		Timeout: defaultTimeout, Transport: transport,
-		CheckRedirect: func(request *http.Request, via []*http.Request) error {
-			if len(via) >= 10 {
-				return fmt.Errorf("too many redirects")
+		CheckRedirect: protectedRedirectPolicy(policy, nil),
+	}
+}
+
+func protectedRedirectPolicy(policy RedirectPolicy, prior func(*http.Request, []*http.Request) error) func(*http.Request, []*http.Request) error {
+	return func(request *http.Request, via []*http.Request) error {
+		if len(via) >= 10 {
+			return fmt.Errorf("too many redirects")
+		}
+		var origin *url.URL
+		if len(via) > 0 && via[0] != nil && via[0].URL != nil {
+			copy := *via[0].URL
+			origin = &copy
+		}
+		if prior != nil {
+			if err := prior(request, via); err != nil {
+				return err
 			}
-			if len(via) > 0 && !safeMetadataRedirect(via[0].URL, request.URL, policy) {
-				return fmt.Errorf("refusing unsafe metadata redirect")
-			}
-			return nil
-		},
+		}
+		// Run the mandatory check after the caller hook so even a hook that
+		// mutates the redirect request cannot weaken the built-in policy. The
+		// original origin was copied first for the same reason.
+		if len(via) > 0 && (request == nil || !safeMetadataRedirect(origin, request.URL, policy)) {
+			return fmt.Errorf("refusing unsafe metadata redirect")
+		}
+		return nil
 	}
 }
 

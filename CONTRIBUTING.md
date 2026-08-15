@@ -15,4 +15,4 @@ directly.
 The full contributor guide—including the Hub/spoke boundary, format-adapter
 guidance, tests, and local documentation workflow—lives at
 <https://lehigh-university-libraries.github.io/crosswalk/contributing/> and in
-[docs/contributing.md](docs/contributing.md).
+[docs/content/contributing.md](docs/content/contributing.md).

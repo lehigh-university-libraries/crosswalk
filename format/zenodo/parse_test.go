@@ -1,6 +1,9 @@
 package zenodo
 
 import (
+	"bytes"
+	"fmt"
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -100,6 +103,146 @@ func TestParseSearchPageAndNewCreatorShape(t *testing.T) {
 	}
 	if len(records[0].Contributors) != 1 || records[0].Contributors[0].ParsedName.Given != "John" || len(records[0].Contributors[0].Identifiers) != 1 {
 		t.Fatalf("contributors = %+v", records[0].Contributors)
+	}
+}
+
+func TestParseSkipsEmptyCreatorAndContributorObjects(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name        string
+		creditsJSON string
+		wantNames   []string
+	}{
+		{name: "single empty creator object", creditsJSON: `"creators": {}`},
+		{name: "single empty contributor object", creditsJSON: `"contributors": {}`},
+		{name: "empty entries in arrays", creditsJSON: `"creators": [{}, {"name":"Doe, Jane"}], "contributors": [{}, {"name":"Example Organization", "type":"organizational"}]`, wantNames: []string{"Doe, Jane", "Example Organization"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			input := `{"id":44,"metadata":{"title":"One",` + test.creditsJSON + `}}`
+			records, err := (&Format{}).Parse(strings.NewReader(input), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			contributors := records[0].GetContributors()
+			if len(contributors) != len(test.wantNames) {
+				t.Fatalf("contributors = %+v, want names %v", contributors, test.wantNames)
+			}
+			for index, want := range test.wantNames {
+				if got := contributors[index].GetName(); got != want {
+					t.Errorf("contributor %d name = %q, want %q", index, got, want)
+				}
+			}
+		})
+	}
+}
+
+func TestZenodoRelationUsesCanonicalIdentifierResolvers(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name          string
+		identifier    string
+		wantID        string
+		wantType      hubv1.IdentifierType
+		wantTargetURI string
+	}{
+		{name: "Handle", identifier: "hdl:20.500.12345/example", wantID: "20.500.12345/example", wantType: hubv1.IdentifierType_IDENTIFIER_TYPE_HANDLE, wantTargetURI: "https://hdl.handle.net/20.500.12345/example"},
+		{name: "ISBN", identifier: "ISBN-13: 978-0-306-40615-7", wantID: "9780306406157", wantType: hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN, wantTargetURI: "urn:isbn:9780306406157"},
+		{name: "ISSN", identifier: "ISSN: 2049-3630", wantID: "2049-3630", wantType: hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN, wantTargetURI: "urn:issn:2049-3630"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			relation := zenodoRelation(related{Identifier: test.identifier, Relation: "references"})
+			if relation == nil {
+				t.Fatal("zenodoRelation() = nil")
+			}
+			if relation.GetTargetId() != test.wantID || relation.GetTargetIdType() != test.wantType || relation.GetTargetUri() != test.wantTargetURI {
+				t.Fatalf("relation = %v, want id %q, type %s, URI %q", relation, test.wantID, test.wantType, test.wantTargetURI)
+			}
+		})
+	}
+}
+
+func TestParseRetainsFunderIdentifierSchemes(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		identifier string
+		wantScheme string
+	}{
+		{name: "DOI", identifier: "10.13039/100000001", wantScheme: "doi"},
+		{name: "ROR", identifier: "https://ror.org/02mhbdp94", wantScheme: "ror"},
+		{name: "ISNI", identifier: "https://isni.org/isni/000000012124423X", wantScheme: "isni"},
+		{name: "GND", identifier: "https://d-nb.info/gnd/118540238", wantScheme: "gnd"},
+		{name: "unrecognized", identifier: "local-funder-id"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			input := fmt.Sprintf(`{"id":44,"metadata":{"title":"One","grants":{"funder":{"name":"Example Funder","id":%q}}}}`, test.identifier)
+			records, err := (&Format{}).Parse(strings.NewReader(input), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			funders := records[0].GetFunders()
+			if len(funders) != 1 {
+				t.Fatalf("funders = %+v", funders)
+			}
+			if got := funders[0].GetIdentifierType(); got != test.wantScheme {
+				t.Fatalf("identifier type = %q, want %q", got, test.wantScheme)
+			}
+		})
+	}
+}
+
+func TestParseWarnsWhenDroppingMalformedDates(t *testing.T) {
+	var output bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&output, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	input := `{
+	  "id": 44,
+	  "created": "bad-created",
+	  "modified": "bad-modified",
+	  "metadata": {
+	    "title": "One",
+	    "publication_date": "not-a-date",
+	    "dates": [
+	      {"date":"2023-99-99","type":"collected"},
+	      {"date":"still-not-a-date","type":"available"}
+	    ]
+	  }
+	}`
+	records, err := (&Format{}).Parse(strings.NewReader(input), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records[0].GetDates()) != 0 {
+		t.Fatalf("dates = %+v, want none", records[0].GetDates())
+	}
+	logged := output.String()
+	for _, want := range []string{
+		`msg="ignoring malformed Zenodo date"`,
+		`field=metadata.publication_date count=1 source_id=44`,
+		`field=metadata.dates.date count=2 source_id=44`,
+		`field=created count=1 source_id=44`,
+		`field=modified count=1 source_id=44`,
+	} {
+		if !strings.Contains(logged, want) {
+			t.Errorf("log output does not contain %q:\n%s", want, logged)
+		}
+	}
+	if got := strings.Count(logged, "field=metadata.dates.date"); got != 1 {
+		t.Errorf("metadata date warnings = %d, want one aggregated warning:\n%s", got, logged)
+	}
+
+	output.Reset()
+	parseZenodoDate("bad", hubv1.DateType_DATE_TYPE_PUBLISHED, "metadata.publication_date", "access_token=secret")
+	if logged := output.String(); strings.Contains(logged, "access_token") || strings.Contains(logged, "secret") {
+		t.Fatalf("malformed-date warning leaked a non-numeric source ID: %s", logged)
 	}
 }
 

@@ -1,0 +1,13 @@
+id: node.islandora_object.field_collection
+field_name: field_collection
+entity_type: node
+bundle: islandora_object
+label: Collection
+description: 'Collection vocabulary terms.'
+required: false
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      collection: collection
+field_type: entity_reference

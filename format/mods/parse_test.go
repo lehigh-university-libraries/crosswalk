@@ -24,7 +24,7 @@ func TestParseSingleRecord(t *testing.T) {
     </role>
   </name>
   <name type="corporate">
-    <namePart>Lehigh University</namePart>
+    <namePart>Example University</namePart>
     <role>
       <roleTerm type="text">sponsor</roleTerm>
     </role>

@@ -78,9 +78,10 @@ func init() {
 		profile.SetConfigDir(dir)
 		return nil
 	}
-	rootCmd.AddCommand(convertCmd)
+	rootCmd.AddCommand(newConvertCmd())
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(newServeCmd())
 	rootCmd.AddCommand(newFetchCmd())
 	rootCmd.AddCommand(newSpecCmd())
+	rootCmd.AddCommand(newWorkbenchCmd())
 }

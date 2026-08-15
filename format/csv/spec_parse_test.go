@@ -4,6 +4,7 @@ import (
 	"bytes"
 	stdcsv "encoding/csv"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -43,7 +44,7 @@ func TestParseFabricatorGoldenFixture(t *testing.T) {
 	if first.Title == "Title" || first.Title == "Human Name" {
 		t.Fatalf("header row was parsed as metadata: title %q", first.Title)
 	}
-	if first.Title != "Coplay Echoes (volume 1, no.1)" {
+	if first.Title != "Example Gazette (volume 1, no.1)" {
 		t.Errorf("first title = %q", first.Title)
 	}
 	if first.FullTitle != first.Title {
@@ -52,13 +53,13 @@ func TestParseFabricatorGoldenFixture(t *testing.T) {
 	if first.ObjectModel != "Paged Content" {
 		t.Errorf("first object model = %q", first.ObjectModel)
 	}
-	if len(first.Contributors) != 1 || first.Contributors[0].Name != "People of Coplay" {
+	if len(first.Contributors) != 1 || first.Contributors[0].Name != "Example Historical Society" {
 		t.Errorf("first contributors = %+v", first.Contributors)
 	}
 	if len(first.Rights) != 1 || first.Rights[0].Uri != "http://rightsstatements.org/vocab/NoC-US/1.0/" {
 		t.Errorf("first rights = %+v", first.Rights)
 	}
-	wantFile := "/mnt/islandora_staging/Coplay-Echoes/Coplay-Echoes-1943-09/Coplay-Echoes-1943-09_001.tif"
+	wantFile := "/mnt/islandora_staging/Example-Gazette/Example-Gazette-2001-09/Example-Gazette-2001-09_001.tif"
 	if got := records[1].Files[0].Path; got != wantFile {
 		t.Errorf("normalized file path = %q", got)
 	}
@@ -104,7 +105,7 @@ func TestParseFabricatorGoldenFixture(t *testing.T) {
 }
 
 func TestParseSpecNormalizesFileReferences(t *testing.T) {
-	input := strings.NewReader("Node ID,File Path\n1,nested\\file.pdf\n2,/home/import/file.pdf\n3,/etc/passwd\n")
+	input := strings.NewReader("Node ID,File Path\n1,nested\\file.pdf\n2,/home/import/file.pdf\n3,/etc/passwd.txt\n")
 	records, err := (&Format{}).Parse(input, &format.ParseOptions{Spec: spec.FabricatorWorkbench(), Strict: true})
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
@@ -112,7 +113,7 @@ func TestParseSpecNormalizesFileReferences(t *testing.T) {
 	want := []string{
 		"/mnt/islandora_staging/nested/file.pdf",
 		"/home/import/file.pdf",
-		"/mnt/islandora_staging/etc/passwd",
+		"/mnt/islandora_staging/etc/passwd.txt",
 	}
 	for index := range want {
 		if got := records[index].Files[0].Path; got != want[index] {
@@ -146,6 +147,52 @@ func TestParseSpecRejectsFilePathTraversal(t *testing.T) {
 	got := diagnostics.Diagnostics[0]
 	if got.Code != "invalid_value" || got.Row != 2 || got.Column != 2 || !strings.Contains(got.Message, "escapes") {
 		t.Fatalf("traversal diagnostic = %+v", got)
+	}
+}
+
+func TestMediaExtensionValidationUsesSealedBundlePolicy(t *testing.T) {
+	policies := []spec.MediaExtensionPolicy{
+		{MediaType: "file", SelectExtensions: []string{"tif"}, AllowedExtensions: []string{"odt", "tif"}, Fallback: true},
+		{MediaType: "document", SelectExtensions: []string{"pdf"}, AllowedExtensions: []string{"pdf"}},
+		{MediaType: "video", SelectExtensions: []string{"mp4"}, AllowedExtensions: []string{"mp4"}},
+		{MediaType: "model_3d", SelectExtensions: []string{"stl"}, AllowedExtensions: []string{"stl"}},
+	}
+	tests := []struct {
+		name      string
+		file      string
+		mediaType string
+		extension string
+		allowed   bool
+	}{
+		{name: "fallback uses actual file field", file: "report.odt", mediaType: "file", extension: "odt", allowed: true},
+		{name: "document selection", file: "report.pdf", mediaType: "document", extension: "pdf", allowed: true},
+		{name: "URL query is not part of extension", file: "https://files.example/report.pdf?download=1", mediaType: "document", extension: "pdf", allowed: true},
+		{name: "video selection", file: "movie.mp4", mediaType: "video", extension: "mp4", allowed: true},
+		{name: "manual custom selection", file: "mesh.stl", mediaType: "model_3d", extension: "stl", allowed: true},
+		{name: "unselected legacy extension falls back", file: "movie.m4v", mediaType: "file", extension: "m4v", allowed: false},
+		{name: "extension required", file: "README", mediaType: "file", extension: "", allowed: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mediaType, extension, allowed := allowedSpecMediaExtension(test.file, policies)
+			if mediaType != test.mediaType || extension != test.extension || allowed != test.allowed {
+				t.Fatalf("allowedSpecMediaExtension(%q) = %q, %q, %v; want %q, %q, %v", test.file, mediaType, extension, allowed, test.mediaType, test.extension, test.allowed)
+			}
+		})
+	}
+}
+
+func TestNotFutureTimestampValidation(t *testing.T) {
+	validation := spec.Validation{Rule: spec.ValidationNotFutureTimestamp}
+	field := spec.Field{Name: "created", Hub: "Extra.created"}
+	if message := validateSpecFieldRule(validation, "2000-01-02T03:04:05+00:00", []string{"2000-01-02T03:04:05+00:00"}, field, specRowView{}, nil, nil); message != "" {
+		t.Fatalf("past timestamp finding = %q", message)
+	}
+	if message := validateSpecFieldRule(validation, "9999-01-02T03:04:05+00:00", []string{"9999-01-02T03:04:05+00:00"}, field, specRowView{}, nil, nil); !strings.Contains(message, "future") {
+		t.Fatalf("future timestamp finding = %q", message)
+	}
+	if message := validateSpecFieldRule(validation, "tomorrow", []string{"tomorrow"}, field, specRowView{}, nil, nil); !strings.Contains(message, "RFC 3339") {
+		t.Fatalf("malformed timestamp finding = %q", message)
 	}
 }
 
@@ -216,7 +263,7 @@ func TestParseSpecRequiresSealedExactValueProfileBinding(t *testing.T) {
 }
 
 func TestParseFabricatorHumanHeader(t *testing.T) {
-	input := strings.NewReader("Upload ID,Object Model,Title,Full Title,Make Public (Y/N)\n001,Digital Document,Example,Example full,No\n")
+	input := strings.NewReader("Upload ID,Object Model,Title,Full Title,Resource Type,Make Public (Y/N)\n001,Digital Document,Example,Example full,Book,No\n")
 	records, err := (&Format{}).Parse(input, &format.ParseOptions{
 		Spec:       spec.FabricatorWorkbench(),
 		Strict:     true,
@@ -233,8 +280,48 @@ func TestParseFabricatorHumanHeader(t *testing.T) {
 	}
 }
 
+func TestParseFabricatorCombinedContributorPreservesETDMetadata(t *testing.T) {
+	input := strings.NewReader(`Upload ID,Object Model,Title,Full Title,Resource Type,Contributor
+1,Digital Document,Synthetic ETD,Synthetic ETD,Text,"{""name"":""relators:cre:person:Example, Alex"",""institution"":""Example University"",""orcid"":""0000-0000-0000-0000"",""email"":""alex@example.invalid"",""status"":""Graduate Student""}"
+`)
+	records, err := (&Format{}).Parse(input, &format.ParseOptions{
+		Spec: spec.FabricatorWorkbench(), Strict: true, SourceName: "etd.csv",
+	})
+	if err != nil {
+		t.Fatalf("parse combined ETD contributor: %v", err)
+	}
+	if len(records) != 1 || len(records[0].Contributors) != 1 {
+		t.Fatalf("contributors = %#v", records)
+	}
+	contributor := records[0].Contributors[0]
+	if contributor.Name != "Example, Alex" || contributor.RoleCode != "relators:cre" || contributor.Email != "alex@example.invalid" || contributor.Status != "Graduate Student" {
+		t.Fatalf("contributor = %#v", contributor)
+	}
+	if len(contributor.Affiliations) != 1 || contributor.Affiliations[0].Name != "Example University" {
+		t.Fatalf("affiliations = %#v", contributor.Affiliations)
+	}
+	if len(contributor.Identifiers) != 1 || contributor.Identifiers[0].Type != hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID || contributor.Identifiers[0].Value != "0000-0000-0000-0000" {
+		t.Fatalf("identifiers = %#v", contributor.Identifiers)
+	}
+}
+
+func TestParseFabricatorRequiresUploadIDForCreate(t *testing.T) {
+	input := strings.NewReader("Upload ID,Object Model,Title,Full Title,Resource Type\n,Digital Document,Example,Example full,Book\n")
+	_, err := (&Format{}).Parse(input, &format.ParseOptions{Spec: spec.FabricatorWorkbench(), Strict: true})
+	var diagnostics *format.DiagnosticsError
+	if !errors.As(err, &diagnostics) {
+		t.Fatalf("Parse() error = %T %v, want DiagnosticsError", err, err)
+	}
+	for _, diagnostic := range diagnostics.Diagnostics {
+		if diagnostic.Code == "required" && diagnostic.Header == "Upload ID" && diagnostic.Row == 2 {
+			return
+		}
+	}
+	t.Fatalf("missing create Upload ID diagnostic: %+v", diagnostics.Diagnostics)
+}
+
 func TestParseSpecReportsCellDiagnostics(t *testing.T) {
-	input := strings.NewReader("Upload ID,Object Model,Title,Full Title,Creation Date\nnot-a-number,Digital Document,,Example full,not-a-date\n")
+	input := strings.NewReader("Upload ID,Object Model,Title,Full Title,Creation Date,Resource Type\nnot-a-number,Digital Document,,Example full,not-a-date,\n")
 	_, err := (&Format{}).Parse(input, &format.ParseOptions{
 		Spec:       spec.FabricatorWorkbench(),
 		Strict:     true,
@@ -303,6 +390,153 @@ func TestParseSpecAppliesDefaultsAndCardinality(t *testing.T) {
 	var diagnostics *format.DiagnosticsError
 	if !errors.As(err, &diagnostics) || len(diagnostics.Diagnostics) != 1 || diagnostics.Diagnostics[0].Code != "cardinality" {
 		t.Fatalf("cardinality error = %T %+v", err, err)
+	}
+}
+
+func TestParseSpecPreservesModelDeclaredContributorBundles(t *testing.T) {
+	transformation := &spec.Transformation{
+		Version: spec.CurrentVersion,
+		Name:    "contributor-bundles",
+		Source: spec.Table{
+			Format:              "csv",
+			MultiValueSeparator: " ; ",
+			Fields: []spec.Field{
+				{Name: "name", Hub: "Contributors.Name", Codec: "contributors"},
+				{Name: "type", Hub: "Contributors.Type", Codec: "contributors", InstanceSettings: map[string]any{
+					"handler_settings": map[string]any{"target_bundles": map[string]any{
+						"corporate_body": "Corporate Body", "family": "Family", "person": "Person",
+					}},
+				}},
+			},
+		},
+		Target: spec.Table{
+			Format: "islandora-workbench",
+			Fields: []spec.Field{{Name: "title", Hub: "Title"}},
+		},
+	}
+	sealCSVSpec(t, transformation)
+
+	records, err := (&Format{}).Parse(strings.NewReader(
+		"name,type\nExample Person ; Example University ; Example Family,person ; corporate_body ; family\n",
+	), &format.ParseOptions{Spec: transformation, Strict: true})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if len(records) != 1 || len(records[0].GetContributors()) != 3 {
+		t.Fatalf("contributors = %#v", records)
+	}
+	wantIDs := []string{
+		"person:Example Person",
+		"corporate_body:Example University",
+		"family:Example Family",
+	}
+	for index, want := range wantIDs {
+		if got := records[0].GetContributors()[index].GetSourceId(); got != want {
+			t.Errorf("contributor %d SourceId = %q, want %q", index+1, got, want)
+		}
+	}
+	if got := records[0].GetContributors()[2].GetType(); got != hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION {
+		t.Fatalf("family coarse Hub type = %v, want organization", got)
+	}
+
+	_, err = (&Format{}).Parse(strings.NewReader(
+		"name,type\nExample Agent,unconfigured_agent\n",
+	), &format.ParseOptions{Spec: transformation, Strict: true})
+	var diagnostics *format.DiagnosticsError
+	if !errors.As(err, &diagnostics) || len(diagnostics.Diagnostics) != 1 ||
+		diagnostics.Diagnostics[0].Code != "invalid_contributor" ||
+		!strings.Contains(diagnostics.Diagnostics[0].Message, "not a model-declared Drupal bundle") {
+		t.Fatalf("unconfigured contributor bundle error = %T %+v", err, err)
+	}
+}
+
+func TestParseSpecCardinalityUsesCanonicalSourceEncoding(t *testing.T) {
+	t.Parallel()
+
+	transformation := &spec.Transformation{
+		Version: spec.CurrentVersion,
+		Name:    "source-encoded-cardinality",
+		Source: spec.Table{
+			Format:              "csv",
+			MultiValueSeparator: " ; ",
+			Fields: []spec.Field{
+				{Name: "title", Label: "Renamed headline", Hub: "Title", Codec: "string", Cardinality: 1},
+				{Name: "field_scalar", Label: "Renamed scalar", Hub: "Extra.drupal.field_scalar", Codec: "string", Cardinality: 1},
+				{Name: "field_bounded", Label: "Renamed bounded", Hub: "Extra.drupal.field_bounded", Codec: "multi", Cardinality: 2},
+			},
+		},
+		Target: spec.Table{
+			Format: "islandora-workbench",
+			Fields: []spec.Field{
+				{Name: "title", Hub: "Title", Cardinality: 1},
+				{Name: "field_scalar", Hub: "Extra.drupal.field_scalar", Cardinality: 1},
+				{Name: "field_bounded", Hub: "Extra.drupal.field_bounded", Codec: "multi", Cardinality: 2},
+			},
+		},
+	}
+	sealCSVSpec(t, transformation)
+
+	t.Run("canonical title remains scalar", func(t *testing.T) {
+		records, err := (&Format{}).Parse(strings.NewReader(
+			"Renamed headline,Renamed scalar,Renamed bounded\nA ; literal title,one,alpha ; beta\n",
+		), &format.ParseOptions{Spec: transformation, Strict: true})
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+		if got := records[0].Title; got != "A ; literal title" {
+			t.Fatalf("title = %q, want separator preserved as scalar text", got)
+		}
+		if got := records[0].GetExtra().AsMap()["drupal.field_bounded"]; !reflect.DeepEqual(got, []any{"alpha", "beta"}) {
+			t.Fatalf("bounded values = %#v", got)
+		}
+	})
+
+	tests := []struct {
+		name       string
+		header     string
+		value      string
+		wantValues int
+		wantMax    int
+	}{
+		{
+			name:       "scalar Drupal field",
+			header:     "Renamed scalar",
+			value:      "one ; two",
+			wantValues: 2,
+			wantMax:    1,
+		},
+		{
+			name:       "bounded multi Drupal field",
+			header:     "Renamed bounded",
+			value:      "one ; two ; three",
+			wantValues: 3,
+			wantMax:    2,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			input := test.header + "\n" + test.value + "\n"
+			_, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{
+				Spec:       transformation,
+				Strict:     true,
+				SourceName: "cardinality.csv",
+			})
+			var diagnostics *format.DiagnosticsError
+			if !errors.As(err, &diagnostics) {
+				t.Fatalf("Parse() error = %T %v, want DiagnosticsError", err, err)
+			}
+			if got := len(diagnostics.Diagnostics); got != 1 {
+				t.Fatalf("diagnostics = %+v, want exactly one", diagnostics.Diagnostics)
+			}
+			diagnostic := diagnostics.Diagnostics[0]
+			if diagnostic.Code != "cardinality" || diagnostic.Row != 2 || diagnostic.Column != 1 || diagnostic.Header != test.header {
+				t.Fatalf("diagnostic = %+v", diagnostic)
+			}
+			wantMessage := fmt.Sprintf("got %d values; maximum is %d", test.wantValues, test.wantMax)
+			if diagnostic.Message != wantMessage {
+				t.Fatalf("message = %q, want %q", diagnostic.Message, wantMessage)
+			}
+		})
 	}
 }
 

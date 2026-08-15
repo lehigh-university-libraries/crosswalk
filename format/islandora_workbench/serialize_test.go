@@ -160,30 +160,30 @@ func TestSerializeLinkedAgent(t *testing.T) {
 		{
 			name: "person with role",
 			c: &hubv1.Contributor{
-				Name:     "Qin, Tian",
+				Name:     "Example, Avery",
 				RoleCode: "relators:cre",
 				Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			},
-			want: "relators:cre:person:Qin, Tian",
+			want: "relators:cre:person:Example, Avery",
 		},
 		{
 			name: "person with institution",
 			c: &hubv1.Contributor{
-				Name:         "Qin, Tian",
+				Name:         "Example, Avery",
 				RoleCode:     "relators:cre",
 				Type:         hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-				Affiliations: []*hubv1.Affiliation{{Name: "Lehigh University"}},
+				Affiliations: []*hubv1.Affiliation{{Name: "Example University"}},
 			},
-			want: "relators:cre:person:Qin, Tian - Lehigh University",
+			want: "relators:cre:person:Example, Avery - Example University",
 		},
 		{
 			name: "organization",
 			c: &hubv1.Contributor{
-				Name:     "Lehigh University Press",
+				Name:     "Example University Press",
 				RoleCode: "relators:pbl",
 				Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION,
 			},
-			want: "relators:pbl:corporate_body:Lehigh University Press",
+			want: "relators:pbl:corporate_body:Example University Press",
 		},
 		{
 			name: "no role defaults to relators:aut",
@@ -207,11 +207,11 @@ func TestSerializeLinkedAgent(t *testing.T) {
 
 func TestToAgentRow(t *testing.T) {
 	c := &hubv1.Contributor{
-		Name:         "Qin, Tian",
+		Name:         "Example, Avery",
 		RoleCode:     "relators:cre",
 		Type:         hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-		Affiliations: []*hubv1.Affiliation{{Name: "Lehigh University"}},
-		Email:        "bojack212324@gmail.com",
+		Affiliations: []*hubv1.Affiliation{{Name: "Example University"}},
+		Email:        "contributor@example.invalid",
 		Status:       "Graduate Student",
 		Identifiers: []*hubv1.Identifier{
 			hub.NewIdentifier("0000-0001-2345-6789", hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID),
@@ -220,16 +220,16 @@ func TestToAgentRow(t *testing.T) {
 
 	row := toAgentRow(c)
 
-	if row[0] != "Qin, Tian - Lehigh University" {
+	if row[0] != "Example, Avery - Example University" {
 		t.Errorf("term_name = %q", row[0])
 	}
 	if row[1] != "Graduate Student" {
 		t.Errorf("field_contributor_status = %q", row[1])
 	}
-	if row[2] != "schema:worksFor:corporate_body:Lehigh University" {
+	if row[2] != "schema:worksFor:corporate_body:Example University" {
 		t.Errorf("field_relationships = %q", row[2])
 	}
-	if row[3] != "bojack212324@gmail.com" {
+	if row[3] != "contributor@example.invalid" {
 		t.Errorf("field_email = %q", row[3])
 	}
 	if row[4] != `{"attr0":"orcid","value":"0000-0001-2345-6789"}` {
@@ -262,7 +262,7 @@ func TestNeedsAgentRow(t *testing.T) {
 			name: "has institution",
 			c: &hubv1.Contributor{
 				Name:         "Smith, John",
-				Affiliations: []*hubv1.Affiliation{{Name: "Lehigh University"}},
+				Affiliations: []*hubv1.Affiliation{{Name: "Example University"}},
 			},
 			want: true,
 		},
@@ -298,12 +298,12 @@ func TestSerialize_MainCSV(t *testing.T) {
 		},
 		Contributors: []*hubv1.Contributor{
 			{
-				Name:     "Qin, Tian",
+				Name:     "Example, Avery",
 				RoleCode: "relators:cre",
 				Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			},
 			{
-				Name:     "Huang, Wei-Min",
+				Name:     "Sample, Morgan",
 				RoleCode: "relators:ths",
 				Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			},
@@ -362,10 +362,10 @@ func TestSerialize_MainCSV(t *testing.T) {
 	if len(parts) != 2 {
 		t.Errorf("expected 2 linked agents, got %d: %q", len(parts), linkedAgent)
 	}
-	if parts[0] != "relators:cre:person:Qin, Tian" {
+	if parts[0] != "relators:cre:person:Example, Avery" {
 		t.Errorf("linked agent 0 = %q", parts[0])
 	}
-	if parts[1] != "relators:ths:person:Huang, Wei-Min" {
+	if parts[1] != "relators:ths:person:Sample, Morgan" {
 		t.Errorf("linked agent 1 = %q", parts[1])
 	}
 
@@ -406,11 +406,11 @@ func TestSerialize_AgentsCSV(t *testing.T) {
 		Title: "A Thesis",
 		Contributors: []*hubv1.Contributor{
 			{
-				Name:         "Qin, Tian",
+				Name:         "Example, Avery",
 				RoleCode:     "relators:cre",
 				Type:         hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
-				Affiliations: []*hubv1.Affiliation{{Name: "Lehigh University"}},
-				Email:        "bojack212324@gmail.com",
+				Affiliations: []*hubv1.Affiliation{{Name: "Example University"}},
+				Email:        "contributor@example.invalid",
 				Status:       "Graduate Student",
 				Identifiers: []*hubv1.Identifier{
 					hub.NewIdentifier("0000-0001-2345-6789", hubv1.IdentifierType_IDENTIFIER_TYPE_ORCID),
@@ -418,7 +418,7 @@ func TestSerialize_AgentsCSV(t *testing.T) {
 			},
 			// Bare contributor - should NOT appear in agents CSV
 			{
-				Name:     "Huang, Wei-Min",
+				Name:     "Sample, Morgan",
 				RoleCode: "relators:ths",
 				Type:     hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON,
 			},
@@ -436,7 +436,7 @@ func TestSerialize_AgentsCSV(t *testing.T) {
 	}
 
 	agentRows := parseCSV(t, agentsBuf.String())
-	// header + 1 agent row (Huang has no extra metadata)
+	// header + 1 agent row (Sample has no extra metadata)
 	if len(agentRows) != 2 {
 		t.Fatalf("expected 2 agent rows (header + 1), got %d:\n%s", len(agentRows), agentsBuf.String())
 	}
@@ -447,16 +447,16 @@ func TestSerialize_AgentsCSV(t *testing.T) {
 	}
 
 	agent := agentRows[1]
-	if agent[0] != "Qin, Tian - Lehigh University" {
+	if agent[0] != "Example, Avery - Example University" {
 		t.Errorf("term_name = %q", agent[0])
 	}
 	if agent[1] != "Graduate Student" {
 		t.Errorf("field_contributor_status = %q", agent[1])
 	}
-	if agent[2] != "schema:worksFor:corporate_body:Lehigh University" {
+	if agent[2] != "schema:worksFor:corporate_body:Example University" {
 		t.Errorf("field_relationships = %q", agent[2])
 	}
-	if agent[3] != "bojack212324@gmail.com" {
+	if agent[3] != "contributor@example.invalid" {
 		t.Errorf("field_email = %q", agent[3])
 	}
 	if agent[4] != `{"attr0":"orcid","value":"0000-0001-2345-6789"}` {

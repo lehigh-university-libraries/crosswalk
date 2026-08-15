@@ -1,0 +1,11 @@
+id: node.islandora_object.field_external_link
+field_name: field_external_link
+entity_type: node
+bundle: islandora_object
+label: 'External Link'
+description: 'An absolute HTTP or HTTPS link.'
+required: false
+settings:
+  link_type: 16
+  title: 0
+field_type: link

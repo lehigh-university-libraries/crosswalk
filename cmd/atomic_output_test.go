@@ -4,10 +4,103 @@ import (
 	"errors"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"testing"
 )
+
+const removedWorkingDirectoryEnv = "CROSSWALK_TEST_REMOVED_WORKING_DIRECTORY"
+
+func TestAtomicOutputsRejectBlankPath(t *testing.T) {
+	tests := []struct {
+		name string
+		call func() error
+		want string
+	}{
+		{
+			name: "replaceable file",
+			call: func() error { return writeOutputFile(" \t", func(io.Writer) error { return nil }) },
+			want: "resolving output path: output path is required",
+		},
+		{
+			name: "new file",
+			call: func() error { return writeNewFile("\n", nil) },
+			want: "resolving new output path: output path is required",
+		},
+		{
+			name: "directory",
+			call: func() error { return writeOutputDirectory("  ", nil) },
+			want: "resolving output directory: output directory is required",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.call(); err == nil || err.Error() != test.want {
+				t.Fatalf("error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestAtomicOutputsPreserveAbsolutePathErrors(t *testing.T) {
+	if directory := os.Getenv(removedWorkingDirectoryEnv); directory != "" {
+		if err := os.Chdir(directory); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Remove(directory); err != nil {
+			t.Fatal(err)
+		}
+		tests := []struct {
+			name       string
+			call       func() error
+			wantPrefix string
+		}{
+			{
+				name:       "replaceable file",
+				call:       func() error { return writeOutputFile("result.csv", func(io.Writer) error { return nil }) },
+				wantPrefix: "resolving output path:",
+			},
+			{
+				name:       "new file",
+				call:       func() error { return writeNewFile("result.csv", nil) },
+				wantPrefix: "resolving new output path:",
+			},
+			{
+				name:       "directory",
+				call:       func() error { return writeOutputDirectory("artifacts", nil) },
+				wantPrefix: "resolving output directory:",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				err := test.call()
+				if !errors.Is(err, os.ErrNotExist) {
+					t.Fatalf("error = %v, want wrapped working-directory error", err)
+				}
+				if !strings.HasPrefix(err.Error(), test.wantPrefix) || strings.Contains(err.Error(), "required") {
+					t.Fatalf("error = %q, want prefix %q and the real path-resolution failure", err, test.wantPrefix)
+				}
+			})
+		}
+		return
+	}
+
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not permit removing the process working directory")
+	}
+	directory := filepath.Join(t.TempDir(), "removed-working-directory")
+	if err := os.Mkdir(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command(os.Args[0], "-test.run=^TestAtomicOutputsPreserveAbsolutePathErrors$")
+	command.Env = append(os.Environ(), removedWorkingDirectoryEnv+"="+directory)
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("path-error subprocess failed: %v\n%s", err, output)
+	}
+}
 
 func TestWriteOutputFileDoesNotReplaceDestinationOnFailure(t *testing.T) {
 	t.Parallel()

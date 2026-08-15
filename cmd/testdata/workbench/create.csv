@@ -1,0 +1,3 @@
+Upload ID,Page/Item Parent ID,Parent Collection,Object Model,File Path,Title,Full Title,Resource Type,Creation Date,Make Public (Y/N)
+810001,,321,Paged Content,,A Demonstration Notebook,A Demonstration Notebook,Book,2024,Yes
+810002,810001,,Page,objects/demonstration-page.tif,Page One,Page One,,2024,Yes

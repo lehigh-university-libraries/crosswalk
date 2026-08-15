@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,11 +15,18 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 type mediaDoerFunc func(*http.Request) (*http.Response, error)
 
 func (function mediaDoerFunc) Do(request *http.Request) (*http.Response, error) {
+	return function(request)
+}
+
+type mediaRoundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (function mediaRoundTripperFunc) RoundTrip(request *http.Request) (*http.Response, error) {
 	return function(request)
 }
 
@@ -34,7 +42,7 @@ func TestDownloadWritesValidatedPDFAndReusesIt(t *testing.T) {
 	defer server.Close()
 
 	directory := t.TempDir()
-	downloader := &Downloader{HTTP: server.Client(), MaxBytes: 1024}
+	downloader := &Downloader{HTTP: server.Client(), MaxBytes: 1024, AllowPrivate: true}
 	body := []byte("%PDF-1.7\nbody")
 	digest := sha256.Sum256(body)
 	request := Request{
@@ -72,7 +80,7 @@ func TestDownloadDoesNotReuseSameFilenameWithoutTrustedDigest(t *testing.T) {
 
 	directory := t.TempDir()
 	request := Request{URL: server.URL, Directory: directory, Filename: "paper.pdf", ExpectedMediaType: "application/pdf"}
-	downloader := &Downloader{HTTP: server.Client(), MaxBytes: 1024}
+	downloader := &Downloader{HTTP: server.Client(), MaxBytes: 1024, AllowPrivate: true}
 	if _, err := downloader.Download(context.Background(), request); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +105,7 @@ func TestDownloadRejectsDigestMismatchWithoutPublishing(t *testing.T) {
 	defer server.Close()
 
 	directory := t.TempDir()
-	_, err := (&Downloader{HTTP: server.Client(), MaxBytes: 1024}).Download(context.Background(), Request{
+	_, err := (&Downloader{HTTP: server.Client(), MaxBytes: 1024, AllowPrivate: true}).Download(context.Background(), Request{
 		URL: server.URL, Directory: directory, Filename: "paper.pdf", ExpectedMediaType: "application/pdf",
 		ExpectedSHA256: strings.Repeat("0", 64),
 	})
@@ -128,7 +136,7 @@ func TestDownloadRejectsOversizedOrInvalidPDF(t *testing.T) {
 			}))
 			defer server.Close()
 			directory := t.TempDir()
-			_, err := (&Downloader{HTTP: server.Client(), MaxBytes: test.limit}).Download(context.Background(), Request{
+			_, err := (&Downloader{HTTP: server.Client(), MaxBytes: test.limit, AllowPrivate: true}).Download(context.Background(), Request{
 				URL: server.URL, Directory: directory, Filename: "paper.pdf", ExpectedMediaType: "application/pdf",
 			})
 			if err == nil || !strings.Contains(err.Error(), test.want) {
@@ -241,6 +249,103 @@ func TestDefaultHTTPClientDoesNotInheritEnvironmentProxy(t *testing.T) {
 	}
 	if transport.Proxy != nil {
 		t.Fatal("protected media transport inherited environment proxy support")
+	}
+}
+
+func TestSuppliedHTTPClientRetainsMediaSSRFProtections(t *testing.T) {
+	t.Parallel()
+
+	transportCalled := false
+	callerRedirectCalled := false
+	callerVeto := false
+	vetoError := errors.New("caller refused redirect")
+	provided := &http.Client{
+		Timeout: 2 * time.Minute,
+		Transport: mediaRoundTripperFunc(func(*http.Request) (*http.Response, error) {
+			transportCalled = true
+			return nil, errors.New("unprotected transport was used")
+		}),
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			callerRedirectCalled = true
+			if callerVeto {
+				return vetoError
+			}
+			return nil
+		},
+	}
+	downloader := &Downloader{HTTP: provided, MaxBytes: 1024}
+	protected, ok := downloader.httpClient().(*http.Client)
+	if !ok {
+		t.Fatalf("httpClient() = %T, want *http.Client", downloader.httpClient())
+	}
+	if protected == provided {
+		t.Fatal("supplied HTTP client was modified instead of cloned")
+	}
+	if protected.Timeout != provided.Timeout {
+		t.Fatalf("Timeout = %s, want %s", protected.Timeout, provided.Timeout)
+	}
+	transport, ok := protected.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport = %T, want *http.Transport", protected.Transport)
+	}
+	if transport.Proxy != nil {
+		t.Fatal("protected transport permits proxies")
+	}
+	if transport.DialContext == nil {
+		t.Fatal("protected transport has no validating dialer")
+	}
+
+	origin, err := http.NewRequest(http.MethodGet, "https://publisher.example/paper.pdf", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	downgrade, err := http.NewRequest(http.MethodGet, "http://publisher.example/paper.pdf", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protected.CheckRedirect(downgrade, []*http.Request{origin}); err == nil || !strings.Contains(err.Error(), "unsafe metadata redirect") {
+		t.Fatalf("HTTPS downgrade error = %v", err)
+	}
+	if !callerRedirectCalled {
+		t.Fatal("caller's redirect policy was not invoked")
+	}
+
+	callerVeto = true
+	secureRedirect, err := http.NewRequest(http.MethodGet, "https://cdn.example/paper.pdf", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := protected.CheckRedirect(secureRedirect, []*http.Request{origin}); !errors.Is(err, vetoError) {
+		t.Fatalf("caller redirect veto error = %v", err)
+	}
+
+	directory := t.TempDir()
+	_, err = downloader.Download(t.Context(), Request{
+		URL: "http://127.0.0.1:1/paper.pdf", Directory: directory,
+		Filename: "paper.pdf", ExpectedMediaType: "application/pdf",
+	})
+	if err == nil || !strings.Contains(err.Error(), "no permitted address") {
+		t.Fatalf("Download() error = %v, want private-address rejection", err)
+	}
+	if transportCalled {
+		t.Fatal("supplied unprotected transport handled a request")
+	}
+	if _, ok := provided.Transport.(mediaRoundTripperFunc); !ok || provided.Timeout != 2*time.Minute {
+		t.Fatal("supplied HTTP client was modified")
+	}
+	if _, err := os.Stat(filepath.Join(directory, "paper.pdf")); !os.IsNotExist(err) {
+		t.Fatalf("private response published destination: %v", err)
+	}
+}
+
+func TestSuppliedHTTPClientWithoutTimeoutRetainsFiniteMediaDefault(t *testing.T) {
+	t.Parallel()
+	client, ok := (&Downloader{HTTP: &http.Client{}}).httpClient().(*http.Client)
+	if !ok {
+		t.Fatalf("httpClient() = %T, want *http.Client", (&Downloader{HTTP: &http.Client{}}).httpClient())
+	}
+	if client.Timeout != 5*time.Minute {
+		t.Fatalf("Timeout = %s, want %s", client.Timeout, 5*time.Minute)
 	}
 }
 

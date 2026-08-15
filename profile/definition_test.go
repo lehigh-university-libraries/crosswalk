@@ -192,6 +192,18 @@ func TestDefinitionIdentifierPatternUsesWholeValueSemantics(t *testing.T) {
 	}
 }
 
+func TestDefinitionRejectsOversizedIdentifierPattern(t *testing.T) {
+	t.Parallel()
+
+	snapshot := testModel(t)
+	definition := testDefinition(t, snapshot)
+	definition.Identity.Identifiers[1].Pattern = "^" + strings.Repeat("a", maxIdentifierPatternBytes) + "$"
+	definition.Fingerprint = model.Fingerprint{}
+	if err := definition.SealFingerprint(); err == nil || !strings.Contains(err.Error(), "pattern exceeds 4096 bytes") {
+		t.Fatalf("oversized identifier pattern error = %v", err)
+	}
+}
+
 func TestCompileCanonicalizesIdentifierNamespacesInLookupPlan(t *testing.T) {
 	snapshot := testModel(t)
 	definition := testDefinition(t, snapshot)
@@ -298,6 +310,25 @@ func TestCompileRejectsNonExecutableMappings(t *testing.T) {
 				t.Fatalf("Compile() error = %v, want containing %q", err, test.want)
 			}
 		})
+	}
+}
+
+func TestCompileRejectsArchivesSpaceProfiles(t *testing.T) {
+	snapshot := testModel(t)
+	snapshot.System = archivesSpaceSystem
+	snapshot.Fingerprint = model.Fingerprint{}
+	if err := snapshot.SealFingerprint(); err != nil {
+		t.Fatal(err)
+	}
+
+	definition := testDefinition(t, snapshot)
+	definition.System = archivesSpaceSystem
+	definition.Fingerprint = model.Fingerprint{}
+	if err := definition.SealFingerprint(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Compile(snapshot, &definition); err == nil || !strings.Contains(err.Error(), "ArchivesSpace profiles are not executable") {
+		t.Fatalf("Compile() error = %v, want ArchivesSpace profile rejection", err)
 	}
 }
 

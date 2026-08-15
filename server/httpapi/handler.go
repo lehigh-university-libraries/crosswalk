@@ -523,10 +523,6 @@ func methodNotAllowed(w http.ResponseWriter, allowed string) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
-func buildArchive(artifacts []Artifact) ([]byte, error) {
-	return buildArchiveWithLimit(artifacts, defaultMaxOutputBytes)
-}
-
 func buildArchiveWithLimit(artifacts []Artifact, maxBytes int64) ([]byte, error) {
 	if len(artifacts) == 0 {
 		return nil, fmt.Errorf("%w: no artifacts", ErrInvalidArtifact)

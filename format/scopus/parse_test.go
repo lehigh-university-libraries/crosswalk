@@ -69,7 +69,7 @@ func TestParsePageMapsScopusMetadataAndIdentity(t *testing.T) {
 	}
 	isbns, exists := hub.GetExtra(record, "publication_isbn")
 	values, stringsOK := isbns.([]any)
-	if !exists || !stringsOK || len(values) != 1 || values[0] != "978-1-2345-6789-0" {
+	if !exists || !stringsOK || len(values) != 1 || values[0] != "9781234567890" {
 		t.Fatalf("publication ISBNs = %#v", isbns)
 	}
 	for _, identifier := range record.Identifiers {

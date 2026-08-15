@@ -230,7 +230,7 @@ func decodeTermValues(term string, raw json.RawMessage, model *schemaModel) ([]v
 		return nil, fmt.Errorf("property %q value count exceeds %d", term, maxTermValues)
 	}
 	var expectedProperty *property
-	if model != nil && len(model.propertiesByID) > 0 {
+	if model != nil {
 		value, exists := model.propertiesByTerm[term]
 		if !exists {
 			return nil, fmt.Errorf("property term %q is missing from the snapshot model", term)

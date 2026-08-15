@@ -86,8 +86,9 @@ crosswalk convert csv islandora-workbench \
   --output target.csv
 ```
 
-See [Islandora Workbench](workbench.md) for artifact planning, media policy,
-and the independently provisioned sitectl contract.
+See [Transformation specifications](specifications.md) for the complete mapping
+and validation schema, and [Islandora Workbench](workbench.md) for artifact
+planning, media policy, and the independently provisioned sitectl contract.
 
 ## Acquire scholarly metadata
 
@@ -103,4 +104,6 @@ crosswalk fetch scopus --help
 crosswalk fetch zenodo --help
 ```
 
-See [Existing-item reconciliation](reconciliation.md) before running a batch.
+See [Acquisition and network safety](acquisition.md) for source and media trust
+boundaries, then [Existing-item reconciliation](reconciliation.md) before
+running a batch.

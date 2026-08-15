@@ -25,7 +25,13 @@ const (
 	identifierPatternMatchContract = "whole-value-v1"
 )
 
-var identifierSchemePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`)
+var (
+	identifierSchemePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`)
+	isbnPresentationPattern = regexp.MustCompile(`^(?:[0-9](?:[- ]?[0-9]){8}[- ]?[0-9X]|[0-9](?:[- ]?[0-9]){12})$`)
+	isbnCanonicalPattern    = regexp.MustCompile(`^(?:[0-9]{9}[0-9X]|[0-9]{13})$`)
+	isniPresentationPattern = regexp.MustCompile(`^(?:[0-9]{15}[0-9X]|[0-9]{4} [0-9]{4} [0-9]{4} [0-9]{3}[0-9X])$`)
+	rorCanonicalPattern     = regexp.MustCompile(`^0[0-9a-hj-km-np-tv-z]{6}[0-9]{2}$`)
+)
 
 // IdentifierCase controls case normalization after wrappers and prefixes are removed.
 type IdentifierCase string
@@ -259,7 +265,7 @@ func (registry *IdentifierRegistry) DetectScheme(value string) string {
 	registry = effectiveIdentifierRegistry(registry)
 	trimmed := strings.TrimSpace(value)
 	lower := strings.ToLower(trimmed)
-	checks := []string{"doi", "arxiv", "handle", "orcid", "pmcid", "pmid", "wos", "scopus-eid", "scopus-id", "zenodo-record", "uuid", "isbn", "issn"}
+	checks := []string{"doi", "arxiv", "handle", "orcid", "pmcid", "pmid", "wos", "scopus-eid", "scopus-id", "zenodo-record", "ror", "gnd", "isni", "uuid", "isbn", "issn"}
 	for _, scheme := range checks {
 		rule := registry.rules[scheme]
 		candidate := normalizeIdentifierValue(trimmed, rule)
@@ -468,13 +474,14 @@ func builtInIdentifierRules() []compiledIdentifierRule {
 		{IdentifierRule: IdentifierRule{Scheme: "archivesspace-agent-uri", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL, DefaultIdentityLevel: sourceRecord, Pattern: `^/agents/(?:people|families|corporate_entities|software)/[1-9][0-9]*$`}},
 		{IdentifierRule: IdentifierRule{Scheme: "archivesspace-agent-external-id", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL, DefaultIdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_CONCEPT, Pattern: `^\S(?:.*\S)?$`}},
 		{IdentifierRule: IdentifierRule{Scheme: "ark", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, DefaultIdentityLevel: sourceRecord, Pattern: `^https?://\S+/ark:/\S+$`}, normalize: canonicalIdentifierURL},
-		{IdentifierRule: IdentifierRule{Scheme: "gnd", NamespaceURI: "https://d-nb.info/gnd/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, Pattern: `^[0-9Xx-]+$`, Case: IdentifierCaseUpper}},
+		{IdentifierRule: IdentifierRule{Scheme: "gnd", NamespaceURI: "https://d-nb.info/gnd/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, Pattern: `^[0-9Xx-]+$`, Prefixes: []string{"https://d-nb.info/gnd/", "http://d-nb.info/gnd/", "gnd:"}, Case: IdentifierCaseUpper}},
 		{IdentifierRule: IdentifierRule{Scheme: "lcnaf", Aliases: []string{"naf"}, NamespaceURI: "https://id.loc.gov/authorities/names/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, DefaultIdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_CONCEPT, Pattern: `^[A-Za-z0-9]+$`}},
 		{IdentifierRule: IdentifierRule{Scheme: "viaf", NamespaceURI: "https://viaf.org/viaf/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, DefaultIdentityLevel: hubv1.IdentifierIdentityLevel_IDENTIFIER_IDENTITY_LEVEL_CONCEPT, Pattern: `^[1-9][0-9]*$`}},
+		{IdentifierRule: IdentifierRule{Scheme: "ror", NamespaceURI: "https://ror.org/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, Pattern: rorCanonicalPattern.String(), Prefixes: []string{"https://ror.org/", "http://ror.org/", "ror.org/", "ror:"}, Case: IdentifierCaseLower}},
 		{IdentifierRule: IdentifierRule{Scheme: "uuid", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_UUID, DefaultIdentityLevel: sourceRecord, Pattern: `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`, Case: IdentifierCaseLower}},
-		{IdentifierRule: IdentifierRule{Scheme: "isbn", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN, Pattern: `^(?:[0-9]{9}[0-9X]|[0-9]{13}|[0-9-]+)$`, Case: IdentifierCaseUpper}},
-		{IdentifierRule: IdentifierRule{Scheme: "issn", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN, Pattern: `^(?:[0-9]{4}-?[0-9]{3}[0-9X])$`, Case: IdentifierCaseUpper}},
-		{IdentifierRule: IdentifierRule{Scheme: "isni", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISNI, Pattern: `^\S+$`, Case: IdentifierCaseUpper}},
+		{IdentifierRule: IdentifierRule{Scheme: "isbn", NamespaceURI: "urn:isbn:", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN, Pattern: `^(?:[0-9]{9}[0-9X]|[0-9]{13})$`, Prefixes: []string{"urn:isbn:", "isbn-13:", "isbn-10:", "isbn:"}, Case: IdentifierCaseUpper}, normalize: normalizeISBNIdentifier},
+		{IdentifierRule: IdentifierRule{Scheme: "issn", NamespaceURI: "urn:issn:", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISSN, Pattern: `^(?:[0-9]{4}-?[0-9]{3}[0-9X])$`, Prefixes: []string{"urn:issn:", "issn:"}, Case: IdentifierCaseUpper}},
+		{IdentifierRule: IdentifierRule{Scheme: "isni", NamespaceURI: "https://isni.org/isni/", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_ISNI, Pattern: `^[0-9]{15}[0-9X]$`, Prefixes: []string{"https://isni.org/isni/", "http://isni.org/isni/", "isni:"}, Case: IdentifierCaseUpper}, normalize: normalizeISNIIdentifier},
 		{IdentifierRule: IdentifierRule{Scheme: "url", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_URL, Pattern: `^https?://\S+$`}, normalize: canonicalIdentifierURL},
 		{IdentifierRule: IdentifierRule{Scheme: "local", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL, DefaultIdentityLevel: sourceRecord, Pattern: `^\S(?:.*\S)?$`}},
 		{IdentifierRule: IdentifierRule{Scheme: "pid", Type: hubv1.IdentifierType_IDENTIFIER_TYPE_PID, DefaultIdentityLevel: sourceRecord, Pattern: `^\S(?:.*\S)?$`}},
@@ -527,6 +534,52 @@ func normalizeWOSIdentifier(value string) string {
 	value = strings.TrimPrefix(value, "UT=")
 	value = strings.TrimPrefix(value, "WOS:")
 	return "WOS:" + value
+}
+
+func normalizeISBNIdentifier(value string) string {
+	value = strings.TrimSpace(value)
+	original := value
+	expectedLength := 0
+	for _, prefix := range []struct {
+		value  string
+		length int
+	}{
+		{value: "isbn-13:", length: 13},
+		{value: "isbn-10:", length: 10},
+		{value: "urn:isbn:"},
+		{value: "isbn:"},
+	} {
+		if len(value) >= len(prefix.value) && strings.EqualFold(value[:len(prefix.value)], prefix.value) {
+			value = strings.TrimSpace(value[len(prefix.value):])
+			expectedLength = prefix.length
+			break
+		}
+	}
+	value = strings.ToUpper(value)
+	if !isbnPresentationPattern.MatchString(value) {
+		return value
+	}
+	value = strings.ReplaceAll(value, "-", "")
+	value = strings.ReplaceAll(value, " ", "")
+	if expectedLength != 0 && len(value) != expectedLength {
+		return strings.ToUpper(original)
+	}
+	return value
+}
+
+func normalizeISNIIdentifier(value string) string {
+	value = strings.TrimSpace(value)
+	for _, prefix := range []string{"https://isni.org/isni/", "http://isni.org/isni/", "isni:", "isni "} {
+		if len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix) {
+			value = strings.TrimSpace(value[len(prefix):])
+			break
+		}
+	}
+	value = strings.ToUpper(value)
+	if !isniPresentationPattern.MatchString(value) {
+		return value
+	}
+	return strings.ReplaceAll(value, " ", "")
 }
 
 func normalizeScopusEID(value string) string {
@@ -657,13 +710,18 @@ func identifierHasSignal(original, lower, scheme string) bool {
 		return strings.HasPrefix(lower, "scopus_id:") || strings.HasPrefix(lower, "scopus-id:") || strings.HasPrefix(lower, "scopus:")
 	case "zenodo-record":
 		return strings.HasPrefix(lower, "zenodo:") || strings.Contains(lower, "zenodo.org/record")
+	case "ror":
+		return strings.HasPrefix(lower, "ror:") || strings.HasPrefix(lower, "ror.org/") || strings.Contains(lower, "ror.org/") || rorCanonicalPattern.MatchString(lower)
+	case "gnd":
+		return strings.HasPrefix(lower, "gnd:") || strings.Contains(lower, "d-nb.info/gnd/")
+	case "isni":
+		return strings.HasPrefix(lower, "isni:") || strings.HasPrefix(lower, "isni ") || strings.Contains(lower, "isni.org/isni/") || isniPresentationPattern.MatchString(strings.ToUpper(original))
 	case "uuid":
 		return regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).MatchString(original)
 	case "isbn":
-		clean := strings.ReplaceAll(original, "-", "")
-		return regexp.MustCompile(`^(?:[0-9]{9}[0-9Xx]|[0-9]{13})$`).MatchString(clean)
+		return isbnCanonicalPattern.MatchString(normalizeISBNIdentifier(original))
 	case "issn":
-		return regexp.MustCompile(`^[0-9]{4}-?[0-9]{3}[0-9Xx]$`).MatchString(original)
+		return strings.HasPrefix(lower, "urn:issn:") || strings.HasPrefix(lower, "issn:") || regexp.MustCompile(`^[0-9]{4}-?[0-9]{3}[0-9Xx]$`).MatchString(original)
 	default:
 		return false
 	}

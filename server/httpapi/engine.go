@@ -23,14 +23,16 @@ import (
 const maxEngineRecords = 100_000
 
 // CrosswalkEngine implements the HTTP engine with a validated, versioned
-// spreadsheet-to-Workbench specification. It performs no network or filesystem
-// access and supplies no live taxonomy resolver.
+// spreadsheet-to-Workbench specification. It performs no direct network or
+// filesystem access; deployment-aware checks use an explicitly installed,
+// read-only validation context.
 type CrosswalkEngine struct {
-	transformation *spec.Transformation
-	finder         reconcile.Finder
-	policy         reconcile.Policy
-	provenance     ReconciliationProvenance
-	targetProfile  *profile.Compiled
+	transformation  *spec.Transformation
+	finder          reconcile.Finder
+	policy          reconcile.Policy
+	provenance      ReconciliationProvenance
+	targetProfile   *profile.Compiled
+	contextResolver ValidationContextResolver
 }
 
 // ReconciliationProvenance identifies the immutable system profile and
@@ -53,15 +55,6 @@ var _ MatchEngine = (*CrosswalkEngine)(nil)
 // NewCrosswalkEngine creates the default side-effect-free HTTP engine.
 func NewCrosswalkEngine() *CrosswalkEngine {
 	return &CrosswalkEngine{transformation: spec.FabricatorWorkbench(), policy: reconcile.PolicyV1()}
-}
-
-// WithFinder returns an engine that can perform read-only duplicate matching.
-// The caller owns the Finder and must make it safe for concurrent requests.
-func (e *CrosswalkEngine) WithFinder(finder reconcile.Finder) *CrosswalkEngine {
-	if e != nil {
-		e.finder = finder
-	}
-	return e
 }
 
 // ConfigureReconciliation validates and defensively copies matching policy
@@ -170,7 +163,7 @@ func (e *CrosswalkEngine) Check(ctx context.Context, rows [][]string) (CheckResu
 	if len(rows) > maxEngineRecords+2 {
 		return nil, errors.New("metadata input exceeds maximum record count")
 	}
-	result := validateWorkbenchRows(rows, e.transformation)
+	result := make(CheckResult)
 
 	var input bytes.Buffer
 	writer := csv.NewWriter(&input)
@@ -183,6 +176,13 @@ func (e *CrosswalkEngine) Check(ctx context.Context, rows [][]string) (CheckResu
 		var diagnostics *format.DiagnosticsError
 		if errors.As(err, &diagnostics) {
 			mergeCheckResults(result, diagnosticsResult(diagnostics.Diagnostics, rows, e.transformation))
+			if e.HasValidationContext() {
+				contextResult, contextErr := e.validateContext(ctx, rows)
+				if contextErr != nil {
+					return nil, contextErr
+				}
+				mergeCheckResults(result, contextResult)
+			}
 			return result, nil
 		}
 		return nil, err
@@ -199,11 +199,7 @@ func (e *CrosswalkEngine) Check(ctx context.Context, rows [][]string) (CheckResu
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		validationOptions := hub.DefaultValidationOptions()
-		// Workbench updates and add-media rows do not require a title. The
-		// transformation specification enforces title on creates.
-		validationOptions.RequireTitle = hub.GetExtraString(record, "node_id") == ""
-		validation := hub.Validate(record, validationOptions)
+		validation := hub.Validate(record, e.hubValidationOptions(record))
 		for _, issue := range validation.Errors {
 			row := headerRows + recordIndex + 1
 			if recordIndex < len(dataRows) {
@@ -212,6 +208,13 @@ func (e *CrosswalkEngine) Check(ctx context.Context, rows [][]string) (CheckResu
 			key := validationCoordinate(recordIndex, row, columns, issue.Field)
 			appendCheckMessage(result, key, issue.Message)
 		}
+	}
+	if e.HasValidationContext() {
+		contextResult, err := e.validateContext(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		mergeCheckResults(result, contextResult)
 	}
 	return result, nil
 }
@@ -235,6 +238,21 @@ func (e *CrosswalkEngine) Transform(ctx context.Context, input io.Reader) ([]Art
 	if len(records) == 0 {
 		return nil, errors.New("no metadata records to transform")
 	}
+	diagnostics := make([]format.Diagnostic, 0)
+	for recordIndex, record := range records {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		for _, issue := range hub.Validate(record, e.hubValidationOptions(record)).Errors {
+			diagnostics = append(diagnostics, format.Diagnostic{
+				Source: "request.csv", Row: recordIndex + 2, Header: issue.Field,
+				Code: issue.Code, Message: issue.Message,
+			})
+		}
+	}
+	if len(diagnostics) != 0 {
+		return nil, &format.DiagnosticsError{Diagnostics: diagnostics}
+	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -257,6 +275,17 @@ func (e *CrosswalkEngine) Transform(ctx context.Context, input io.Reader) ([]Art
 		})
 	}
 	return artifacts, nil
+}
+
+func (e *CrosswalkEngine) hubValidationOptions(record *hubv1.Record) hub.ValidationOptions {
+	options := hub.DefaultValidationOptions()
+	// Workbench updates and add-media rows do not require a title. The
+	// transformation specification enforces title on creates.
+	options.RequireTitle = hub.GetExtraString(record, "node_id") == ""
+	if e != nil && e.targetProfile != nil {
+		options.IdentifierRegistry = e.targetProfile.IdentifierRegistry()
+	}
+	return options
 }
 
 // Matches parses spreadsheet CSV, queries the configured repository, and
@@ -431,7 +460,10 @@ func hubFieldBase(field string) string {
 }
 
 func appendCheckMessage(result CheckResult, key, message string) {
-	if existing := result[key]; existing != "" && !strings.Contains(existing, message) {
+	if existing := result[key]; existing != "" {
+		if existing == message {
+			return
+		}
 		result[key] = existing + "; " + message
 		return
 	}

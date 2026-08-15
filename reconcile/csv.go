@@ -94,57 +94,59 @@ func SafeSpreadsheetCell(value string) string {
 }
 
 func reviewCSVRow(report Report, mode Mode, result Result, match *Match) []string {
-	row := []string{
-		report.Version,
-		report.PolicyVersion,
-		report.Provenance.IdentifierRegistryVersion,
-		report.Provenance.IdentifierRegistryDigest,
-		report.Provenance.System,
-		report.Provenance.ProfileName,
-		report.Provenance.ProfileFingerprint,
-		report.Provenance.ModelFingerprint,
-		string(mode),
-		result.InputKey,
-		strconv.Itoa(result.InputIndex),
-		string(result.Verdict),
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		preferredTitle(result.Input),
-		"",
-		strings.Join(result.Input.Authors, "; "),
-		"",
-		formatYear(result.Input.Year),
-		"",
-		formatIdentifiers(result.Input.Identifiers),
-		"",
-		"[]",
-		"[]",
-		recommendedAction(result.Verdict),
+	cells := map[string]string{
+		"report_version":              report.Version,
+		"policy_version":              report.PolicyVersion,
+		"identifier_registry_version": report.Provenance.IdentifierRegistryVersion,
+		"identifier_registry_digest":  report.Provenance.IdentifierRegistryDigest,
+		"system":                      report.Provenance.System,
+		"profile_name":                report.Provenance.ProfileName,
+		"profile_fingerprint":         report.Provenance.ProfileFingerprint,
+		"model_fingerprint":           report.Provenance.ModelFingerprint,
+		"mode":                        string(mode),
+		"input_key":                   result.InputKey,
+		"input_index":                 strconv.Itoa(result.InputIndex),
+		"verdict":                     string(result.Verdict),
+		"match_kind":                  "",
+		"score":                       "",
+		"confidence":                  "",
+		"candidate_kind":              "",
+		"candidate_key":               "",
+		"repository_id":               "",
+		"uuid":                        "",
+		"url":                         "",
+		"input_title":                 preferredTitle(result.Input),
+		"candidate_title":             "",
+		"input_authors":               strings.Join(result.Input.Authors, "; "),
+		"candidate_authors":           "",
+		"input_year":                  formatYear(result.Input.Year),
+		"candidate_year":              "",
+		"input_identifiers":           formatIdentifiers(result.Input.Identifiers),
+		"candidate_identifiers":       "",
+		"evidence":                    "[]",
+		"differences":                 "[]",
+		"recommended_action":          recommendedAction(result.Verdict),
 	}
 	if match != nil {
-		row[12] = string(match.Kind)
-		row[13] = strconv.Itoa(match.Score)
-		row[14] = match.Confidence
-		row[15] = string(match.Candidate.Kind)
-		row[16] = match.Candidate.Key
-		row[17] = match.Candidate.RepositoryID
-		row[18] = match.Candidate.UUID
-		row[19] = match.Candidate.URL
-		row[21] = preferredTitle(match.Candidate.Metadata)
-		row[23] = strings.Join(match.Candidate.Metadata.Authors, "; ")
-		row[25] = formatYear(match.Candidate.Metadata.Year)
-		row[27] = formatIdentifiers(match.Candidate.Metadata.Identifiers)
-		row[28] = mustJSON(match.Evidence)
-		row[29] = mustJSON(match.Differences)
+		cells["match_kind"] = string(match.Kind)
+		cells["score"] = strconv.Itoa(match.Score)
+		cells["confidence"] = match.Confidence
+		cells["candidate_kind"] = string(match.Candidate.Kind)
+		cells["candidate_key"] = match.Candidate.Key
+		cells["repository_id"] = match.Candidate.RepositoryID
+		cells["uuid"] = match.Candidate.UUID
+		cells["url"] = match.Candidate.URL
+		cells["candidate_title"] = preferredTitle(match.Candidate.Metadata)
+		cells["candidate_authors"] = strings.Join(match.Candidate.Metadata.Authors, "; ")
+		cells["candidate_year"] = formatYear(match.Candidate.Metadata.Year)
+		cells["candidate_identifiers"] = formatIdentifiers(match.Candidate.Metadata.Identifiers)
+		cells["evidence"] = mustJSON(match.Evidence)
+		cells["differences"] = mustJSON(match.Differences)
 	}
+
+	row := make([]string, len(reviewCSVHeader))
 	for index := range row {
-		row[index] = SafeSpreadsheetCell(row[index])
+		row[index] = SafeSpreadsheetCell(cells[reviewCSVHeader[index]])
 	}
 	return row
 }

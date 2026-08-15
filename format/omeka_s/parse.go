@@ -55,7 +55,7 @@ func (*Format) ParseDataset(reader io.Reader, options *format.ParseOptions) (*fo
 
 	resourcesByKey := make(map[string]*resource, len(input.resources))
 	for _, source := range input.resources {
-		resourcesByKey[resourceMapKey(source.kind, source.id)] = source
+		resourcesByKey[resourceLookupKey(source.kind, source.id)] = source
 	}
 	dataset := &format.Dataset{
 		Records:    make([]format.DatasetRecord, 0, len(input.resources)),
@@ -67,6 +67,8 @@ func (*Format) ParseDataset(reader io.Reader, options *format.ParseOptions) (*fo
 		if err != nil {
 			return nil, fmt.Errorf("mapping Omeka S %s %d: %w", source.kind, source.id, err)
 		}
+		// Dataset keys are a stable, user-facing serialization contract. Internal
+		// lookups use the kind:id form shared with SourceInfo.SourceId.
 		key := string(source.kind) + "-" + strconv.FormatInt(source.id, 10)
 		dataset.Records = append(dataset.Records, format.DatasetRecord{Key: key, Record: record})
 		dataset.Hierarchy.Nodes = append(dataset.Hierarchy.Nodes, format.HierarchyNode{RecordKey: key, Position: index})
@@ -173,7 +175,7 @@ func mapResource(source *resource, model *schemaModel, provenance format.Dataset
 	}
 	if source.kind == kindItem {
 		for _, mediaRef := range source.media {
-			mediaSource := resources[resourceMapKey(kindMedia, mediaRef.id)]
+			mediaSource := resources[resourceLookupKey(kindMedia, mediaRef.id)]
 			if mediaSource == nil {
 				continue
 			}
@@ -188,7 +190,7 @@ func mapResource(source *resource, model *schemaModel, provenance format.Dataset
 	return record, nil
 }
 
-func resourceMapKey(kind resourceKind, id int64) string {
+func resourceLookupKey(kind resourceKind, id int64) string {
 	return string(kind) + ":" + strconv.FormatInt(id, 10)
 }
 

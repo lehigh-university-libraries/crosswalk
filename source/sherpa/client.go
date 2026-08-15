@@ -338,18 +338,18 @@ func sameOrigin(left, right *url.URL) bool {
 }
 
 func (c *Client) httpClient() source.HTTPDoer {
+	allowPrivate := c != nil && c.AllowPrivate
+	allowLoopback := c != nil && (configuredLoopback(c.searchURL()) || configuredLoopback(c.retrieveURL()))
 	if c != nil && c.HTTP != nil {
 		if provided, ok := c.HTTP.(*http.Client); ok {
-			copy := *provided
-			copy.CheckRedirect = func(*http.Request, []*http.Request) error {
+			client := source.CloneProtectedHTTPClient(provided, allowPrivate, allowLoopback, source.RedirectSameOrigin)
+			client.CheckRedirect = func(*http.Request, []*http.Request) error {
 				return http.ErrUseLastResponse
 			}
-			return &copy
+			return client
 		}
 		return c.HTTP
 	}
-	allowPrivate := c != nil && c.AllowPrivate
-	allowLoopback := c != nil && (configuredLoopback(c.searchURL()) || configuredLoopback(c.retrieveURL()))
 	client := source.NewProtectedHTTPClient(allowPrivate, allowLoopback, source.RedirectSameOrigin)
 	client.Timeout = 30 * time.Second
 	client.CheckRedirect = func(*http.Request, []*http.Request) error {

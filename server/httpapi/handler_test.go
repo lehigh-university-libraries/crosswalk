@@ -575,8 +575,8 @@ func TestArchiveRejectsUnsafeOrDuplicateNames(t *testing.T) {
 		{{Name: "target.csv"}, {Name: "target.csv"}},
 	}
 	for _, artifacts := range tests {
-		if _, err := buildArchive(artifacts); !errors.Is(err, ErrInvalidArtifact) {
-			t.Fatalf("buildArchive(%#v) error = %v, want ErrInvalidArtifact", artifacts, err)
+		if _, err := buildArchiveWithLimit(artifacts, defaultMaxOutputBytes); !errors.Is(err, ErrInvalidArtifact) {
+			t.Fatalf("buildArchiveWithLimit(%#v) error = %v, want ErrInvalidArtifact", artifacts, err)
 		}
 	}
 }

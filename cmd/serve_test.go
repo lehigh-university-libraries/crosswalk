@@ -48,6 +48,8 @@ func TestServeCommandExposesOperationalLimits(t *testing.T) {
 		"shutdown-timeout",
 		"max-header-bytes",
 		"spec",
+		"workbench-staging-root",
+		"workbench-allowed-absolute-roots",
 		"drupal-jsonapi",
 		"drupal-profile",
 		"drupal-token-env",
@@ -57,6 +59,53 @@ func TestServeCommandExposesOperationalLimits(t *testing.T) {
 		if command.Flags().Lookup(name) == nil {
 			t.Errorf("serve command is missing --%s", name)
 		}
+	}
+}
+
+func TestServeValidationFileDefaultsAreExplicitAndResealed(t *testing.T) {
+	t.Setenv(workbenchStagingRootEnv, "")
+	t.Setenv(workbenchAllowedAbsoluteRootsEnv, "")
+	transformation := spec.FabricatorWorkbench()
+	transformation.Defaults = nil
+	if err := transformation.SealFingerprint(); err != nil {
+		t.Fatal(err)
+	}
+	options := serveOptions{
+		workbenchStagingRoot:  "/srv/workbench/staging",
+		workbenchAllowedRoots: "/srv/workbench/shared|/data/imports",
+	}
+	configured, roots, err := options.withValidationFileDefaults(transformation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if transformation.Default(spec.FileStagingRootDefault) != "" {
+		t.Fatal("input transformation was mutated")
+	}
+	if configured.Default(spec.FileStagingRootDefault) != options.workbenchStagingRoot || configured.Default(spec.FileAllowedAbsoluteRootsDefault) != options.workbenchAllowedRoots {
+		t.Fatalf("configured defaults = %#v", configured.Defaults)
+	}
+	if strings.Join(roots, ",") != "/srv/workbench/staging,/srv/workbench/shared,/data/imports" {
+		t.Fatalf("validation roots = %#v", roots)
+	}
+	if err := configured.ValidateSealed(); err != nil {
+		t.Fatalf("runtime transformation is not sealed: %v", err)
+	}
+}
+
+func TestServeValidationFileDefaultsUseNarrowFallback(t *testing.T) {
+	t.Setenv(workbenchStagingRootEnv, "")
+	t.Setenv(workbenchAllowedAbsoluteRootsEnv, "")
+	transformation := spec.FabricatorWorkbench()
+	transformation.Defaults = nil
+	if err := transformation.SealFingerprint(); err != nil {
+		t.Fatal(err)
+	}
+	configured, roots, err := (&serveOptions{}).withValidationFileDefaults(transformation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if configured.Default(spec.FileStagingRootDefault) != defaultWorkbenchValidationFileRoot || len(roots) != 1 || roots[0] != defaultWorkbenchValidationFileRoot {
+		t.Fatalf("configured root = %q, roots=%#v", configured.Default(spec.FileStagingRootDefault), roots)
 	}
 }
 

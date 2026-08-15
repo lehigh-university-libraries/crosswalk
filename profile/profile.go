@@ -14,7 +14,11 @@ import (
 var configDirOverride string
 var configDirMutex sync.RWMutex
 
-// SetConfigDir overrides the default configuration directory.
+// SetConfigDir overrides the default configuration directory for the process.
+// It exists for CLI startup configuration and tests: set it before concurrent
+// work begins and keep it stable until that work completes. The mutex prevents
+// data races on the override itself, but changing it during storage operations
+// can make one logical operation observe more than one directory.
 func SetConfigDir(dir string) {
 	configDirMutex.Lock()
 	defer configDirMutex.Unlock()

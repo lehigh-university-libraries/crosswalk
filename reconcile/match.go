@@ -11,7 +11,11 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
-const grossTitleConflictThreshold = 55
+const (
+	grossPublisherConflictThreshold = 55
+	grossTitleConflictThreshold     = 55
+	seriousYearDifferenceThreshold  = 1
+)
 
 // Compare evaluates one candidate using a versioned policy. The boolean is
 // false when the candidate has insufficient evidence to include in a report.
@@ -79,6 +83,23 @@ func Compare(incoming *hubv1.Record, candidate Candidate, policy Policy) (Match,
 		} else if title.available {
 			match.Evidence = append(match.Evidence, titleEvidence(title, 0))
 		}
+		metadataConflicts := seriousMetadataConflicts(incoming, candidate.Record, match.Differences, author)
+		yearConflictReported := false
+		if len(metadataConflicts) != 0 {
+			match.RequiresReview = true
+			match.Score -= 5
+			match.Confidence = "conflict"
+			for index := range metadataConflicts {
+				metadataConflicts[index].Weight = 0
+				if index == 0 {
+					metadataConflicts[index].Weight = -5
+				}
+				if metadataConflicts[index].Field == "year" {
+					yearConflictReported = true
+				}
+			}
+			match.Evidence = append(match.Evidence, metadataConflicts...)
+		}
 		match.Score = max(0, match.Score)
 		if evidence, ok := author.evidence(0); ok {
 			match.Evidence = append(match.Evidence, evidence)
@@ -88,12 +109,14 @@ func Compare(incoming *hubv1.Record, candidate Candidate, policy Policy) (Match,
 			if incomingYear != existingYear {
 				code = "year_conflict"
 			}
-			match.Evidence = append(match.Evidence, Evidence{
-				Code:     code,
-				Field:    "year",
-				Incoming: formatYear(incomingYear),
-				Existing: formatYear(existingYear),
-			})
+			if !yearConflictReported {
+				match.Evidence = append(match.Evidence, Evidence{
+					Code:     code,
+					Field:    "year",
+					Incoming: formatYear(incomingYear),
+					Existing: formatYear(existingYear),
+				})
+			}
 		}
 		sortEvidence(match.Evidence)
 		return match, true, nil
@@ -351,6 +374,64 @@ func (comparison authorComparison) evidence(weight int) (Evidence, bool) {
 		Code: "author_" + comparison.kind + "_exact", Field: "author",
 		Incoming: comparison.incoming, Existing: comparison.existing, Weight: weight,
 	}, true
+}
+
+func seriousMetadataConflicts(incoming, existing *hubv1.Record, differences []Difference, author authorComparison) []Evidence {
+	var conflicts []Evidence
+	for _, difference := range differences {
+		if difference.Kind != DifferenceChanged {
+			continue
+		}
+		conflict := Evidence{
+			Field: difference.Field, Incoming: difference.Incoming, Existing: difference.Existing,
+		}
+		switch difference.Field {
+		case "authors":
+			if author.kind != "" {
+				continue
+			}
+			conflict.Code = "author_conflict"
+			conflict.Field = "author"
+		case "year":
+			yearDifference := int64(primaryYear(incoming)) - int64(primaryYear(existing))
+			if yearDifference < 0 {
+				yearDifference = -yearDifference
+			}
+			if yearDifference <= seriousYearDifferenceThreshold {
+				continue
+			}
+			conflict.Code = "year_conflict"
+		case "publisher":
+			if titleSimilarity(normalizeText(difference.Incoming), normalizeText(difference.Existing)) >= grossPublisherConflictThreshold {
+				continue
+			}
+			conflict.Code = "publisher_conflict"
+		case "resource_type":
+			if !resourceTypesConflict(incoming.GetResourceType(), existing.GetResourceType()) {
+				continue
+			}
+			conflict.Code = "resource_type_conflict"
+		default:
+			continue
+		}
+		conflicts = append(conflicts, conflict)
+	}
+	return conflicts
+}
+
+func resourceTypesConflict(incoming, existing *hubv1.ResourceType) bool {
+	return resourceTypeComparisonKey(incoming) != resourceTypeComparisonKey(existing)
+}
+
+func resourceTypeComparisonKey(value *hubv1.ResourceType) string {
+	if value == nil {
+		return ""
+	}
+	if value.GetType() != hubv1.ResourceTypeValue_RESOURCE_TYPE_UNSPECIFIED {
+		name := strings.TrimPrefix(value.GetType().String(), "RESOURCE_TYPE_")
+		return normalizeText(strings.ReplaceAll(name, "_", " "))
+	}
+	return normalizeText(value.GetOriginal())
 }
 
 func stringIntersection(left, right []string) (string, bool) {

@@ -159,7 +159,7 @@ func omekaProfileScalar(value valueObject) (any, error) {
 	case "uri":
 		return value.uri, nil
 	case "resource", "resource:item", "resource:itemset", "resource:media":
-		return displayValue(value), nil
+		return nil, fmt.Errorf("resource value type %q cannot be decoded by a scalar codec", value.typeName)
 	}
 	if len(value.raw) == 0 {
 		return nil, fmt.Errorf("module value type %q has no preserved JSON value", value.typeName)
