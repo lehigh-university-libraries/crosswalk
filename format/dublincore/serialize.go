@@ -8,6 +8,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	dcv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/dublincore/v20200120"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as Dublin Core XML.
@@ -69,8 +70,8 @@ func hubToSpoke(record *hubv1.Record) (*dcv1.Record, error) {
 	}
 
 	// Publisher
-	if record.Publisher != "" {
-		dc.Publisher = []*dcv1.Agent{{Name: record.Publisher}}
+	for _, publisher := range hub.GetPublishers(record) {
+		dc.Publisher = append(dc.Publisher, &dcv1.Agent{Name: publisher})
 	}
 
 	// Subjects
@@ -92,9 +93,7 @@ func hubToSpoke(record *hubv1.Record) (*dcv1.Record, error) {
 	}
 
 	// Language
-	if record.Language != "" {
-		dc.Language = []string{record.Language}
-	}
+	dc.Language = append(dc.Language, hub.GetLanguages(record)...)
 
 	// Identifiers
 	for _, id := range record.Identifiers {

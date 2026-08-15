@@ -17,6 +17,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	"github.com/lehigh-university-libraries/crosswalk/helpers"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 var machineNameSeparators = regexp.MustCompile(`[^a-z0-9]+`)
@@ -626,11 +627,7 @@ func appendNotes(record *hubv1.Record, model *jsonModel, options *format.ParseOp
 				record.Notes = append(record.Notes, combined)
 			}
 		case "physdesc":
-			if record.PhysicalDesc == "" {
-				record.PhysicalDesc = combined
-			} else {
-				record.Notes = append(record.Notes, combined)
-			}
+			hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), combined))
 		case "prefercite":
 			record.PreferredCitation = combined
 		case "accessrestrict":
@@ -730,11 +727,7 @@ func appendExtents(record *hubv1.Record, model *jsonModel, options *format.Parse
 		}
 	}
 	if len(descriptions) > 0 {
-		if record.PhysicalDesc == "" {
-			record.PhysicalDesc = strings.Join(descriptions, "; ")
-		} else {
-			record.PhysicalDesc += "; " + strings.Join(descriptions, "; ")
-		}
+		hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), descriptions...))
 	}
 }
 
@@ -917,8 +910,8 @@ func appendLanguages(record *hubv1.Record, model *jsonModel, options *format.Par
 			languages = append(languages, noteText(note, options)...)
 		}
 	}
-	if record.Language == "" {
-		record.Language = strings.Join(compactStrings(languages), "; ")
+	if languages = compactStrings(languages); len(languages) > 0 {
+		hub.SetLanguages(record, append(hub.GetLanguages(record), languages...))
 	}
 }
 

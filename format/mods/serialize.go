@@ -8,6 +8,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	modsv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/mods/v3_8"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as MODS XML.
@@ -120,18 +121,19 @@ func hubToSpoke(record *hubv1.Record) (*modsv1.Record, error) {
 	originInfo := &modsv1.OriginInfo{}
 	hasOriginInfo := false
 
-	if record.Publisher != "" {
-		originInfo.Publisher = []string{record.Publisher}
+	if publishers := hub.GetPublishers(record); len(publishers) > 0 {
+		originInfo.Publisher = append(originInfo.Publisher, publishers...)
 		hasOriginInfo = true
 	}
-	if record.PlacePublished != "" {
-		originInfo.Place = []*modsv1.Place{{
-			PlaceTerm: []*modsv1.PlaceTerm{{Value: record.PlacePublished}},
-		}}
+	for _, place := range hub.GetPlacesPublished(record) {
+		originInfo.Place = append(originInfo.Place, &modsv1.Place{
+			PlaceTerm: []*modsv1.PlaceTerm{{Value: place}},
+		})
 		hasOriginInfo = true
 	}
-	if record.Edition != "" {
-		originInfo.Edition = record.Edition
+	editions := hub.GetEditions(record)
+	if len(editions) > 0 {
+		originInfo.Edition = editions[0]
 		hasOriginInfo = true
 	}
 
@@ -140,11 +142,13 @@ func hubToSpoke(record *hubv1.Record) (*modsv1.Record, error) {
 		if dateStr != "" {
 			switch d.Type {
 			case hubv1.DateType_DATE_TYPE_ISSUED, hubv1.DateType_DATE_TYPE_PUBLISHED:
-				originInfo.DateIssued = []*modsv1.DateElement{{Value: dateStr}}
+				originInfo.DateIssued = append(originInfo.DateIssued, &modsv1.DateElement{Value: dateStr})
 			case hubv1.DateType_DATE_TYPE_CREATED:
-				originInfo.DateCreated = []*modsv1.DateElement{{Value: dateStr}}
+				originInfo.DateCreated = append(originInfo.DateCreated, &modsv1.DateElement{Value: dateStr})
 			case hubv1.DateType_DATE_TYPE_COPYRIGHT:
-				originInfo.CopyrightDate = []*modsv1.DateElement{{Value: dateStr}}
+				originInfo.CopyrightDate = append(originInfo.CopyrightDate, &modsv1.DateElement{Value: dateStr})
+			case hubv1.DateType_DATE_TYPE_MODIFIED:
+				originInfo.DateModified = append(originInfo.DateModified, &modsv1.DateElement{Value: dateStr})
 			}
 			hasOriginInfo = true
 		}
@@ -153,12 +157,21 @@ func hubToSpoke(record *hubv1.Record) (*modsv1.Record, error) {
 	if hasOriginInfo {
 		mods.OriginInfo = []*modsv1.OriginInfo{originInfo}
 	}
+	for _, edition := range editions[1:] {
+		mods.OriginInfo = append(mods.OriginInfo, &modsv1.OriginInfo{Edition: edition})
+	}
 
 	// Language
-	if record.Language != "" {
-		mods.Language = []*modsv1.Language{{
-			LanguageTerm: []*modsv1.LanguageTerm{{Value: record.Language}},
-		}}
+	for _, language := range hub.GetLanguages(record) {
+		mods.Language = append(mods.Language, &modsv1.Language{
+			LanguageTerm: []*modsv1.LanguageTerm{{Value: language}},
+		})
+	}
+
+	for _, description := range hub.GetPhysicalDescriptions(record) {
+		mods.PhysicalDescription = append(mods.PhysicalDescription, &modsv1.PhysicalDescription{
+			Extent: []string{description},
+		})
 	}
 
 	// Abstract
@@ -376,6 +389,9 @@ func spokeToXML(spoke *modsv1.Record) *XMLMods {
 		for _, d := range o.CopyrightDate {
 			xmlOrigin.CopyrightDates = append(xmlOrigin.CopyrightDates, d.Value)
 		}
+		for _, d := range o.DateModified {
+			xmlOrigin.DateModified = append(xmlOrigin.DateModified, d.Value)
+		}
 		if o.Edition != "" {
 			xmlOrigin.Editions = []string{o.Edition}
 		}
@@ -389,6 +405,12 @@ func spokeToXML(spoke *modsv1.Record) *XMLMods {
 				LanguageTerm: XMLLanguageTerm{Value: lt.Value},
 			})
 		}
+	}
+
+	for _, description := range spoke.PhysicalDescription {
+		xmlMods.PhysicalDescriptions = append(xmlMods.PhysicalDescriptions, XMLPhysicalDescription{
+			Extents: description.Extent,
+		})
 	}
 
 	// Abstract
@@ -516,23 +538,24 @@ func relatedItemTypeToString(t modsv1.RelatedItemType) string {
 // XML types for MODS marshaling.
 
 type XMLMods struct {
-	XMLName           xml.Name             `xml:"mods"`
-	Xmlns             string               `xml:"xmlns,attr"`
-	XmlnsXsi          string               `xml:"xmlns:xsi,attr"`
-	XsiSchemaLocation string               `xml:"xsi:schemaLocation,attr"`
-	Version           string               `xml:"version,attr"`
-	TitleInfo         []XMLTitleInfo       `xml:"titleInfo,omitempty"`
-	Names             []XMLName            `xml:"name,omitempty"`
-	TypeOfResource    []string             `xml:"typeOfResource,omitempty"`
-	Genre             []string             `xml:"genre,omitempty"`
-	OriginInfo        []XMLOriginInfo      `xml:"originInfo,omitempty"`
-	Languages         []XMLLanguage        `xml:"language,omitempty"`
-	Abstracts         []string             `xml:"abstract,omitempty"`
-	Notes             []string             `xml:"note,omitempty"`
-	Subjects          []XMLSubject         `xml:"subject,omitempty"`
-	Identifiers       []XMLIdentifier      `xml:"identifier,omitempty"`
-	RelatedItems      []XMLRelatedItem     `xml:"relatedItem,omitempty"`
-	AccessConditions  []XMLAccessCondition `xml:"accessCondition,omitempty"`
+	XMLName              xml.Name                 `xml:"mods"`
+	Xmlns                string                   `xml:"xmlns,attr"`
+	XmlnsXsi             string                   `xml:"xmlns:xsi,attr"`
+	XsiSchemaLocation    string                   `xml:"xsi:schemaLocation,attr"`
+	Version              string                   `xml:"version,attr"`
+	TitleInfo            []XMLTitleInfo           `xml:"titleInfo,omitempty"`
+	Names                []XMLName                `xml:"name,omitempty"`
+	TypeOfResource       []string                 `xml:"typeOfResource,omitempty"`
+	Genre                []string                 `xml:"genre,omitempty"`
+	OriginInfo           []XMLOriginInfo          `xml:"originInfo,omitempty"`
+	Languages            []XMLLanguage            `xml:"language,omitempty"`
+	PhysicalDescriptions []XMLPhysicalDescription `xml:"physicalDescription,omitempty"`
+	Abstracts            []string                 `xml:"abstract,omitempty"`
+	Notes                []string                 `xml:"note,omitempty"`
+	Subjects             []XMLSubject             `xml:"subject,omitempty"`
+	Identifiers          []XMLIdentifier          `xml:"identifier,omitempty"`
+	RelatedItems         []XMLRelatedItem         `xml:"relatedItem,omitempty"`
+	AccessConditions     []XMLAccessCondition     `xml:"accessCondition,omitempty"`
 }
 
 type XMLTitleInfo struct {
@@ -567,6 +590,7 @@ type XMLOriginInfo struct {
 	DateIssued     []string   `xml:"dateIssued,omitempty"`
 	DateCreated    []string   `xml:"dateCreated,omitempty"`
 	CopyrightDates []string   `xml:"copyrightDate,omitempty"`
+	DateModified   []string   `xml:"dateModified,omitempty"`
 	Editions       []string   `xml:"edition,omitempty"`
 }
 
@@ -584,6 +608,10 @@ type XMLLanguage struct {
 
 type XMLLanguageTerm struct {
 	Value string `xml:",chardata"`
+}
+
+type XMLPhysicalDescription struct {
+	Extents []string `xml:"extent,omitempty"`
 }
 
 type XMLSubject struct {

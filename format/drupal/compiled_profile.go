@@ -58,6 +58,10 @@ func convertEntityWithCompiledProfile(entity DrupalEntity, options *format.Parse
 				return nil, fmt.Errorf("profile mapping %d: %w", entry.mapping.Position+1, err)
 			}
 		}
+		var previousCompatibilityValues []string
+		if entry.mapping.Merge == profile.MergeAppend {
+			previousCompatibilityValues, _ = repeatedCompatibilityHubValues(record, key)
+		}
 
 		var valueSet bool
 		if entry.mapping.Decode == "typed-identifier" {
@@ -73,6 +77,13 @@ func convertEntityWithCompiledProfile(entity DrupalEntity, options *format.Parse
 			return nil, fmt.Errorf("profile mapping %d field %q to Hub %q: %w", entry.mapping.Position+1, entry.mapping.Field.Selector.Path, entry.mapping.Hub, err)
 		}
 		if valueSet {
+			if len(previousCompatibilityValues) > 0 {
+				current, compatible := repeatedCompatibilityHubValues(record, key)
+				if compatible {
+					combined := append(previousCompatibilityValues, current...)
+					setRepeatedCompatibilityHubValues(record, key, combined)
+				}
+			}
 			set[key] = true
 			mappedFields[path] = true
 		}
@@ -81,6 +92,45 @@ func convertEntityWithCompiledProfile(entity DrupalEntity, options *format.Parse
 	addDrupalResourceIdentifier(record, entity, options)
 	applyDrupalProvenance(record, entity, options, compiled, mappedFields, partialFields)
 	return record, nil
+}
+
+// repeatedCompatibilityHubValues exposes the repeated storage behind Hub
+// fields that retain a legacy scalar primary. Generic repeated Hub fields are
+// appended by their processField handlers already; these compatibility fields
+// use Set* helpers, so compiled MergeAppend needs to combine source mappings
+// explicitly instead of allowing a later mapping to replace an earlier one.
+func repeatedCompatibilityHubValues(record *hubv1.Record, path string) ([]string, bool) {
+	base, _ := mapping.IRFieldName(path)
+	switch base {
+	case "Publisher":
+		return hub.GetPublishers(record), true
+	case "PlacePublished":
+		return hub.GetPlacesPublished(record), true
+	case "PhysicalDesc":
+		return hub.GetPhysicalDescriptions(record), true
+	case "Edition":
+		return hub.GetEditions(record), true
+	case "Language":
+		return hub.GetLanguages(record), true
+	default:
+		return nil, false
+	}
+}
+
+func setRepeatedCompatibilityHubValues(record *hubv1.Record, path string, values []string) {
+	base, _ := mapping.IRFieldName(path)
+	switch base {
+	case "Publisher":
+		hub.SetPublishers(record, values)
+	case "PlacePublished":
+		hub.SetPlacesPublished(record, values)
+	case "PhysicalDesc":
+		hub.SetPhysicalDescriptions(record, values)
+	case "Edition":
+		hub.SetEditions(record, values)
+	case "Language":
+		hub.SetLanguages(record, values)
+	}
 }
 
 func compiledPublicationPath(path string) bool {
@@ -457,9 +507,13 @@ func clearReplaceableHubValue(record *hubv1.Record, path string) error {
 	case "Publisher":
 		hub.SetPublishers(record, nil)
 	case "PlacePublished":
-		record.PlacePublished = ""
+		hub.SetPlacesPublished(record, nil)
 	case "PhysicalDesc":
-		record.PhysicalDesc = ""
+		hub.SetPhysicalDescriptions(record, nil)
+	case "Edition":
+		hub.SetEditions(record, nil)
+	case "Language":
+		hub.SetLanguages(record, nil)
 	case "TableOfContents":
 		record.TableOfContents = ""
 	case "Source":

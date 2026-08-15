@@ -167,7 +167,9 @@ func mapResource(source *resource, model *schemaModel, provenance format.Dataset
 	}
 	mapStructuralRelations(record, source)
 	if source.kind == kindMedia {
-		record.Language = firstNonempty(record.Language, source.lang)
+		if language := strings.TrimSpace(source.lang); language != "" {
+			hub.SetLanguages(record, append(hub.GetLanguages(record), language))
+		}
 		record.Source = firstNonempty(record.Source, source.mediaSource)
 		if file := mediaFile(source); file != nil {
 			record.Files = append(record.Files, file)
@@ -367,9 +369,9 @@ func mapProperties(record *hubv1.Record, source *resource) {
 		case "dcterms:subject":
 			appendSubjects(record, term.values)
 		case "dcterms:language":
-			record.Language = firstNonempty(record.Language, firstDisplay(term.values))
+			appendOmekaCompatibilityValues(record, "Language", term.values, nil)
 		case "dcterms:publisher":
-			record.Publisher = firstNonempty(record.Publisher, firstDisplay(term.values))
+			appendOmekaCompatibilityValues(record, "Publisher", term.values, nil)
 		case "dcterms:rights", "dcterms:license", "dcterms:accessRights":
 			appendRights(record, term.values)
 		case "dcterms:identifier":

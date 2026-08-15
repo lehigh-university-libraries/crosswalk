@@ -211,17 +211,21 @@ type hubPathShape uint8
 const (
 	hubPathScalar hubPathShape = iota + 1
 	hubPathRepeated
+	// hubPathCompatibilityRepeated is ordered repeated storage paired with a
+	// legacy scalar primary. Unlike an ordinary repeated path, it accepts
+	// replace so profiles that targeted the scalar field before the repeated
+	// companion existed remain valid; it also accepts append for the complete
+	// list.
+	hubPathCompatibilityRepeated
 	hubPathDynamic
 )
 
 var canonicalHubPathShapes = map[string]hubPathShape{
 	"Title": hubPathScalar, "FullTitle": hubPathScalar,
 	"Abstract": hubPathScalar, "Description": hubPathScalar,
-	"Language": hubPathScalar, "Publisher": hubPathScalar,
-	"PlacePublished": hubPathScalar, "PhysicalDesc": hubPathScalar,
 	"TableOfContents": hubPathScalar, "Source": hubPathScalar,
-	"DigitalOrigin": hubPathScalar, "Edition": hubPathScalar,
-	"Version": hubPathScalar, "PreferredCitation": hubPathScalar,
+	"DigitalOrigin": hubPathScalar,
+	"Version":       hubPathScalar, "PreferredCitation": hubPathScalar,
 	"ObjectModel": hubPathScalar, "AddCoverpage": hubPathScalar,
 	"CaptureDevice": hubPathScalar, "PPI": hubPathScalar,
 	"PageCount": hubPathScalar, "Dimensions": hubPathScalar,
@@ -238,6 +242,9 @@ var canonicalHubPathShapes = map[string]hubPathShape{
 	"Identifiers": hubPathRepeated, "Relations": hubPathRepeated,
 	"Notes": hubPathRepeated, "Files": hubPathRepeated,
 	"PhysicalForm": hubPathRepeated, "Funders": hubPathRepeated,
+	"Publisher": hubPathCompatibilityRepeated, "PlacePublished": hubPathCompatibilityRepeated,
+	"PhysicalDesc": hubPathCompatibilityRepeated, "Edition": hubPathCompatibilityRepeated,
+	"Language": hubPathCompatibilityRepeated,
 
 	"Extra": hubPathDynamic,
 }

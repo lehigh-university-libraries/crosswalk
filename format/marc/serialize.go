@@ -139,13 +139,17 @@ func hubToMARC(record *hubv1.Record) ([]byte, error) {
 func hubToFields(record *hubv1.Record) []marcfile.Field {
 	var fields []marcfile.Field
 
-	if id := localIdentifier(record); id != "" {
-		fields = append(fields, controlField("001", id))
+	controlID := localIdentifier(record)
+	if controlID != "" {
+		fields = append(fields, controlField("001", controlID))
 	}
 	fields = append(fields, controlField("005", time.Now().UTC().Format("20060102150405.0")))
 	fields = append(fields, controlField("008", control008(record)))
 
 	for _, id := range record.Identifiers {
+		if id == nil || strings.TrimSpace(id.Value) == "" {
+			continue
+		}
 		switch id.Type {
 		case hubv1.IdentifierType_IDENTIFIER_TYPE_ISBN:
 			fields = append(fields, dataField("020", " ", " ", subfield("a", id.Value)))
@@ -157,7 +161,22 @@ func hubToFields(record *hubv1.Record) []marcfile.Field {
 			fields = append(fields, dataField("088", " ", " ", subfield("a", id.Value)))
 		case hubv1.IdentifierType_IDENTIFIER_TYPE_CALL_NUMBER:
 			fields = append(fields, dataField("050", " ", "4", subfield("a", id.Value)))
+		case hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL:
+			if strings.TrimSpace(id.Value) != strings.TrimSpace(controlID) {
+				fields = append(fields, dataField("035", " ", " ", subfield("a", id.Value)))
+			}
+		case hubv1.IdentifierType_IDENTIFIER_TYPE_URL:
+			// URLs are written as 856 fields below.
+		default:
+			fields = append(fields, fallbackIdentifierField(id))
 		}
+	}
+	if languages := hub.GetLanguages(record); len(languages) > 1 {
+		subs := make([]marcfile.SubField, 0, len(languages))
+		for _, language := range languages {
+			subs = append(subs, subfield("a", language))
+		}
+		fields = append(fields, dataField("041", "0", " ", subs...))
 	}
 
 	fields = append(fields, contributorFields(record)...)
@@ -170,19 +189,40 @@ func hubToFields(record *hubv1.Record) []marcfile.Field {
 			fields = append(fields, dataField("246", "3", " ", subfield("a", title)))
 		}
 	}
+	for _, edition := range hub.GetEditions(record) {
+		fields = append(fields, dataField("250", " ", " ", subfield("a", edition)))
+	}
 
+	places := hub.GetPlacesPublished(record)
 	publishers := hub.GetPublishers(record)
-	if record.PlacePublished != "" || len(publishers) > 0 || primaryDateString(record) != "" {
-		subs := []marcfile.SubField{subfield("a", record.PlacePublished)}
+	publicationDates := marcDateValues(record,
+		hubv1.DateType_DATE_TYPE_ISSUED,
+		hubv1.DateType_DATE_TYPE_PUBLISHED,
+	)
+	if len(places) > 0 || len(publishers) > 0 || len(publicationDates) > 0 {
+		var subs []marcfile.SubField
+		for _, place := range places {
+			subs = append(subs, subfield("a", place))
+		}
 		for _, publisher := range publishers {
 			subs = append(subs, subfield("b", publisher))
 		}
-		subs = append(subs, subfield("c", primaryDateString(record)))
+		for _, date := range publicationDates {
+			subs = append(subs, subfield("c", date))
+		}
 		fields = append(fields, dataField("264", " ", "1", subs...))
 	}
+	if copyrightDates := marcDateValues(record, hubv1.DateType_DATE_TYPE_COPYRIGHT); len(copyrightDates) > 0 {
+		subs := make([]marcfile.SubField, 0, len(copyrightDates))
+		for _, date := range copyrightDates {
+			subs = append(subs, subfield("c", date))
+		}
+		fields = append(fields, dataField("264", " ", "4", subs...))
+	}
+	fields = append(fields, codedDateFields(record)...)
 
-	if record.PhysicalDesc != "" {
-		fields = append(fields, dataField("300", " ", " ", subfield("a", record.PhysicalDesc)))
+	for _, description := range hub.GetPhysicalDescriptions(record) {
+		fields = append(fields, dataField("300", " ", " ", subfield("a", description)))
 	}
 	if record.Abstract != "" {
 		fields = append(fields, dataField("520", " ", " ", subfield("a", record.Abstract)))
@@ -227,6 +267,12 @@ func hubToFields(record *hubv1.Record) []marcfile.Field {
 				subfield("t", rel.TargetTitle),
 				subfield("w", rel.TargetId),
 			))
+		case hubv1.RelationType_RELATION_TYPE_MEMBER_OF:
+			fields = append(fields, dataField("773", "0", " ",
+				subfield("i", "Member of:"),
+				subfield("t", rel.TargetTitle),
+				subfield("w", rel.TargetId),
+			))
 		case hubv1.RelationType_RELATION_TYPE_IN_SERIES:
 			fields = append(fields, dataField("830", " ", "0", subfield("a", rel.TargetTitle)))
 		case hubv1.RelationType_RELATION_TYPE_HAS_FORMAT:
@@ -234,16 +280,139 @@ func hubToFields(record *hubv1.Record) []marcfile.Field {
 				subfield("t", rel.TargetTitle),
 				subfield("w", rel.TargetId),
 			))
+		case hubv1.RelationType_RELATION_TYPE_RELATED_TO:
+			fields = append(fields, dataField("787", "0", " ",
+				subfield("t", rel.TargetTitle),
+				subfield("w", rel.TargetId),
+			))
 		}
 	}
 
 	for _, id := range record.Identifiers {
-		if id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_URL {
+		if id != nil && id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_URL {
 			fields = append(fields, dataField("856", "4", "0", subfield("u", id.Value)))
 		}
 	}
 
 	return compactFields(fields)
+}
+
+func fallbackIdentifierField(id *hubv1.Identifier) marcfile.Field {
+	indicator1 := "8"
+	subs := []marcfile.SubField{subfield("a", id.GetValue())}
+	if scheme := strings.ToLower(strings.TrimSpace(id.GetScheme())); scheme != "" && scheme != "unspecified" {
+		indicator1 = "7"
+		subs = append(subs, subfield("2", scheme))
+	}
+	return dataField("024", indicator1, " ", subs...)
+}
+
+func marcDateValues(record *hubv1.Record, dateTypes ...hubv1.DateType) []string {
+	accepted := make(map[hubv1.DateType]struct{}, len(dateTypes))
+	for _, dateType := range dateTypes {
+		accepted[dateType] = struct{}{}
+	}
+	var values []string
+	for _, date := range record.GetDates() {
+		if date == nil {
+			continue
+		}
+		if _, ok := accepted[date.Type]; !ok {
+			continue
+		}
+		if value := marcDateValue(date); value != "" {
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
+func codedDateFields(record *hubv1.Record) []marcfile.Field {
+	var fields []marcfile.Field
+	for _, date := range record.GetDates() {
+		if date == nil {
+			continue
+		}
+		value, isEDTF := marcCodedDateValue(date)
+		if value == "" {
+			continue
+		}
+
+		start, end, isRange := strings.Cut(value, "/")
+		switch date.Type {
+		case hubv1.DateType_DATE_TYPE_ISSUED,
+			hubv1.DateType_DATE_TYPE_PUBLISHED,
+			hubv1.DateType_DATE_TYPE_COPYRIGHT:
+			continue
+		case hubv1.DateType_DATE_TYPE_CREATED:
+			if !isEDTF {
+				fields = append(fields, crosswalkDateField(date, value))
+				continue
+			}
+			subs := []marcfile.SubField{subfield("k", start)}
+			if isRange {
+				subs = append(subs, subfield("l", end))
+			}
+			subs = append(subs, subfield("2", "edtf"))
+			fields = append(fields, dataField("046", "1", " ", subs...))
+		case hubv1.DateType_DATE_TYPE_MODIFIED:
+			if isRange || !isEDTF {
+				fields = append(fields, crosswalkDateField(date, value))
+				continue
+			}
+			fields = append(fields, dataField("046", " ", " ", subfield("j", start), subfield("2", "edtf")))
+		case hubv1.DateType_DATE_TYPE_VALID:
+			if !isEDTF {
+				fields = append(fields, crosswalkDateField(date, value))
+				continue
+			}
+			subs := []marcfile.SubField{subfield("m", start)}
+			if isRange {
+				subs = append(subs, subfield("n", end))
+			}
+			subs = append(subs, subfield("2", "edtf"))
+			fields = append(fields, dataField("046", " ", " ", subs...))
+		default:
+			fields = append(fields, crosswalkDateField(date, value))
+		}
+	}
+	return fields
+}
+
+func crosswalkDateField(date *hubv1.DateValue, value string) marcfile.Field {
+	note := crosswalkDateNotePrefix + date.Type.String() + ":" + value
+	return dataField("046", " ", " ", subfield("x", note))
+}
+
+func marcDateValue(date *hubv1.DateValue) string {
+	if date == nil {
+		return ""
+	}
+	if value := strings.TrimSpace(date.Raw); value != "" {
+		return value
+	}
+	if value := strings.TrimSpace(hub.FormatEDTF(date)); value != "" {
+		return value
+	}
+	return ""
+}
+
+func marcCodedDateValue(date *hubv1.DateValue) (string, bool) {
+	if date == nil {
+		return "", false
+	}
+	if value := strings.TrimSpace(hub.FormatEDTF(date)); value != "" {
+		return value, true
+	}
+	value := strings.TrimSpace(date.Raw)
+	if value == "" {
+		return "", false
+	}
+	parsed, err := helpers.ParseEDTF(value, date.Type)
+	if err == nil && parsed != nil && parsed.Year != 0 {
+		return value, true
+	}
+	return value, false
 }
 
 func contributorFields(record *hubv1.Record) []marcfile.Field {
@@ -391,7 +560,10 @@ func control008(record *hubv1.Record) string {
 	if len(date) >= 4 {
 		year = date[:4]
 	}
-	lang := strings.TrimSpace(record.GetLanguage())
+	lang := ""
+	if languages := hub.GetLanguages(record); len(languages) > 0 {
+		lang = strings.TrimSpace(languages[0])
+	}
 	if lang == "" {
 		lang = "eng"
 	}
@@ -472,8 +644,10 @@ func localIdentifier(record *hubv1.Record) string {
 	if record.SourceInfo != nil && record.SourceInfo.SourceId != "" {
 		return record.SourceInfo.SourceId
 	}
-	if id := hub.GetIdentifier(record, hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL); id != nil {
-		return id.Value
+	for _, id := range record.Identifiers {
+		if id != nil && id.Type == hubv1.IdentifierType_IDENTIFIER_TYPE_LOCAL {
+			return id.Value
+		}
 	}
 	return ""
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	pqv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/proquest/v1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as ProQuest ETD XML.
@@ -127,8 +128,9 @@ func hubToSpoke(record *hubv1.Record) (*pqv1.Submission, error) {
 			})
 		}
 	}
-	if len(categorization.Categories) > 0 || len(categorization.Keywords) > 0 || record.Language != "" {
-		categorization.Language = record.Language
+	language := primaryCompatibilityValue(hub.GetLanguages(record))
+	if len(categorization.Categories) > 0 || len(categorization.Keywords) > 0 || language != "" {
+		categorization.Language = language
 		submission.Description.Categorization = categorization
 	}
 
@@ -138,9 +140,13 @@ func hubToSpoke(record *hubv1.Record) (*pqv1.Submission, error) {
 		dateStr := formatDate(d)
 		switch d.Type {
 		case hubv1.DateType_DATE_TYPE_ACCEPTED:
-			dates.AcceptDate = dateStr
+			if dates.AcceptDate == "" {
+				dates.AcceptDate = dateStr
+			}
 		case hubv1.DateType_DATE_TYPE_ISSUED, hubv1.DateType_DATE_TYPE_PUBLISHED:
-			dates.CompletionDate = dateStr
+			if dates.CompletionDate == "" {
+				dates.CompletionDate = dateStr
+			}
 		}
 	}
 	if dates.AcceptDate != "" || dates.CompletionDate != "" {
@@ -162,6 +168,13 @@ func hubToSpoke(record *hubv1.Record) (*pqv1.Submission, error) {
 	}
 
 	return submission, nil
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 // contributorToName converts a hub contributor to a ProQuest Name.

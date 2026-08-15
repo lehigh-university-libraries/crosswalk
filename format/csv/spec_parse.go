@@ -538,11 +538,15 @@ func assignSpecValue(record *hubv1.Record, field spec.Field, value string, opts 
 	case "ResourceType":
 		record.ResourceType = hub.NewResourceType(value, "")
 	case "Language":
-		record.Language = value
+		hub.SetLanguages(record, append(hub.GetLanguages(record), value))
 	case "Publisher":
-		record.Publisher = value
+		hub.SetPublishers(record, append(hub.GetPublishers(record), value))
+	case "PlacePublished":
+		hub.SetPlacesPublished(record, append(hub.GetPlacesPublished(record), value))
+	case "PhysicalDesc":
+		hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), value))
 	case "Edition":
-		record.Edition = value
+		hub.SetEditions(record, append(hub.GetEditions(record), value))
 	case "DigitalOrigin":
 		record.DigitalOrigin = value
 	case "Dimensions":

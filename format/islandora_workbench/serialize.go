@@ -527,6 +527,8 @@ func targetFieldValue(record *hubv1.Record, hubPath string, canonical map[string
 		return canonical["field_edtf_date_embargo"], nil
 	case "Publisher":
 		return canonical["field_publisher"], nil
+	case "PlacePublished":
+		return canonical["field_place_published"], nil
 	case "Edition":
 		return canonical["field_edition"], nil
 	case "Language":
@@ -535,7 +537,7 @@ func targetFieldValue(record *hubv1.Record, hubPath string, canonical map[string
 		return canonical["field_physical_form"], nil
 	case "Files.mime_type":
 		return canonical["field_media_type"], nil
-	case "Extent":
+	case "Extent", "PhysicalDesc":
 		return canonical["field_extent"], nil
 	case "DigitalOrigin":
 		return canonical["field_digital_origin"], nil
@@ -1262,7 +1264,7 @@ func projectRecordToColumns(record *hubv1.Record, delimiter string) (map[string]
 		cols["field_resource_type"] = hub.ResourceTypeString(record.ResourceType)
 	}
 
-	cols["field_language"] = record.Language
+	cols["field_language"] = strings.Join(hub.GetLanguages(record), delimiter)
 
 	// Contributors → field_linked_agent + optional agents rows
 	if len(record.Contributors) > 0 {
@@ -1329,8 +1331,9 @@ func projectRecordToColumns(record *hubv1.Record, delimiter string) (map[string]
 	if len(abstracts) > 0 {
 		cols["field_abstract"] = strings.Join(abstracts, delimiter)
 	}
-	cols["field_publisher"] = record.Publisher
-	cols["field_edition"] = record.Edition
+	cols["field_publisher"] = strings.Join(hub.GetPublishers(record), delimiter)
+	cols["field_place_published"] = strings.Join(hub.GetPlacesPublished(record), delimiter)
+	cols["field_edition"] = strings.Join(hub.GetEditions(record), delimiter)
 	cols["field_digital_origin"] = record.DigitalOrigin
 
 	// Rights → field_rights (URI form preferred)
@@ -1398,8 +1401,8 @@ func projectRecordToColumns(record *hubv1.Record, delimiter string) (map[string]
 
 	// Physical description → field_extent
 	var extents []string
-	if record.PhysicalDesc != "" {
-		extents = append(extents, attrValue(record.PhysicalDesc, "page"))
+	for _, description := range hub.GetPhysicalDescriptions(record) {
+		extents = append(extents, attrValue(description, "page"))
 	}
 	if record.Dimensions != "" {
 		extents = append(extents, attrValue(record.Dimensions, "dimensions"))

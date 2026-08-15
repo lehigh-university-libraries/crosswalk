@@ -75,6 +75,17 @@ func buildProfile(format string, fields map[string]FieldMeta) *mapping.Profile {
 		if meta.DrupalField == "field_genre" && meta.TargetBundle == "genre" {
 			fm.IR = "Genre"
 		}
+		// The generated Islandora registry predates first-class Hub edition
+		// support and still labels this field as Extra.edition. Keep the source
+		// metadata compatible while routing the standard field to its Hub value.
+		if meta.DrupalField == "field_edition" && meta.HubField == "Extra.edition" {
+			fm.IR = "Edition"
+		}
+		// field_physical_description is the preferred source when both it and
+		// the older field_extent fallback are present in an entity.
+		if meta.DrupalField == "field_extent" && fm.IR == "PhysicalDesc" {
+			fm.Priority = -1
+		}
 
 		// Set Drupal type — for typed_relation this is the primary type signal
 		fm.Type = meta.DrupalType

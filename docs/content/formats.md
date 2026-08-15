@@ -64,6 +64,11 @@ top-level plugin/newer fields in canonical JSON for later use.
 The `marc` adapter reads MARC21 binary and MARCXML. Serialization writes binary
 ISO 2709 by default; pass `--pretty` to write readable MARCXML instead.
 
+Repeatable Hub values are written as repeated MARC fields or subfields where
+MARC21 permits them. This includes publishers, publication places and dates,
+physical descriptions, editions, languages, identifiers, subjects, rights,
+and supported relations.
+
 MARC maps directly between its tag/subfield record model and the Hub. The
 current mapping is implemented in the adapter and compiled into Crosswalk; it
 is not exposed as a site profile or CLI mapping override. A site that needs

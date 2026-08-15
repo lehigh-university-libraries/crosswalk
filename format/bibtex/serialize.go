@@ -9,6 +9,7 @@ import (
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	bibtexv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/bibtex/v1"
 	"github.com/lehigh-university-libraries/crosswalk/helpers"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as BibTeX entries.
@@ -107,16 +108,16 @@ func hubToSpoke(record *hubv1.Record) (*bibtexv1.Entry, error) {
 	}
 
 	// Publisher
-	entry.Publisher = record.Publisher
+	entry.Publisher = primaryCompatibilityValue(hub.GetPublishers(record))
 
 	// Place published
-	entry.Address = record.PlacePublished
+	entry.Address = primaryCompatibilityValue(hub.GetPlacesPublished(record))
 
 	// Edition
-	entry.Edition = record.Edition
+	entry.Edition = primaryCompatibilityValue(hub.GetEditions(record))
 
 	// Language
-	entry.Language = record.Language
+	entry.Language = primaryCompatibilityValue(hub.GetLanguages(record))
 
 	// Dates
 	for _, d := range record.Dates {
@@ -167,6 +168,13 @@ func hubToSpoke(record *hubv1.Record) (*bibtexv1.Entry, error) {
 	}
 
 	return entry, nil
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 // mapResourceTypeToBibtex maps hub resource type to BibTeX entry type.

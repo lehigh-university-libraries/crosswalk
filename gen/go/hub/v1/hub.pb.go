@@ -954,6 +954,9 @@ type Record struct {
 	// Subject access
 	Subjects []*Subject `protobuf:"bytes,8,rep,name=subjects,proto3" json:"subjects,omitempty"`
 	Language string     `protobuf:"bytes,9,opt,name=language,proto3" json:"language,omitempty"`
+	// Languages is the complete ordered list of language values. language
+	// remains the primary value for compatibility.
+	Languages []string `protobuf:"bytes,49,rep,name=languages,proto3" json:"languages,omitempty"`
 	// Publication info
 	// Publisher is the primary publisher retained for compatibility with
 	// consumers that support only one value.
@@ -962,6 +965,9 @@ type Record struct {
 	Publishers     []string            `protobuf:"bytes,45,rep,name=publishers,proto3" json:"publishers,omitempty"`
 	PlacePublished string              `protobuf:"bytes,11,opt,name=place_published,json=placePublished,proto3" json:"place_published,omitempty"`
 	Publication    *PublicationDetails `protobuf:"bytes,24,opt,name=publication,proto3" json:"publication,omitempty"`
+	// PlacesPublished is the complete ordered list of publication places.
+	// place_published remains the primary value for compatibility.
+	PlacesPublished []string `protobuf:"bytes,46,rep,name=places_published,json=placesPublished,proto3" json:"places_published,omitempty"`
 	// Rights and access
 	Rights          []*Rights `protobuf:"bytes,12,rep,name=rights,proto3" json:"rights,omitempty"`
 	IsPublic        bool      `protobuf:"varint,25,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`
@@ -969,13 +975,19 @@ type Record struct {
 	// Identifiers
 	Identifiers []*Identifier `protobuf:"bytes,13,rep,name=identifiers,proto3" json:"identifiers,omitempty"`
 	// Descriptions and notes
-	Description       string   `protobuf:"bytes,14,opt,name=description,proto3" json:"description,omitempty"`
-	PhysicalDesc      string   `protobuf:"bytes,15,opt,name=physical_desc,json=physicalDesc,proto3" json:"physical_desc,omitempty"`
-	Notes             []string `protobuf:"bytes,16,rep,name=notes,proto3" json:"notes,omitempty"`
-	TableOfContents   string   `protobuf:"bytes,17,opt,name=table_of_contents,json=tableOfContents,proto3" json:"table_of_contents,omitempty"`
-	Source            string   `protobuf:"bytes,18,opt,name=source,proto3" json:"source,omitempty"`
-	DigitalOrigin     string   `protobuf:"bytes,19,opt,name=digital_origin,json=digitalOrigin,proto3" json:"digital_origin,omitempty"`
-	Edition           string   `protobuf:"bytes,27,opt,name=edition,proto3" json:"edition,omitempty"`
+	Description  string `protobuf:"bytes,14,opt,name=description,proto3" json:"description,omitempty"`
+	PhysicalDesc string `protobuf:"bytes,15,opt,name=physical_desc,json=physicalDesc,proto3" json:"physical_desc,omitempty"`
+	// PhysicalDescriptions is the complete ordered list of physical extents or
+	// descriptions. physical_desc remains the primary value for compatibility.
+	PhysicalDescriptions []string `protobuf:"bytes,47,rep,name=physical_descriptions,json=physicalDescriptions,proto3" json:"physical_descriptions,omitempty"`
+	Notes                []string `protobuf:"bytes,16,rep,name=notes,proto3" json:"notes,omitempty"`
+	TableOfContents      string   `protobuf:"bytes,17,opt,name=table_of_contents,json=tableOfContents,proto3" json:"table_of_contents,omitempty"`
+	Source               string   `protobuf:"bytes,18,opt,name=source,proto3" json:"source,omitempty"`
+	DigitalOrigin        string   `protobuf:"bytes,19,opt,name=digital_origin,json=digitalOrigin,proto3" json:"digital_origin,omitempty"`
+	Edition              string   `protobuf:"bytes,27,opt,name=edition,proto3" json:"edition,omitempty"`
+	// Editions is the complete ordered list of edition statements. edition
+	// remains the primary value for compatibility.
+	Editions          []string `protobuf:"bytes,48,rep,name=editions,proto3" json:"editions,omitempty"`
 	Version           string   `protobuf:"bytes,28,opt,name=version,proto3" json:"version,omitempty"`
 	PreferredCitation string   `protobuf:"bytes,29,opt,name=preferred_citation,json=preferredCitation,proto3" json:"preferred_citation,omitempty"`
 	// Technical Metadata
@@ -1118,6 +1130,13 @@ func (x *Record) GetLanguage() string {
 	return ""
 }
 
+func (x *Record) GetLanguages() []string {
+	if x != nil {
+		return x.Languages
+	}
+	return nil
+}
+
 func (x *Record) GetPublisher() string {
 	if x != nil {
 		return x.Publisher
@@ -1142,6 +1161,13 @@ func (x *Record) GetPlacePublished() string {
 func (x *Record) GetPublication() *PublicationDetails {
 	if x != nil {
 		return x.Publication
+	}
+	return nil
+}
+
+func (x *Record) GetPlacesPublished() []string {
+	if x != nil {
+		return x.PlacesPublished
 	}
 	return nil
 }
@@ -1188,6 +1214,13 @@ func (x *Record) GetPhysicalDesc() string {
 	return ""
 }
 
+func (x *Record) GetPhysicalDescriptions() []string {
+	if x != nil {
+		return x.PhysicalDescriptions
+	}
+	return nil
+}
+
 func (x *Record) GetNotes() []string {
 	if x != nil {
 		return x.Notes
@@ -1221,6 +1254,13 @@ func (x *Record) GetEdition() string {
 		return x.Edition
 	}
 	return ""
+}
+
+func (x *Record) GetEditions() []string {
+	if x != nil {
+		return x.Editions
+	}
+	return nil
 }
 
 func (x *Record) GetVersion() string {
@@ -2996,7 +3036,7 @@ var File_hub_v1_hub_proto protoreflect.FileDescriptor
 
 const file_hub_v1_hub_proto_rawDesc = "" +
 	"\n" +
-	"\x10hub/v1/hub.proto\x12\x06hub.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xfa\r\n" +
+	"\x10hub/v1/hub.proto\x12\x06hub.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x94\x0f\n" +
 	"\x06Record\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1b\n" +
 	"\talt_title\x18\x02 \x03(\tR\baltTitle\x12\x1a\n" +
@@ -3007,24 +3047,28 @@ const file_hub_v1_hub_proto_rawDesc = "" +
 	"\x06genres\x18\a \x03(\v2\x0f.hub.v1.SubjectR\x06genres\x12+\n" +
 	"\bsubjects\x18\b \x03(\v2\x0f.hub.v1.SubjectR\bsubjects\x12\x1a\n" +
 	"\blanguage\x18\t \x01(\tR\blanguage\x12\x1c\n" +
+	"\tlanguages\x181 \x03(\tR\tlanguages\x12\x1c\n" +
 	"\tpublisher\x18\n" +
 	" \x01(\tR\tpublisher\x12\x1e\n" +
 	"\n" +
 	"publishers\x18- \x03(\tR\n" +
 	"publishers\x12'\n" +
 	"\x0fplace_published\x18\v \x01(\tR\x0eplacePublished\x12<\n" +
-	"\vpublication\x18\x18 \x01(\v2\x1a.hub.v1.PublicationDetailsR\vpublication\x12&\n" +
+	"\vpublication\x18\x18 \x01(\v2\x1a.hub.v1.PublicationDetailsR\vpublication\x12)\n" +
+	"\x10places_published\x18. \x03(\tR\x0fplacesPublished\x12&\n" +
 	"\x06rights\x18\f \x03(\v2\x0e.hub.v1.RightsR\x06rights\x12\x1b\n" +
 	"\tis_public\x18\x19 \x01(\bR\bisPublic\x12)\n" +
 	"\x10access_condition\x18\x1a \x01(\tR\x0faccessCondition\x124\n" +
 	"\videntifiers\x18\r \x03(\v2\x12.hub.v1.IdentifierR\videntifiers\x12 \n" +
 	"\vdescription\x18\x0e \x01(\tR\vdescription\x12#\n" +
-	"\rphysical_desc\x18\x0f \x01(\tR\fphysicalDesc\x12\x14\n" +
+	"\rphysical_desc\x18\x0f \x01(\tR\fphysicalDesc\x123\n" +
+	"\x15physical_descriptions\x18/ \x03(\tR\x14physicalDescriptions\x12\x14\n" +
 	"\x05notes\x18\x10 \x03(\tR\x05notes\x12*\n" +
 	"\x11table_of_contents\x18\x11 \x01(\tR\x0ftableOfContents\x12\x16\n" +
 	"\x06source\x18\x12 \x01(\tR\x06source\x12%\n" +
 	"\x0edigital_origin\x18\x13 \x01(\tR\rdigitalOrigin\x12\x18\n" +
-	"\aedition\x18\x1b \x01(\tR\aedition\x12\x18\n" +
+	"\aedition\x18\x1b \x01(\tR\aedition\x12\x1a\n" +
+	"\beditions\x180 \x03(\tR\beditions\x12\x18\n" +
 	"\aversion\x18\x1c \x01(\tR\aversion\x12-\n" +
 	"\x12preferred_citation\x18\x1d \x01(\tR\x11preferredCitation\x12!\n" +
 	"\fobject_model\x18\x1e \x01(\tR\vobjectModel\x12#\n" +

@@ -164,9 +164,9 @@ func compiledHubValues(record *hubv1.Record, entry compiledDrupalMapping) ([]any
 	case "Publisher":
 		return stringValues(hub.GetPublishers(record)), nil
 	case "PlacePublished":
-		return nonemptyStringValue(record.GetPlacePublished()), nil
+		return stringValues(hub.GetPlacesPublished(record)), nil
 	case "PhysicalDesc":
-		return nonemptyStringValue(record.GetPhysicalDesc()), nil
+		return stringValues(hub.GetPhysicalDescriptions(record)), nil
 	case "Notes":
 		return stringValues(record.GetNotes()), nil
 	case "TableOfContents":
@@ -176,7 +176,7 @@ func compiledHubValues(record *hubv1.Record, entry compiledDrupalMapping) ([]any
 	case "DigitalOrigin":
 		return nonemptyStringValue(record.GetDigitalOrigin()), nil
 	case "Edition":
-		return nonemptyStringValue(record.GetEdition()), nil
+		return stringValues(hub.GetEditions(record)), nil
 	case "Version":
 		return nonemptyStringValue(record.GetVersion()), nil
 	case "PreferredCitation":
@@ -194,7 +194,7 @@ func compiledHubValues(record *hubv1.Record, entry compiledDrupalMapping) ([]any
 	case "LocalRestriction":
 		return nonemptyStringValue(record.GetLocalRestriction()), nil
 	case "Language":
-		return nonemptyStringValue(record.GetLanguage()), nil
+		return stringValues(hub.GetLanguages(record)), nil
 	case "Departments":
 		return stringValues(record.GetDepartments()), nil
 	case "IsPublic":

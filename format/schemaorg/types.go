@@ -44,7 +44,7 @@ type CreativeWork struct {
 
 	// Core properties
 	Headline         string `json:"headline,omitempty"`
-	AlternativeTitle string `json:"alternativeHeadline,omitempty"`
+	AlternativeTitle any    `json:"alternativeHeadline,omitempty"`
 	Abstract         string `json:"abstract,omitempty"`
 
 	// Authorship
@@ -55,10 +55,10 @@ type CreativeWork struct {
 	Publisher   any `json:"publisher,omitempty"`   // Person or Organization
 
 	// Dates
-	DateCreated   string `json:"dateCreated,omitempty"`
-	DatePublished string `json:"datePublished,omitempty"`
-	DateModified  string `json:"dateModified,omitempty"`
-	CopyrightYear any    `json:"copyrightYear,omitempty"` // int or string
+	DateCreated   any `json:"dateCreated,omitempty"`
+	DatePublished any `json:"datePublished,omitempty"`
+	DateModified  any `json:"dateModified,omitempty"`
+	CopyrightYear any `json:"copyrightYear,omitempty"` // int, string, or array
 
 	// Classification
 	Genre                any    `json:"genre,omitempty"`      // string or []string

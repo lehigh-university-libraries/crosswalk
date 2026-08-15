@@ -18,7 +18,10 @@ import (
 
 var yearPattern = regexp.MustCompile(`\d{4}`)
 
-const maxMARCInputBytes = int64(64 << 20)
+const (
+	maxMARCInputBytes       = int64(64 << 20)
+	crosswalkDateNotePrefix = "crosswalk-date:"
+)
 
 // Parse reads MARC21 binary or MARCXML and returns hub records.
 func (f *Format) Parse(r io.Reader, _ *format.ParseOptions) ([]*hubv1.Record, error) {
@@ -106,15 +109,17 @@ func recordToHub(rec marcfile.Record) *hubv1.Record {
 
 	addIdentifiers(record, rec)
 	addContributors(record, rec)
+	addEditions(record, rec)
 	addPublication(record, rec)
+	addCodedDates(record, rec)
 	addPhysicalDescription(record, rec)
 	addNotes(record, rec)
 	addRights(record, rec)
 	addSubjects(record, rec)
 	addRelations(record, rec)
 
-	if lang := languageFromRecord(rec); lang != "" {
-		record.Language = lang
+	if languages := languagesFromRecord(rec); len(languages) > 0 {
+		hub.SetLanguages(record, languages)
 	}
 	if record.ResourceType == nil {
 		record.ResourceType = resourceTypeFromLeader(rec.Leader.Raw())
@@ -142,8 +147,9 @@ func addIdentifiers(record *hubv1.Record, rec marcfile.Record) {
 		}
 	}
 	for _, f := range rec.FieldsByTag("024") {
+		scheme := strings.ToLower(cleanMARCValue(firstSubfield(f, "2")))
 		for _, value := range subfieldValues(f, "a") {
-			addIdentifier(record, value, hubv1.IdentifierType_IDENTIFIER_TYPE_UNSPECIFIED)
+			addIdentifierForScheme(record, value, scheme)
 		}
 	}
 	for _, tag := range []string{"035", "088"} {
@@ -159,7 +165,7 @@ func addIdentifiers(record *hubv1.Record, rec marcfile.Record) {
 	}
 	for _, tag := range []string{"050", "090"} {
 		for _, f := range rec.FieldsByTag(tag) {
-			if callNumber := joinSubfields(f, " ", "a", "b"); callNumber != "" {
+			for _, callNumber := range callNumbersFromField(f) {
 				addIdentifier(record, callNumber, hubv1.IdentifierType_IDENTIFIER_TYPE_CALL_NUMBER)
 			}
 		}
@@ -176,13 +182,68 @@ func addIdentifier(record *hubv1.Record, value string, idType hubv1.IdentifierTy
 	if value == "" {
 		return
 	}
-	id := hub.NewIdentifier(value, idType)
+	appendIdentifier(record, hub.NewIdentifier(value, idType))
+}
+
+func addIdentifierForScheme(record *hubv1.Record, value, scheme string) {
+	value = cleanIdentifier(value)
+	if value == "" {
+		return
+	}
+
+	var id *hubv1.Identifier
+	if scheme != "" {
+		candidate := &hubv1.Identifier{Value: value, Scheme: scheme}
+		if canonical, err := hub.DefaultIdentifierRegistry().CanonicalizeIdentifier(candidate); err == nil {
+			id = canonical
+		} else {
+			id = candidate
+		}
+	} else {
+		id = hub.NewIdentifier(value, hubv1.IdentifierType_IDENTIFIER_TYPE_UNSPECIFIED)
+	}
+	appendIdentifier(record, id)
+}
+
+func appendIdentifier(record *hubv1.Record, id *hubv1.Identifier) {
+	if id == nil || strings.TrimSpace(id.Value) == "" {
+		return
+	}
 	for _, existing := range record.Identifiers {
-		if existing.Type == id.Type && existing.Value == id.Value {
+		if existing != nil && existing.Type == id.Type && existing.Value == id.Value && existing.Scheme == id.Scheme {
 			return
 		}
 	}
 	record.Identifiers = append(record.Identifiers, id)
+}
+
+func callNumbersFromField(f marcfile.Field) []string {
+	var primary string
+	var alternates []string
+	for _, sub := range f.SubFields {
+		value := cleanMARCValue(sub.Value)
+		if value == "" {
+			continue
+		}
+		switch sub.Code {
+		case "a":
+			if primary == "" {
+				primary = value
+			} else {
+				alternates = append(alternates, value)
+			}
+		case "b":
+			if primary == "" {
+				primary = value
+			} else {
+				primary += " " + value
+			}
+		}
+	}
+	if primary == "" {
+		return alternates
+	}
+	return append([]string{primary}, alternates...)
 }
 
 func addContributors(record *hubv1.Record, rec marcfile.Record) {
@@ -207,51 +268,150 @@ func addContributors(record *hubv1.Record, rec marcfile.Record) {
 				continue
 			}
 
-			role, code := contributorRole(f, cfg.defaultRole, cfg.defaultCode)
-			c := &hubv1.Contributor{
-				Name:     name,
-				Role:     role,
-				RoleCode: code,
+			for _, role := range contributorRoles(f, cfg.defaultRole, cfg.defaultCode) {
+				c := &hubv1.Contributor{
+					Name:     name,
+					Role:     role.role,
+					RoleCode: role.code,
+				}
+				if cfg.person {
+					c.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
+					c.ParsedName = helpers.ParseName(name)
+				} else {
+					c.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
+				}
+				record.Contributors = append(record.Contributors, c)
 			}
-			if cfg.person {
-				c.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_PERSON
-				c.ParsedName = helpers.ParseName(name)
-			} else {
-				c.Type = hubv1.ContributorType_CONTRIBUTOR_TYPE_ORGANIZATION
-			}
-			record.Contributors = append(record.Contributors, c)
 		}
 	}
 }
 
 func addPublication(record *hubv1.Record, rec marcfile.Record) {
 	fields := publicationFields(rec)
-	if len(fields) == 0 {
-		return
-	}
-
+	var places []string
 	var publishers []string
 	for _, field := range fields {
-		if record.PlacePublished == "" {
-			record.PlacePublished = cleanMARCValue(firstSubfield(field, "a"))
-		}
+		places = append(places, subfieldValues(field, "a")...)
 		publishers = append(publishers, subfieldValues(field, "b")...)
-		if len(record.Dates) == 0 {
-			if rawDate := cleanDateValue(firstSubfield(field, "c")); rawDate != "" {
-				record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_ISSUED))
+		for _, rawDate := range dateSubfieldValues(field, "c") {
+			record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_ISSUED))
+		}
+	}
+	if len(fields) > 0 {
+		hub.SetPlacesPublished(record, places)
+		hub.SetPublishers(record, publishers)
+	}
+
+	for _, field := range rec.FieldsByTag("264") {
+		if field.Indicator2 != "4" {
+			continue
+		}
+		for _, rawDate := range dateSubfieldValues(field, "c") {
+			record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_COPYRIGHT))
+		}
+	}
+}
+
+func addEditions(record *hubv1.Record, rec marcfile.Record) {
+	var editions []string
+	for _, field := range rec.FieldsByTag("250") {
+		if edition := joinSubfields(field, " ", "a", "b"); edition != "" {
+			editions = append(editions, edition)
+		}
+	}
+	if len(editions) > 0 {
+		hub.SetEditions(record, editions)
+	}
+}
+
+func addCodedDates(record *hubv1.Record, rec marcfile.Record) {
+	for _, field := range rec.FieldsByTag("046") {
+		for _, rawDate := range dateSubfieldValues(field, "j") {
+			record.Dates = append(record.Dates, dateFromString(rawDate, hubv1.DateType_DATE_TYPE_MODIFIED))
+		}
+
+		appendDateRange(record, field, "k", "l", hubv1.DateType_DATE_TYPE_CREATED)
+		appendDateRange(record, field, "m", "n", hubv1.DateType_DATE_TYPE_VALID)
+
+		for _, note := range subfieldValuesUnclean(field, "x") {
+			dateType, value, ok := parseCrosswalkDateNote(note)
+			if ok {
+				record.Dates = append(record.Dates, dateFromString(value, dateType))
 			}
 		}
 	}
-	hub.SetPublishers(record, publishers)
+}
+
+func appendDateRange(record *hubv1.Record, field marcfile.Field, startCode, endCode string, dateType hubv1.DateType) {
+	start := firstDateSubfield(field, startCode)
+	end := firstDateSubfield(field, endCode)
+	if start == "" && end == "" {
+		return
+	}
+	value := start
+	if value == "" {
+		value = end
+	} else if end != "" {
+		value += "/" + end
+	}
+	record.Dates = append(record.Dates, dateFromString(value, dateType))
+}
+
+func parseCrosswalkDateNote(note string) (hubv1.DateType, string, bool) {
+	note = strings.TrimSpace(note)
+	if !strings.HasPrefix(note, crosswalkDateNotePrefix) {
+		return hubv1.DateType_DATE_TYPE_UNSPECIFIED, "", false
+	}
+	typeName, value, ok := strings.Cut(strings.TrimPrefix(note, crosswalkDateNotePrefix), ":")
+	if !ok || strings.TrimSpace(value) == "" {
+		return hubv1.DateType_DATE_TYPE_UNSPECIFIED, "", false
+	}
+	typeNumber, ok := hubv1.DateType_value[strings.TrimSpace(typeName)]
+	if !ok {
+		return hubv1.DateType_DATE_TYPE_UNSPECIFIED, "", false
+	}
+	return hubv1.DateType(typeNumber), strings.TrimSpace(value), true
 }
 
 func addPhysicalDescription(record *hubv1.Record, rec marcfile.Record) {
+	var descriptions []string
 	for _, f := range rec.FieldsByTag("300") {
-		if value := joinSubfields(f, " ", "a", "b", "c", "e", "f", "g"); value != "" {
-			record.PhysicalDesc = value
-			return
-		}
+		descriptions = append(descriptions, physicalDescriptionsFromField(f)...)
 	}
+	if len(descriptions) > 0 {
+		hub.SetPhysicalDescriptions(record, descriptions)
+	}
+}
+
+func physicalDescriptionsFromField(field marcfile.Field) []string {
+	var descriptions []string
+	var parts []string
+	seenExtent := false
+	flush := func() {
+		if value := strings.Join(parts, " "); value != "" {
+			descriptions = append(descriptions, value)
+		}
+		parts = nil
+	}
+
+	for _, sub := range field.SubFields {
+		if sub.Code != "a" && sub.Code != "b" && sub.Code != "c" && sub.Code != "e" && sub.Code != "f" && sub.Code != "g" {
+			continue
+		}
+		value := cleanMARCValue(sub.Value)
+		if value == "" {
+			continue
+		}
+		if sub.Code == "a" {
+			if seenExtent {
+				flush()
+			}
+			seenExtent = true
+		}
+		parts = append(parts, value)
+	}
+	flush()
+	return descriptions
 }
 
 func addNotes(record *hubv1.Record, rec marcfile.Record) {
@@ -271,12 +431,16 @@ func addNotes(record *hubv1.Record, rec marcfile.Record) {
 
 func addRights(record *hubv1.Record, rec marcfile.Record) {
 	for _, f := range rec.FieldsByTag("540") {
-		rights := &hubv1.Rights{
-			Statement: joinSubfields(f, " ", "a", "b", "c", "d"),
-			Uri:       cleanMARCValue(firstSubfield(f, "u")),
+		statement := joinSubfields(f, " ", "a", "b", "c", "d")
+		uris := subfieldValues(f, "u")
+		if len(uris) == 0 {
+			if statement != "" {
+				record.Rights = append(record.Rights, &hubv1.Rights{Statement: statement})
+			}
+			continue
 		}
-		if rights.Statement != "" || rights.Uri != "" {
-			record.Rights = append(record.Rights, rights)
+		for _, uri := range uris {
+			record.Rights = append(record.Rights, &hubv1.Rights{Statement: statement, Uri: uri})
 		}
 	}
 }
@@ -316,28 +480,39 @@ func addRelations(record *hubv1.Record, rec marcfile.Record) {
 	}
 
 	for _, f := range rec.FieldsByTag("773") {
-		if rel := relationFromField(f, hubv1.RelationType_RELATION_TYPE_PART_OF); rel.TargetTitle != "" || rel.TargetId != "" {
-			record.Relations = append(record.Relations, rel)
+		relType := hubv1.RelationType_RELATION_TYPE_PART_OF
+		if strings.EqualFold(cleanMARCValue(firstSubfield(f, "i")), "member of") {
+			relType = hubv1.RelationType_RELATION_TYPE_MEMBER_OF
 		}
+		record.Relations = append(record.Relations, relationsFromField(f, relType)...)
 	}
 	for _, f := range rec.FieldsByTag("776") {
-		if rel := relationFromField(f, hubv1.RelationType_RELATION_TYPE_HAS_FORMAT); rel.TargetTitle != "" || rel.TargetId != "" {
-			record.Relations = append(record.Relations, rel)
-		}
+		record.Relations = append(record.Relations, relationsFromField(f, hubv1.RelationType_RELATION_TYPE_HAS_FORMAT)...)
 	}
 	for _, f := range rec.FieldsByTag("787") {
-		if rel := relationFromField(f, hubv1.RelationType_RELATION_TYPE_RELATED_TO); rel.TargetTitle != "" || rel.TargetId != "" {
-			record.Relations = append(record.Relations, rel)
-		}
+		record.Relations = append(record.Relations, relationsFromField(f, hubv1.RelationType_RELATION_TYPE_RELATED_TO)...)
 	}
 }
 
-func relationFromField(f marcfile.Field, relType hubv1.RelationType) *hubv1.Relation {
-	return &hubv1.Relation{
-		Type:        relType,
-		TargetTitle: joinSubfields(f, " ", "a", "t"),
-		TargetId:    cleanIdentifier(firstSubfield(f, "w")),
+func relationsFromField(f marcfile.Field, relType hubv1.RelationType) []*hubv1.Relation {
+	title := joinSubfields(f, " ", "a", "t")
+	identifiers := subfieldValues(f, "w")
+	if len(identifiers) == 0 {
+		if title == "" {
+			return nil
+		}
+		return []*hubv1.Relation{{Type: relType, TargetTitle: title}}
 	}
+
+	relations := make([]*hubv1.Relation, 0, len(identifiers))
+	for _, identifier := range identifiers {
+		relations = append(relations, &hubv1.Relation{
+			Type:        relType,
+			TargetTitle: title,
+			TargetId:    cleanIdentifier(identifier),
+		})
+	}
+	return relations
 }
 
 func firstField(rec marcfile.Record, tag string) marcfile.Field {
@@ -375,18 +550,43 @@ func contributorName(f marcfile.Field, person bool) string {
 	return joinSubfields(f, " ", "a", "b", "c", "d", "n")
 }
 
-func contributorRole(f marcfile.Field, defaultRole, defaultCode string) (string, string) {
-	if code := helpers.NormalizeRole(firstSubfield(f, "4")); code != "" {
-		return code, code
-	}
-	if role := cleanMARCValue(firstSubfield(f, "e")); role != "" {
-		code := helpers.NormalizeRole(role)
-		if code != "" && code != role {
-			return code, code
+type contributorRoleValue struct {
+	role string
+	code string
+}
+
+func contributorRoles(f marcfile.Field, defaultRole, defaultCode string) []contributorRoleValue {
+	var roles []contributorRoleValue
+	seen := make(map[string]int)
+	for _, sub := range f.SubFields {
+		value := cleanMARCValue(sub.Value)
+		if value == "" || (sub.Code != "4" && sub.Code != "e") {
+			continue
 		}
-		return strings.ToLower(role), ""
+
+		normalized := helpers.NormalizeRole(value)
+		role := contributorRoleValue{role: strings.ToLower(value)}
+		if sub.Code == "4" || (normalized != "" && !strings.EqualFold(normalized, value)) {
+			role.role = normalized
+			role.code = normalized
+		}
+		key := strings.ToLower(normalized)
+		if key == "" {
+			key = role.role
+		}
+		if index, exists := seen[key]; exists {
+			if roles[index].code == "" && role.code != "" {
+				roles[index] = role
+			}
+			continue
+		}
+		seen[key] = len(roles)
+		roles = append(roles, role)
 	}
-	return defaultRole, defaultCode
+	if len(roles) == 0 {
+		return []contributorRoleValue{{role: defaultRole, code: defaultCode}}
+	}
+	return roles
 }
 
 func subjectFromField(f marcfile.Field) *hubv1.Subject {
@@ -441,19 +641,31 @@ func subjectType(tag string) hubv1.SubjectType {
 	}
 }
 
-func languageFromRecord(rec marcfile.Record) string {
-	if value := rec.GetValue("008", ""); len(value) >= 38 {
-		lang := strings.TrimSpace(value[35:38])
-		if lang != "" && lang != "|||" {
-			return lang
+func languagesFromRecord(rec marcfile.Record) []string {
+	var languages []string
+	seen := make(map[string]struct{})
+	appendLanguage := func(value string) {
+		value = cleanMARCValue(value)
+		if value == "" || value == "|||" {
+			return
 		}
+		key := strings.ToLower(value)
+		if _, exists := seen[key]; exists {
+			return
+		}
+		seen[key] = struct{}{}
+		languages = append(languages, value)
+	}
+
+	if value := rec.GetValue("008", ""); len(value) >= 38 {
+		appendLanguage(value[35:38])
 	}
 	for _, f := range rec.FieldsByTag("041") {
-		if lang := cleanMARCValue(firstSubfield(f, "a")); lang != "" {
-			return lang
+		for _, language := range subfieldValues(f, "a") {
+			appendLanguage(language)
 		}
 	}
-	return ""
+	return languages
 }
 
 func resourceTypeFromLeader(raw string) *hubv1.ResourceType {
@@ -493,11 +705,16 @@ func resourceTypeFromLeader(raw string) *hubv1.ResourceType {
 }
 
 func dateFromString(value string, dateType hubv1.DateType) *hubv1.DateValue {
-	date := &hubv1.DateValue{
-		Type: dateType,
-		Raw:  value,
+	date, err := helpers.ParseEDTF(value, dateType)
+	if err != nil || date == nil {
+		date = &hubv1.DateValue{Type: dateType, Raw: value}
 	}
-	if year := yearPattern.FindString(value); year != "" {
+	date.Type = dateType
+	if date.Year == 0 {
+		year := yearPattern.FindString(value)
+		if year == "" {
+			return date
+		}
 		if parsed, err := strconv.ParseInt(year, 10, 32); err == nil {
 			date.Year = int32(parsed)
 			date.Precision = hubv1.DatePrecision_DATE_PRECISION_YEAR
@@ -528,6 +745,39 @@ func subfieldValues(f marcfile.Field, codes ...string) []string {
 		}
 	}
 	return values
+}
+
+func subfieldValuesUnclean(f marcfile.Field, codes ...string) []string {
+	var values []string
+	for _, sub := range f.SubFields {
+		for _, code := range codes {
+			if sub.Code == code {
+				if value := strings.TrimSpace(sub.Value); value != "" {
+					values = append(values, value)
+				}
+				break
+			}
+		}
+	}
+	return values
+}
+
+func dateSubfieldValues(f marcfile.Field, codes ...string) []string {
+	values := subfieldValuesUnclean(f, codes...)
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value = cleanDateValue(value); value != "" {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func firstDateSubfield(f marcfile.Field, code string) string {
+	for _, value := range dateSubfieldValues(f, code) {
+		return value
+	}
+	return ""
 }
 
 func joinSubfields(f marcfile.Field, sep string, codes ...string) string {

@@ -8,6 +8,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	dcv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/datacite/v4_6"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as DataCite XML.
@@ -48,8 +49,8 @@ func (f *Format) Serialize(w io.Writer, records []*hubv1.Record, opts *format.Se
 // hubToSpoke converts a hub record to the DataCite spoke proto struct.
 func hubToSpoke(record *hubv1.Record) (*dcv1.Resource, error) {
 	resource := &dcv1.Resource{
-		Publisher: record.Publisher,
-		Language:  record.Language,
+		Publisher: primaryCompatibilityValue(hub.GetPublishers(record)),
+		Language:  primaryCompatibilityValue(hub.GetLanguages(record)),
 	}
 
 	// DOI identifier
@@ -188,6 +189,13 @@ func hubToSpoke(record *hubv1.Record) (*dcv1.Resource, error) {
 	}
 
 	return resource, nil
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 // mapResourceType maps hub resource type to DataCite general type.

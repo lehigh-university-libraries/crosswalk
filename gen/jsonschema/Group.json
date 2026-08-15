@@ -673,6 +673,13 @@
                 "language": {
                     "type": "string"
                 },
+                "languages": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Languages is the complete ordered list of language values. language remains the primary value for compatibility."
+                },
                 "publisher": {
                     "type": "string",
                     "description": "Publication info Publisher is the primary publisher retained for compatibility with consumers that support only one value."
@@ -690,6 +697,13 @@
                 "publication": {
                     "$ref": "#/definitions/hub.v1.PublicationDetails",
                     "additionalProperties": true
+                },
+                "places_published": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "PlacesPublished is the complete ordered list of publication places. place_published remains the primary value for compatibility."
                 },
                 "rights": {
                     "items": {
@@ -718,6 +732,13 @@
                 "physical_desc": {
                     "type": "string"
                 },
+                "physical_descriptions": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "PhysicalDescriptions is the complete ordered list of physical extents or descriptions. physical_desc remains the primary value for compatibility."
+                },
                 "notes": {
                     "items": {
                         "type": "string"
@@ -735,6 +756,13 @@
                 },
                 "edition": {
                     "type": "string"
+                },
+                "editions": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Editions is the complete ordered list of edition statements. edition remains the primary value for compatibility."
                 },
                 "version": {
                     "type": "string"

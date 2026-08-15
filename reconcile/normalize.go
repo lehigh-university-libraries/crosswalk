@@ -205,13 +205,15 @@ func snapshotWithRegistry(record *hubv1.Record, registry *hub.IdentifierRegistry
 	if record == nil {
 		return Snapshot{}
 	}
+	publishers := hub.GetPublishers(record)
+	languages := hub.GetLanguages(record)
 	result := Snapshot{
 		Title:        cleanDisplay(record.GetTitle()),
 		FullTitle:    cleanDisplay(record.GetFullTitle()),
 		Authors:      authorDisplayNames(record),
 		Identifiers:  identifiersWithRegistry(record, registry),
-		Publisher:    cleanDisplay(record.GetPublisher()),
-		Language:     cleanDisplay(record.GetLanguage()),
+		Publisher:    cleanDisplay(firstCompatibilityValue(publishers)),
+		Language:     cleanDisplay(firstCompatibilityValue(languages)),
 		ResourceType: resourceType(record.GetResourceType()),
 	}
 	result.Year = primaryYear(record)
@@ -221,6 +223,13 @@ func snapshotWithRegistry(record *hubv1.Record, registry *hub.IdentifierRegistry
 		result.AbstractSHA256 = hex.EncodeToString(digest[:])
 	}
 	return result
+}
+
+func firstCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 func cleanDisplay(value string) string {

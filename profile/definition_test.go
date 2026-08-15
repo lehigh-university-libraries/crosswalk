@@ -313,6 +313,26 @@ func TestCompileRejectsNonExecutableMappings(t *testing.T) {
 	}
 }
 
+func TestCompileAllowsAppendAndReplaceForRepeatedCompatibilityPaths(t *testing.T) {
+	snapshot := testModel(t)
+	for _, hubPath := range []string{"Publisher", "PlacePublished", "PhysicalDesc", "Edition", "Language"} {
+		for _, merge := range []MergePolicy{MergeAppend, MergeReplace} {
+			t.Run(hubPath+"/"+string(merge), func(t *testing.T) {
+				definition := testDefinition(t, snapshot)
+				definition.Mappings[1].Hub = hubPath
+				definition.Mappings[1].Merge = merge
+				definition.Fingerprint = model.Fingerprint{}
+				if err := definition.SealFingerprint(); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := Compile(snapshot, &definition); err != nil {
+					t.Fatalf("Compile() error = %v", err)
+				}
+			})
+		}
+	}
+}
+
 func TestCompileRejectsArchivesSpaceProfiles(t *testing.T) {
 	snapshot := testModel(t)
 	snapshot.System = archivesSpaceSystem

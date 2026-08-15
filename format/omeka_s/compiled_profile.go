@@ -305,11 +305,11 @@ func applyOmekaMapping(record *hubv1.Record, source *resource, values []valueObj
 		appendSubjects(record, values)
 		return len(record.Subjects) != before, nil
 	case "Language":
-		return setOmekaString(&record.Language, first, options), nil
+		return appendOmekaCompatibilityValues(record, base, values, options), nil
 	case "Publisher":
-		return setOmekaString(&record.Publisher, first, options), nil
+		return appendOmekaCompatibilityValues(record, base, values, options), nil
 	case "PlacePublished":
-		return setOmekaString(&record.PlacePublished, first, options), nil
+		return appendOmekaCompatibilityValues(record, base, values, options), nil
 	case "Rights":
 		before := len(record.Rights)
 		appendProfileRights(record, qualifier, values)
@@ -321,7 +321,7 @@ func applyOmekaMapping(record *hubv1.Record, source *resource, values []valueObj
 		appendProfileRelations(record, qualifier, values)
 		return len(record.Relations) != before, nil
 	case "PhysicalDesc":
-		return setOmekaString(&record.PhysicalDesc, first, options), nil
+		return appendOmekaCompatibilityValues(record, base, values, options), nil
 	case "Notes":
 		return appendOmekaStrings(&record.Notes, values, options), nil
 	case "TableOfContents":
@@ -331,7 +331,7 @@ func applyOmekaMapping(record *hubv1.Record, source *resource, values []valueObj
 	case "DigitalOrigin":
 		return setOmekaString(&record.DigitalOrigin, first, options), nil
 	case "Edition":
-		return setOmekaString(&record.Edition, first, options), nil
+		return appendOmekaCompatibilityValues(record, base, values, options), nil
 	case "Version":
 		return setOmekaString(&record.Version, first, options), nil
 	case "PreferredCitation":
@@ -430,6 +430,34 @@ func appendOmekaStrings(target *[]string, values []valueObject, options *format.
 		}
 	}
 	return len(*target) != before
+}
+
+func appendOmekaCompatibilityValues(record *hubv1.Record, field string, values []valueObject, options *format.ParseOptions) bool {
+	candidates := make([]string, 0, len(values))
+	for _, value := range values {
+		if candidate := cleanOmekaText(displayValue(value), options); candidate != "" {
+			candidates = append(candidates, candidate)
+		}
+	}
+	if len(candidates) == 0 {
+		return false
+	}
+
+	switch field {
+	case "Language":
+		hub.SetLanguages(record, append(hub.GetLanguages(record), candidates...))
+	case "Publisher":
+		hub.SetPublishers(record, append(hub.GetPublishers(record), candidates...))
+	case "PlacePublished":
+		hub.SetPlacesPublished(record, append(hub.GetPlacesPublished(record), candidates...))
+	case "PhysicalDesc":
+		hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), candidates...))
+	case "Edition":
+		hub.SetEditions(record, append(hub.GetEditions(record), candidates...))
+	default:
+		return false
+	}
+	return true
 }
 
 func cleanOmekaText(value string, options *format.ParseOptions) string {
@@ -698,11 +726,11 @@ func clearOmekaHubValue(record *hubv1.Record, path string) error {
 	case "Subjects":
 		record.Subjects = nil
 	case "Language":
-		record.Language = ""
+		hub.SetLanguages(record, nil)
 	case "Publisher":
-		record.Publisher = ""
+		hub.SetPublishers(record, nil)
 	case "PlacePublished":
-		record.PlacePublished = ""
+		hub.SetPlacesPublished(record, nil)
 	case "Rights":
 		record.Rights = nil
 	case "Identifiers":
@@ -710,7 +738,7 @@ func clearOmekaHubValue(record *hubv1.Record, path string) error {
 	case "Relations":
 		record.Relations = nil
 	case "PhysicalDesc":
-		record.PhysicalDesc = ""
+		hub.SetPhysicalDescriptions(record, nil)
 	case "Notes":
 		record.Notes = nil
 	case "TableOfContents":
@@ -720,7 +748,7 @@ func clearOmekaHubValue(record *hubv1.Record, path string) error {
 	case "DigitalOrigin":
 		record.DigitalOrigin = ""
 	case "Edition":
-		record.Edition = ""
+		hub.SetEditions(record, nil)
 	case "Version":
 		record.Version = ""
 	case "PreferredCitation":

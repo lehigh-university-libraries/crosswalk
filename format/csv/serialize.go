@@ -75,16 +75,10 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		return strings.Join(contribs, " ; ")
 
 	case "date_issued":
-		if d := hub.GetDateIssued(record); d != nil {
-			return hub.DateString(d)
-		}
-		return ""
+		return serializeCSVDateValues(hub.GetDates(record, hubv1.DateType_DATE_TYPE_ISSUED), sep)
 
 	case "date_created":
-		if d := hub.GetDateCreated(record); d != nil {
-			return hub.DateString(d)
-		}
-		return ""
+		return serializeCSVDateValues(hub.GetDates(record, hubv1.DateType_DATE_TYPE_CREATED), sep)
 
 	case "date":
 		// Primary date
@@ -107,7 +101,7 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		return strings.Join(genres, sep)
 
 	case "language":
-		return record.Language
+		return strings.Join(hub.GetLanguages(record), sep)
 
 	case "rights":
 		rights := make([]string, 0, len(record.Rights))
@@ -170,10 +164,13 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		return strings.Join(vals, sep)
 
 	case "publisher":
-		return record.Publisher
+		return strings.Join(hub.GetPublishers(record), sep)
 
 	case "place_published":
-		return record.PlacePublished
+		return strings.Join(hub.GetPlacesPublished(record), sep)
+
+	case "edition":
+		return strings.Join(hub.GetEditions(record), sep)
 
 	case "member_of":
 		rels := hub.GetMemberOf(record)
@@ -219,7 +216,7 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		return strings.Join(record.Notes, sep)
 
 	case "physical_description":
-		return record.PhysicalDesc
+		return strings.Join(hub.GetPhysicalDescriptions(record), sep)
 
 	case "table_of_contents":
 		return record.TableOfContents
@@ -262,6 +259,16 @@ func getColumnValue(record *hubv1.Record, column string, sep string) string {
 		}
 		return ""
 	}
+}
+
+func serializeCSVDateValues(dates []*hubv1.DateValue, sep string) string {
+	values := make([]string, 0, len(dates))
+	for _, date := range dates {
+		if value := hub.DateString(date); value != "" {
+			values = append(values, value)
+		}
+	}
+	return strings.Join(values, sep)
 }
 
 // DefaultColumns returns the standard column set for CSV output.

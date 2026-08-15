@@ -134,29 +134,21 @@ func recordToEntityWithStaticProfile(record *hubv1.Record, profile *mapping.Prof
 
 	// Dates
 	for _, d := range record.Dates {
+		if d == nil {
+			continue
+		}
 		var targetField string
-		switch d.Type {
-		case hubv1.DateType_DATE_TYPE_ISSUED:
-			if sources, ok := irToSource["Dates"]; ok {
-				for _, s := range sources {
-					if s.Mapping.DateType == "issued" {
-						targetField = s.SourceField
-						break
-					}
-				}
-			}
-		case hubv1.DateType_DATE_TYPE_CREATED:
-			if sources, ok := irToSource["Dates"]; ok {
-				for _, s := range sources {
-					if s.Mapping.DateType == "created" {
-						targetField = s.SourceField
-						break
-					}
+		if sources, ok := irToSource["Dates"]; ok {
+			for _, source := range sources {
+				if dateTypeFromString(source.Mapping.DateType) == d.Type {
+					targetField = source.SourceField
+					break
 				}
 			}
 		}
 		if targetField != "" {
-			entity[targetField] = []map[string]any{{"value": hub.FormatEDTF(d)}}
+			values, _ := entity[targetField].([]map[string]any)
+			entity[targetField] = append(values, map[string]any{"value": hub.FormatEDTF(d)})
 		}
 	}
 
@@ -186,9 +178,13 @@ func recordToEntityWithStaticProfile(record *hubv1.Record, profile *mapping.Prof
 	}
 
 	// Language
-	if record.Language != "" {
+	if languages := hub.GetLanguages(record); len(languages) > 0 {
 		if sources, ok := irToSource["Language"]; ok && len(sources) > 0 {
-			entity[sources[0].SourceField] = []map[string]any{{"target_id": record.Language}}
+			values := make([]map[string]any, 0, len(languages))
+			for _, language := range languages {
+				values = append(values, map[string]any{"target_id": language})
+			}
+			entity[sources[0].SourceField] = values
 		}
 	}
 
@@ -234,9 +230,35 @@ func recordToEntityWithStaticProfile(record *hubv1.Record, profile *mapping.Prof
 	}
 
 	// PlacePublished
-	if record.PlacePublished != "" {
+	if places := hub.GetPlacesPublished(record); len(places) > 0 {
 		if sources, ok := irToSource["PlacePublished"]; ok && len(sources) > 0 {
-			entity[sources[0].SourceField] = []map[string]any{{"value": record.PlacePublished}}
+			values := make([]map[string]any, 0, len(places))
+			for _, place := range places {
+				values = append(values, map[string]any{"value": place})
+			}
+			entity[sources[0].SourceField] = values
+		}
+	}
+
+	// PhysicalDesc
+	if descriptions := hub.GetPhysicalDescriptions(record); len(descriptions) > 0 {
+		if sources, ok := irToSource["PhysicalDesc"]; ok && len(sources) > 0 {
+			values := make([]map[string]any, 0, len(descriptions))
+			for _, description := range descriptions {
+				values = append(values, map[string]any{"value": description})
+			}
+			entity[sources[0].SourceField] = values
+		}
+	}
+
+	// Edition
+	if editions := hub.GetEditions(record); len(editions) > 0 {
+		if sources, ok := irToSource["Edition"]; ok && len(sources) > 0 {
+			values := make([]map[string]any, 0, len(editions))
+			for _, edition := range editions {
+				values = append(values, map[string]any{"value": edition})
+			}
+			entity[sources[0].SourceField] = values
 		}
 	}
 

@@ -207,6 +207,49 @@ func TestNewDrupalDefinitionExpandsPublicationCompositeFields(t *testing.T) {
 	}
 }
 
+func TestNewDrupalDefinitionMapsRepeatedBibliographicFields(t *testing.T) {
+	snapshot := drupalStarterModel(t)
+	snapshot.Entities[0].Fields = append(snapshot.Entities[0].Fields,
+		model.Field{Path: "field_publisher", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		model.Field{Path: "field_place_published", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		model.Field{Path: "field_physical_description", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		model.Field{Path: "field_extent", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		model.Field{Path: "field_edition", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		model.Field{Path: "field_language", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+	)
+	if err := snapshot.SealFingerprint(); err != nil {
+		t.Fatal(err)
+	}
+	definition, err := NewDrupalDefinition(snapshot, DrupalDefinitionOptions{Name: "bibliographic", EntityType: "node", Bundle: "article"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"field_publisher":            "Publisher",
+		"field_place_published":      "PlacePublished",
+		"field_physical_description": "PhysicalDesc",
+		"field_extent":               "PhysicalDesc",
+		"field_edition":              "Edition",
+		"field_language":             "Language",
+	}
+	for _, mapping := range definition.Mappings {
+		hubPath, exists := want[mapping.Field.Path]
+		if !exists {
+			continue
+		}
+		if mapping.Hub != hubPath || mapping.Merge != MergeAppend {
+			t.Errorf("mapping %s = Hub %q merge %q, want Hub %q merge %q", mapping.Field.Path, mapping.Hub, mapping.Merge, hubPath, MergeAppend)
+		}
+		delete(want, mapping.Field.Path)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing mappings: %#v", want)
+	}
+	if _, err := Compile(snapshot, definition); err != nil {
+		t.Fatalf("generated definition does not compile: %v", err)
+	}
+}
+
 func drupalStarterModel(t *testing.T) *model.Snapshot {
 	t.Helper()
 	snapshot := &model.Snapshot{

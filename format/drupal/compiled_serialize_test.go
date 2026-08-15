@@ -50,6 +50,130 @@ func TestCompiledProfilePreservesMultiplePublishers(t *testing.T) {
 	}
 }
 
+func TestCompiledProfileAppendMergesCompatibilityFieldsAcrossSources(t *testing.T) {
+	tests := []struct {
+		name string
+		hub  string
+		get  func(*hubv1.Record) []string
+	}{
+		{name: "publishers", hub: "Publisher", get: hub.GetPublishers},
+		{name: "places published", hub: "PlacePublished", get: hub.GetPlacesPublished},
+		{name: "physical descriptions", hub: "PhysicalDesc", get: hub.GetPhysicalDescriptions},
+		{name: "editions", hub: "Edition", get: hub.GetEditions},
+		{name: "languages", hub: "Language", get: hub.GetLanguages},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fields := []model.Field{
+				{Path: "field_first", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+				{Path: "field_second", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+			}
+			selector := func(path string) profile.FieldSelector {
+				return profile.FieldSelector{EntityType: "node", Bundle: "article", Path: path}
+			}
+			compiled := compileDrupalEncodingProfile(t, fields, []profile.Mapping{
+				{Field: selector("field_first"), Hub: test.hub, Decode: "text", Encode: "none", Merge: profile.MergeAppend},
+				{Field: selector("field_second"), Hub: test.hub, Decode: "text", Encode: "none", Merge: profile.MergeAppend},
+			}, nil)
+
+			records, err := (&Format{}).Parse(strings.NewReader(`{
+				"field_first":[{"value":"one"},{"value":"two"}],
+				"field_second":[{"value":"three"},{"value":"four"}]
+			}`), &format.ParseOptions{SystemProfile: compiled})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []string{"one", "two", "three", "four"}
+			if got := test.get(records[0]); !slices.Equal(got, want) {
+				t.Fatalf("values = %#v, want %#v", got, want)
+			}
+		})
+	}
+}
+
+func TestCompiledProfilePreservesRepeatedCompatibilityFields(t *testing.T) {
+	fields := []model.Field{
+		{Path: "field_language", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		{Path: "field_place", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		{Path: "field_physical", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+		{Path: "field_edition", SourceType: "string", Kind: model.ValueText, Cardinality: -1},
+	}
+	selector := func(path string) profile.FieldSelector {
+		return profile.FieldSelector{EntityType: "node", Bundle: "article", Path: path}
+	}
+	compiled := compileDrupalEncodingProfile(t, fields, []profile.Mapping{
+		{Field: selector("field_language"), Hub: "Language", Decode: "text", Encode: "text", Merge: profile.MergeAppend},
+		{Field: selector("field_place"), Hub: "PlacePublished", Decode: "text", Encode: "text", Merge: profile.MergeAppend},
+		{Field: selector("field_physical"), Hub: "PhysicalDesc", Decode: "text", Encode: "text", Merge: profile.MergeAppend},
+		{Field: selector("field_edition"), Hub: "Edition", Decode: "text", Encode: "text", Merge: profile.MergeAppend},
+	}, nil)
+	wants := map[string][]string{
+		"field_language": {"English", "French"},
+		"field_place":    {"Halifax", "Moncton"},
+		"field_physical": {"12 pages", "1 map"},
+		"field_edition":  {"First edition", "Revised edition"},
+	}
+	input := `{
+		"field_language":[{"value":"English"},{"value":"French"}],
+		"field_place":[{"value":"Halifax"},{"value":"Moncton"}],
+		"field_physical":[{"value":"12 pages"},{"value":"1 map"}],
+		"field_edition":[{"value":"First edition"},{"value":"Revised edition"}]
+	}`
+
+	records, err := (&Format{}).Parse(strings.NewReader(input), &format.ParseOptions{SystemProfile: compiled})
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := records[0]
+	for name, test := range map[string]struct {
+		get  func(*hubv1.Record) []string
+		want []string
+	}{
+		"languages":             {get: hub.GetLanguages, want: wants["field_language"]},
+		"places published":      {get: hub.GetPlacesPublished, want: wants["field_place"]},
+		"physical descriptions": {get: hub.GetPhysicalDescriptions, want: wants["field_physical"]},
+		"editions":              {get: hub.GetEditions, want: wants["field_edition"]},
+	} {
+		if got := test.get(record); !slices.Equal(got, test.want) {
+			t.Fatalf("%s = %#v, want %#v", name, got, test.want)
+		}
+	}
+
+	entity := serializeCompiledEntity(t, record, compiled)
+	for field, want := range wants {
+		if got := drupalFieldTexts(t, entity, field); !slices.Equal(got, want) {
+			t.Fatalf("%s = %#v, want %#v", field, got, want)
+		}
+	}
+}
+
+func TestClearReplaceableCompatibilityFieldsClearsRepeatedAndScalarStorage(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		seed func(*hubv1.Record)
+		get  func(*hubv1.Record) []string
+	}{
+		{name: "publisher", path: "Publisher", seed: func(record *hubv1.Record) { hub.SetPublishers(record, []string{"one", "two"}) }, get: hub.GetPublishers},
+		{name: "place", path: "PlacePublished", seed: func(record *hubv1.Record) { hub.SetPlacesPublished(record, []string{"one", "two"}) }, get: hub.GetPlacesPublished},
+		{name: "physical description", path: "PhysicalDesc", seed: func(record *hubv1.Record) { hub.SetPhysicalDescriptions(record, []string{"one", "two"}) }, get: hub.GetPhysicalDescriptions},
+		{name: "edition", path: "Edition", seed: func(record *hubv1.Record) { hub.SetEditions(record, []string{"one", "two"}) }, get: hub.GetEditions},
+		{name: "language", path: "Language", seed: func(record *hubv1.Record) { hub.SetLanguages(record, []string{"one", "two"}) }, get: hub.GetLanguages},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			record := &hubv1.Record{}
+			test.seed(record)
+			if err := clearReplaceableHubValue(record, test.path); err != nil {
+				t.Fatal(err)
+			}
+			if got := test.get(record); len(got) != 0 {
+				t.Fatalf("get() = %#v, want empty", got)
+			}
+		})
+	}
+}
+
 func TestEncodeEntityWithProfileRejectsNilInputs(t *testing.T) {
 	compiled := compileDrupalEncodingProfile(t, []model.Field{{
 		Path: "field_title", SourceType: "string", Kind: model.ValueText, Cardinality: 1,

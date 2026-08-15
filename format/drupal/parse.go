@@ -89,13 +89,24 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 	// Track which hub fields have been set with their priorities
 	priorities := make(map[string]int)
 
-	// Process each field in deterministic source-name order. Priority remains
-	// authoritative when several source fields target the same Hub value.
+	// Process each field in deterministic priority order. Trying preferred
+	// sources first means an empty preferred field can still fall through, while
+	// a populated one prevents lower-priority fallback fields from contributing.
 	fieldNames := make([]string, 0, len(entity))
 	for fieldName := range entity {
 		fieldNames = append(fieldNames, fieldName)
 	}
-	sort.Strings(fieldNames)
+	sort.Slice(fieldNames, func(left, right int) bool {
+		leftMapping, leftMapped := profile.Fields[fieldNames[left]]
+		rightMapping, rightMapped := profile.Fields[fieldNames[right]]
+		if leftMapped != rightMapped {
+			return leftMapped
+		}
+		if leftMapping.Priority != rightMapping.Priority {
+			return leftMapping.Priority > rightMapping.Priority
+		}
+		return fieldNames[left] < fieldNames[right]
+	})
 	for _, fieldName := range fieldNames {
 		rawValue := entity[fieldName]
 		fieldMapping, ok := profile.Fields[fieldName]
@@ -104,17 +115,20 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 			continue
 		}
 
-		// Check priority - only skip if a value was actually set at that priority.
-		// Use IR+Type as the key so that fields targeting the same IR base but
-		// different logical sub-types (e.g. Publication/related_item vs
-		// Publication/part_detail) don't block each other.
-		priorityKey := fieldMapping.IR
-		if fieldMapping.Type != "" {
-			priorityKey = fieldMapping.IR + "/" + fieldMapping.Type
-		}
+		// Scalar targets select one source at the highest populated priority.
+		// Repeated targets append every source at that priority. Semantic
+		// discriminators keep independent date, relation, identifier, and
+		// vocabulary mappings from suppressing one another.
+		base, _ := mapping.IRFieldName(fieldMapping.IR)
+		repeated := repeatedStaticDrupalHubPath(base)
+		priorityKey := staticDrupalPriorityKey(fieldMapping)
 		currentPriority, hasPriority := priorities[priorityKey]
-		if hasPriority && fieldMapping.Priority <= currentPriority {
+		if hasPriority && (fieldMapping.Priority < currentPriority || (!repeated && fieldMapping.Priority == currentPriority)) {
 			continue
+		}
+		var previousCompatibilityValues []string
+		if repeated && hasPriority && fieldMapping.Priority == currentPriority {
+			previousCompatibilityValues, _ = repeatedCompatibilityHubValues(record, fieldMapping.IR)
 		}
 
 		// Process field based on its type and target
@@ -129,6 +143,13 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 
 		// Only update priority if a value was actually set
 		if valueSet {
+			if len(previousCompatibilityValues) > 0 {
+				current, compatible := repeatedCompatibilityHubValues(record, fieldMapping.IR)
+				if compatible {
+					combined := append(previousCompatibilityValues, current...)
+					setRepeatedCompatibilityHubValues(record, fieldMapping.IR, combined)
+				}
+			}
 			priorities[priorityKey] = fieldMapping.Priority
 		}
 	}
@@ -136,6 +157,37 @@ func convertEntity(entity DrupalEntity, opts *format.ParseOptions) (*hubv1.Recor
 	addDrupalResourceIdentifier(record, entity, opts)
 
 	return record, nil
+}
+
+func repeatedStaticDrupalHubPath(base string) bool {
+	switch base {
+	case "AltTitle", "Contributors", "Dates", "Genre", "Subjects", "Rights",
+		"Identifiers", "Relations", "Publisher", "PlacePublished", "PhysicalDesc",
+		"Edition", "Language", "Notes":
+		return true
+	default:
+		return false
+	}
+}
+
+func staticDrupalPriorityKey(fieldMapping mapping.FieldMapping) string {
+	discriminators := []string{fieldMapping.IR}
+	base, _ := mapping.IRFieldName(fieldMapping.IR)
+	var discriminator string
+	switch base {
+	case "Dates":
+		discriminator = fieldMapping.DateType
+	case "Relations":
+		discriminator = fieldMapping.RelationType
+	case "Subjects", "Genre":
+		discriminator = fieldMapping.Vocabulary
+	case "Identifiers", "Publication":
+		discriminator = fieldMapping.Type
+	}
+	if discriminator != "" {
+		discriminators = append(discriminators, discriminator)
+	}
+	return strings.Join(discriminators, "/")
 }
 
 func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
@@ -230,17 +282,25 @@ func processField(record *hubv1.Record, fieldName string, rawValue json.RawMessa
 		return false, nil
 
 	case "PlacePublished":
-		val, _ := ExtractString(rawValue)
-		if val != "" {
-			record.PlacePublished = cleanText(val, opts)
+		places := repeatedDrupalTextValues(rawValue, fieldMapping, opts)
+		if len(places) > 0 {
+			hub.SetPlacesPublished(record, places)
 			return true, nil
 		}
 		return false, nil
 
 	case "PhysicalDesc":
-		val, _ := ExtractString(rawValue)
-		if val != "" {
-			record.PhysicalDesc = cleanText(val, opts)
+		descriptions := repeatedDrupalTextValues(rawValue, fieldMapping, opts)
+		if len(descriptions) > 0 {
+			hub.SetPhysicalDescriptions(record, descriptions)
+			return true, nil
+		}
+		return false, nil
+
+	case "Edition":
+		editions := repeatedDrupalTextValues(rawValue, fieldMapping, opts)
+		if len(editions) > 0 {
+			hub.SetEditions(record, editions)
 			return true, nil
 		}
 		return false, nil
@@ -644,9 +704,9 @@ func islandoraModelToResourceType(model string) hubv1.ResourceTypeValue {
 }
 
 func processLanguage(record *hubv1.Record, rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) (bool, error) {
-	val := resolveEntityRef(rawValue, fieldMapping, opts)
-	if val != "" {
-		record.Language = val
+	languages := repeatedDrupalTextValues(rawValue, fieldMapping, opts)
+	if len(languages) > 0 {
+		hub.SetLanguages(record, languages)
 		return true, nil
 	}
 	return false, nil
@@ -662,7 +722,9 @@ func processRights(record *hubv1.Record, rawValue json.RawMessage, fieldMapping 
 			added = true
 		}
 	} else {
-		// Rights as entity reference
+		// Rights can be either an entity reference or a plain text field. Model-
+		// bound Drupal profiles use this branch for text/text_long fields, whose
+		// values live in the same JSON object shape as a reference's target ID.
 		refs, err := ExtractEntityRefs(rawValue)
 		if err != nil {
 			return false, err
@@ -676,10 +738,17 @@ func processRights(record *hubv1.Record, rawValue json.RawMessage, fieldMapping 
 				// Try enriched data first
 				if name, ok := ref.GetResolvedName(); ok {
 					val = name
-				} else if opts.TaxonomyResolver != nil {
+				} else if val != "" && opts.TaxonomyResolver != nil {
 					if resolved, ok := opts.TaxonomyResolver.Resolve(val, ""); ok {
 						val = resolved
 					}
+				}
+				if val == "" {
+					val = value.Text(ref.Value)
+				}
+				val = cleanText(val, opts)
+				if val == "" {
+					continue
 				}
 				record.Rights = append(record.Rights, &hubv1.Rights{Statement: val})
 				added = true
@@ -1287,33 +1356,62 @@ func processExtra(record *hubv1.Record, subfield string, rawValue json.RawMessag
 // Helper functions
 
 func resolveEntityRef(rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) string {
-	refs, err := ExtractEntityRefs(rawValue)
-	if err != nil || len(refs) == 0 {
+	values := resolveEntityRefs(rawValue, fieldMapping, opts)
+	if len(values) == 0 {
 		return ""
 	}
+	return values[0]
+}
 
-	ref := refs[0]
-	targetID := ref.GetTargetID()
-
-	// Try enriched data first
-	if val, ok := ref.GetResolvedName(); ok {
-		return val
+func resolveEntityRefs(rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) []string {
+	refs, err := ExtractEntityRefs(rawValue)
+	if err != nil || len(refs) == 0 {
+		return nil
 	}
 
-	// Fall back to TaxonomyResolver
-	if opts.TaxonomyResolver != nil && fieldMapping.Resolve == "taxonomy_term" {
-		if val, ok := opts.TaxonomyResolver.Resolve(targetID, ""); ok {
-			return val
+	values := make([]string, 0, len(refs))
+	for _, ref := range refs {
+		targetID := ref.GetTargetID()
+		if val, ok := ref.GetResolvedName(); ok {
+			values = append(values, val)
+			continue
+		}
+
+		if opts.TaxonomyResolver != nil && fieldMapping.Resolve == "taxonomy_term" {
+			if val, ok := opts.TaxonomyResolver.Resolve(targetID, ""); ok {
+				values = append(values, val)
+				continue
+			}
+		}
+
+		if opts.TaxonomyResolver != nil && fieldMapping.Resolve == "node" {
+			if val, ok := opts.TaxonomyResolver.ResolveNode(targetID); ok {
+				values = append(values, val)
+				continue
+			}
+		}
+
+		if targetID != "" {
+			values = append(values, targetID)
 		}
 	}
+	return values
+}
 
-	if opts.TaxonomyResolver != nil && fieldMapping.Resolve == "node" {
-		if val, ok := opts.TaxonomyResolver.ResolveNode(targetID); ok {
-			return val
+func repeatedDrupalTextValues(rawValue json.RawMessage, fieldMapping mapping.FieldMapping, opts *format.ParseOptions) []string {
+	var values []string
+	if fieldMapping.Resolve != "" {
+		values = resolveEntityRefs(rawValue, fieldMapping, opts)
+	} else {
+		values, _ = ExtractStrings(rawValue)
+	}
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value = cleanText(value, opts); value != "" {
+			result = append(result, value)
 		}
 	}
-
-	return targetID
+	return result
 }
 
 func cleanText(s string, opts *format.ParseOptions) string {
@@ -1343,37 +1441,40 @@ func defaultProfile() *mapping.Profile {
 		Name:   "default",
 		Format: "drupal",
 		Fields: map[string]mapping.FieldMapping{
-			"title":                   {IR: "Title"},
-			"field_full_title":        {IR: "Title", Priority: 1},
-			"field_alt_title":         {IR: "AltTitle"},
-			"field_abstract":          {IR: "Abstract"},
-			"field_description":       {IR: "Description"},
-			"field_linked_agent":      {IR: "Contributors", Type: "typed_relation", RoleField: "rel_type", Resolve: "taxonomy_term"},
-			"field_edtf_date_issued":  {IR: "Dates", DateType: "issued", Parser: "edtf"},
-			"field_edtf_date_created": {IR: "Dates", DateType: "created", Parser: "edtf"},
-			"field_resource_type":     {IR: "ResourceType", Resolve: "taxonomy_term"},
-			"field_genre":             {IR: "Genre", Resolve: "taxonomy_term"},
-			"field_language":          {IR: "Language", Resolve: "taxonomy_term"},
-			"field_rights":            {IR: "Rights", Type: "uri"},
-			"field_subject":           {IR: "Subjects", Resolve: "taxonomy_term"},
-			"field_lcsh_topic":        {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "lcsh"},
-			"field_keywords":          {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "keywords"},
-			"field_publisher":         {IR: "Publisher"},
-			"field_place_published":   {IR: "PlacePublished"},
-			"field_member_of":         {IR: "Relations", RelationType: "member_of", Resolve: "node"},
-			"field_related_item":      {IR: "Publication", Type: "related_item"},
-			"field_part_detail":       {IR: "Publication", Type: "part_detail"},
-			"field_identifier":        {IR: "Identifiers", Type: "textfield_attr"},
-			"field_note":              {IR: "Notes"},
-			"field_degree_name":       {IR: "DegreeInfo.DegreeName"},
-			"field_degree_level":      {IR: "DegreeInfo.DegreeLevel"},
-			"field_department_name":   {IR: "DegreeInfo.Department", Resolve: "taxonomy_term"},
-			"nid":                     {IR: "Extra.nid"},
-			"uuid":                    {IR: "Extra.uuid"},
-			"created":                 {IR: "Extra.created"},
-			"changed":                 {IR: "Extra.changed"},
-			"status":                  {IR: "Extra.status"},
-			"type":                    {IR: "Extra.type"},
+			"title":                      {IR: "Title"},
+			"field_full_title":           {IR: "Title", Priority: 1},
+			"field_alt_title":            {IR: "AltTitle"},
+			"field_abstract":             {IR: "Abstract"},
+			"field_description":          {IR: "Description"},
+			"field_physical_description": {IR: "PhysicalDesc"},
+			"field_extent":               {IR: "PhysicalDesc", Priority: -1},
+			"field_edition":              {IR: "Edition"},
+			"field_linked_agent":         {IR: "Contributors", Type: "typed_relation", RoleField: "rel_type", Resolve: "taxonomy_term"},
+			"field_edtf_date_issued":     {IR: "Dates", DateType: "issued", Parser: "edtf"},
+			"field_edtf_date_created":    {IR: "Dates", DateType: "created", Parser: "edtf"},
+			"field_resource_type":        {IR: "ResourceType", Resolve: "taxonomy_term"},
+			"field_genre":                {IR: "Genre", Resolve: "taxonomy_term"},
+			"field_language":             {IR: "Language", Resolve: "taxonomy_term"},
+			"field_rights":               {IR: "Rights", Type: "uri"},
+			"field_subject":              {IR: "Subjects", Resolve: "taxonomy_term"},
+			"field_lcsh_topic":           {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "lcsh"},
+			"field_keywords":             {IR: "Subjects", Resolve: "taxonomy_term", Vocabulary: "keywords"},
+			"field_publisher":            {IR: "Publisher"},
+			"field_place_published":      {IR: "PlacePublished"},
+			"field_member_of":            {IR: "Relations", RelationType: "member_of", Resolve: "node"},
+			"field_related_item":         {IR: "Publication", Type: "related_item"},
+			"field_part_detail":          {IR: "Publication", Type: "part_detail"},
+			"field_identifier":           {IR: "Identifiers", Type: "textfield_attr"},
+			"field_note":                 {IR: "Notes"},
+			"field_degree_name":          {IR: "DegreeInfo.DegreeName"},
+			"field_degree_level":         {IR: "DegreeInfo.DegreeLevel"},
+			"field_department_name":      {IR: "DegreeInfo.Department", Resolve: "taxonomy_term"},
+			"nid":                        {IR: "Extra.nid"},
+			"uuid":                       {IR: "Extra.uuid"},
+			"created":                    {IR: "Extra.created"},
+			"changed":                    {IR: "Extra.changed"},
+			"status":                     {IR: "Extra.status"},
+			"type":                       {IR: "Extra.type"},
 		},
 	}
 }

@@ -3,6 +3,7 @@ package drupal
 import (
 	"bytes"
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 
@@ -84,6 +85,37 @@ func TestCompiledProfileDoesNotTreatInputFilenameAsSourceURI(t *testing.T) {
 	}
 	if got := records[0].GetSourceInfo().GetSourceUri(); got != "" {
 		t.Errorf("source URI = %q, want empty for a local input label", got)
+	}
+}
+
+func TestCompiledProfilePreservesRepeatedTextRights(t *testing.T) {
+	field := model.Field{Path: "field_rights", SourceType: "text_long", Kind: model.ValueText, Cardinality: -1}
+	selector := profile.FieldSelector{EntityType: "node", Bundle: "article", Path: field.Path}
+	compiled := compileDrupalEncodingProfile(t, []model.Field{field}, []profile.Mapping{{
+		Field: selector, Hub: "Rights", Decode: "text", Encode: "text", Merge: profile.MergeAppend,
+	}}, nil)
+
+	records, err := (&Format{}).Parse(strings.NewReader(`{
+		"field_rights": [
+			{"value": " First statement "},
+			{"value": "Second statement"}
+		]
+	}`), &format.ParseOptions{SystemProfile: compiled, StripHTML: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"First statement", "Second statement"}
+	got := make([]string, 0, len(records[0].GetRights()))
+	for _, rights := range records[0].GetRights() {
+		got = append(got, rights.GetStatement())
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("rights = %#v, want %#v", got, want)
+	}
+
+	entity := serializeCompiledEntity(t, records[0], compiled)
+	if got := drupalFieldTexts(t, entity, "field_rights"); !slices.Equal(got, want) {
+		t.Fatalf("serialized field_rights = %#v, want %#v", got, want)
 	}
 }
 
