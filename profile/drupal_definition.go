@@ -393,6 +393,12 @@ func drupalHubPath(field model.Field) string {
 		return "Genre"
 	case strings.Contains(path, "language"):
 		return "Language"
+	case strings.Contains(path, "place_published") || strings.Contains(path, "publication_place"):
+		return "PlacePublished"
+	case strings.Contains(path, "physical_description") || path == "field_extent" || path == "extent":
+		return "PhysicalDesc"
+	case strings.Contains(path, "edition"):
+		return "Edition"
 	case strings.Contains(path, "rights"):
 		return "Rights"
 	case strings.Contains(path, "abstract"):
@@ -442,7 +448,8 @@ func drupalCodec(field model.Field, hubPath string) string {
 
 func repeatedHubPath(path string) bool {
 	switch path {
-	case "AltTitle", "Contributors", "Dates", "Genre", "Subjects", "Rights", "Identifiers", "Relations":
+	case "AltTitle", "Contributors", "Dates", "Genre", "Subjects", "Rights", "Identifiers", "Relations",
+		"Publisher", "PlacePublished", "PhysicalDesc", "Edition", "Language":
 		return true
 	default:
 		return false

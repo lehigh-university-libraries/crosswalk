@@ -23,6 +23,17 @@ The Protocol Buffer definition is the authoritative field reference. Generated
 Go types and JSON Schemas are derived from it; do not add a second hand-written
 wire schema.
 
+### Repeated values
+
+Repeatable source fields stay as ordered lists in the Hub until the target
+format is selected. Publisher, publication-place, physical-description,
+edition, and language lists also mirror their first value into the older
+scalar field for compatibility with existing Hub consumers. Adapters for
+repeatable targets emit the full list; formats whose wire standard defines
+only one value receive that primary value at serialization time. This keeps a
+scalar target limitation from silently discarding values earlier in a
+multi-step conversion.
+
 ### Record provenance
 
 `source_info` distinguishes the representation from the system that supplied

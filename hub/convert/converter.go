@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Converter handles conversion between spoke messages and Hub records.
@@ -277,13 +278,22 @@ func (c *Converter) mapToHubField(record *hubv1.Record, value any, mapping Field
 		record.Abstract = toString(value)
 
 	case "publisher":
-		record.Publisher = toString(value)
+		hub.SetPublishers(record, append(hub.GetPublishers(record), compatibilityStrings(value)...))
 
 	case "place_published":
-		record.PlacePublished = toString(value)
+		hub.SetPlacesPublished(record, append(hub.GetPlacesPublished(record), compatibilityStrings(value)...))
 
 	case "language":
-		record.Language = toString(value)
+		hub.SetLanguages(record, append(hub.GetLanguages(record), compatibilityStrings(value)...))
+
+	case "physical_desc":
+		hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), compatibilityStrings(value)...))
+
+	case "dimensions":
+		record.Dimensions = toString(value)
+
+	case "edition":
+		hub.SetEditions(record, append(hub.GetEditions(record), compatibilityStrings(value)...))
 
 	case "resource_type":
 		// Handle enum mapping
@@ -316,6 +326,21 @@ func (c *Converter) mapToHubField(record *hubv1.Record, value any, mapping Field
 	}
 
 	return nil
+}
+
+func compatibilityStrings(value any) []string {
+	switch values := value.(type) {
+	case []any:
+		result := make([]string, 0, len(values))
+		for _, item := range values {
+			result = append(result, toString(item))
+		}
+		return result
+	case []string:
+		return values
+	default:
+		return []string{toString(value)}
+	}
 }
 
 // mapToNestedField handles nested field paths.

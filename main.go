@@ -9,6 +9,7 @@ import (
 	_ "github.com/lehigh-university-libraries/crosswalk/format/csv"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/drupal"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/islandora_workbench"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/marc"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/schemaorg"
 )
 

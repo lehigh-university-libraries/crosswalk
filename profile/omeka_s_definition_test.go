@@ -37,6 +37,14 @@ func TestNewOmekaSDefinitionBuildsTemplateProfile(t *testing.T) {
 	}
 }
 
+func TestOmekaSCompatibilityPathsAreRepeated(t *testing.T) {
+	for _, path := range []string{"Publisher", "PlacePublished", "PhysicalDesc", "Edition", "Language"} {
+		if !omekaSRepeatedHubPath(path) {
+			t.Errorf("omekaSRepeatedHubPath(%q) = false, want true", path)
+		}
+	}
+}
+
 func TestNewOmekaSDefinitionAddsExplicitInstitutionalIdentity(t *testing.T) {
 	t.Parallel()
 

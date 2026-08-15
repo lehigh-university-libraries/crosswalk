@@ -9,6 +9,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/protoxml"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	dcv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/dublincore/v20200120"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 	"github.com/lehigh-university-libraries/crosswalk/hub/convert"
 	"google.golang.org/protobuf/proto"
 )
@@ -71,13 +72,15 @@ func applyLocalizedFields(record *hubv1.Record, dc *dcv1.Record) {
 		record.Abstract = localizedValue(dc.Description)
 	}
 
-	if len(dc.Language) > 0 {
-		record.Language = dc.Language[0]
-	}
+	hub.SetLanguages(record, dc.Language)
 
-	if len(dc.Publisher) > 0 && dc.Publisher[0].Name != "" {
-		record.Publisher = dc.Publisher[0].Name
+	publishers := make([]string, 0, len(dc.Publisher))
+	for _, publisher := range dc.Publisher {
+		if publisher != nil {
+			publishers = append(publishers, publisher.Name)
+		}
 	}
+	hub.SetPublishers(record, publishers)
 
 	// Identifiers: the generic converter may produce a single stringified entry
 	// from a repeated Identifier message. Rebuild from spoke data.

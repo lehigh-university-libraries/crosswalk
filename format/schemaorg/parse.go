@@ -9,6 +9,7 @@ import (
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Parse reads schema.org JSON-LD and returns hub records.
@@ -87,9 +88,7 @@ func schemaOrgToRecord(doc map[string]any) (*hubv1.Record, error) {
 		record.Title = headline
 	}
 
-	if altTitle := getString(doc, "alternativeHeadline"); altTitle != "" {
-		record.AltTitle = []string{altTitle}
-	}
+	record.AltTitle = schemaStringValues(doc["alternativeHeadline"])
 
 	if abstract := getString(doc, "abstract"); abstract != "" {
 		record.Abstract = abstract
@@ -106,38 +105,16 @@ func schemaOrgToRecord(doc map[string]any) (*hubv1.Record, error) {
 	record.Contributors = append(record.Contributors, parseContributors(doc, "contributor", "contributor")...)
 
 	// Publisher
-	if pub := doc["publisher"]; pub != nil {
-		switch p := pub.(type) {
-		case string:
-			record.Publisher = p
-		case map[string]any:
-			record.Publisher = getString(p, "name")
-		}
-	}
+	hub.SetPublishers(record, schemaPublisherNames(doc["publisher"]))
 
 	// Dates
-	if datePublished := getString(doc, "datePublished"); datePublished != "" {
-		record.Dates = append(record.Dates, parseDate(datePublished, hubv1.DateType_DATE_TYPE_PUBLISHED))
-	}
-	if dateCreated := getString(doc, "dateCreated"); dateCreated != "" {
-		record.Dates = append(record.Dates, parseDate(dateCreated, hubv1.DateType_DATE_TYPE_CREATED))
-	}
-	if dateModified := getString(doc, "dateModified"); dateModified != "" {
-		record.Dates = append(record.Dates, parseDate(dateModified, hubv1.DateType_DATE_TYPE_MODIFIED))
-	}
+	appendSchemaDates(record, doc["datePublished"], hubv1.DateType_DATE_TYPE_PUBLISHED)
+	appendSchemaDates(record, doc["dateCreated"], hubv1.DateType_DATE_TYPE_CREATED)
+	appendSchemaDates(record, doc["dateModified"], hubv1.DateType_DATE_TYPE_MODIFIED)
+	appendSchemaDates(record, doc["copyrightYear"], hubv1.DateType_DATE_TYPE_COPYRIGHT)
 
 	// Language
-	if lang := doc["inLanguage"]; lang != nil {
-		switch l := lang.(type) {
-		case string:
-			record.Language = l
-		case map[string]any:
-			record.Language = getString(l, "name")
-			if record.Language == "" {
-				record.Language = getString(l, "alternateName")
-			}
-		}
-	}
+	hub.SetLanguages(record, schemaLanguageNames(doc["inLanguage"]))
 
 	// Genre
 	if genre := doc["genre"]; genre != nil {
@@ -180,23 +157,7 @@ func schemaOrgToRecord(doc map[string]any) (*hubv1.Record, error) {
 	}
 
 	// Rights/License
-	if license := doc["license"]; license != nil {
-		rights := &hubv1.Rights{}
-		switch l := license.(type) {
-		case string:
-			if strings.HasPrefix(l, "http") {
-				rights.Uri = l
-			} else {
-				rights.Statement = l
-			}
-		case map[string]any:
-			rights.Uri = getString(l, "url")
-			rights.Statement = getString(l, "name")
-		}
-		if rights.Uri != "" || rights.Statement != "" {
-			record.Rights = append(record.Rights, rights)
-		}
-	}
+	record.Rights = append(record.Rights, schemaRights(doc["license"])...)
 
 	// Identifiers
 	if url := getString(doc, "url"); url != "" {
@@ -232,16 +193,14 @@ func schemaOrgToRecord(doc map[string]any) (*hubv1.Record, error) {
 	}
 
 	// Relations
-	if isPartOf := doc["isPartOf"]; isPartOf != nil {
-		rel := parseRelation(isPartOf, hubv1.RelationType_RELATION_TYPE_PART_OF)
-		if rel != nil {
-			record.Relations = append(record.Relations, rel)
-		}
-	}
+	record.Relations = append(record.Relations, schemaRelations(doc["isPartOf"], hubv1.RelationType_RELATION_TYPE_PART_OF)...)
 
 	// Physical description
 	if pagination := getString(doc, "pagination"); pagination != "" {
-		record.PhysicalDesc = pagination
+		hub.SetPhysicalDescriptions(record, []string{pagination})
+	}
+	if edition := getString(doc, "bookEdition"); edition != "" {
+		hub.SetEditions(record, []string{edition})
 	}
 
 	// Notes
@@ -561,6 +520,94 @@ func parseRelation(val any, relType hubv1.RelationType) *hubv1.Relation {
 	return rel
 }
 
+func schemaRelations(value any, relType hubv1.RelationType) []*hubv1.Relation {
+	if values, ok := value.([]any); ok {
+		result := make([]*hubv1.Relation, 0, len(values))
+		for _, item := range values {
+			result = append(result, schemaRelations(item, relType)...)
+		}
+		return result
+	}
+	if relation := parseRelation(value, relType); relation != nil {
+		return []*hubv1.Relation{relation}
+	}
+	return nil
+}
+
+func schemaRights(value any) []*hubv1.Rights {
+	switch typed := value.(type) {
+	case []any:
+		result := make([]*hubv1.Rights, 0, len(typed))
+		for _, item := range typed {
+			result = append(result, schemaRights(item)...)
+		}
+		return result
+	case string:
+		rights := &hubv1.Rights{}
+		if strings.HasPrefix(typed, "http") {
+			rights.Uri = typed
+		} else {
+			rights.Statement = typed
+		}
+		return []*hubv1.Rights{rights}
+	case map[string]any:
+		rights := &hubv1.Rights{Uri: getString(typed, "url"), Statement: getString(typed, "name")}
+		if rights.Uri == "" {
+			rights.Uri = getString(typed, "@id")
+		}
+		if rights.Uri != "" || rights.Statement != "" {
+			return []*hubv1.Rights{rights}
+		}
+	}
+	return nil
+}
+
+func appendSchemaDates(record *hubv1.Record, value any, dateType hubv1.DateType) {
+	for _, raw := range schemaDateValues(value) {
+		if date := parseDate(raw, dateType); date != nil {
+			record.Dates = append(record.Dates, date)
+		}
+	}
+}
+
+func schemaDateValues(value any) []string {
+	switch typed := value.(type) {
+	case string:
+		if typed == "" {
+			return nil
+		}
+		return []string{typed}
+	case float64:
+		return []string{strconv.FormatFloat(typed, 'f', -1, 64)}
+	case []any:
+		var result []string
+		for _, item := range typed {
+			result = append(result, schemaDateValues(item)...)
+		}
+		return result
+	default:
+		return nil
+	}
+}
+
+func schemaStringValues(value any) []string {
+	switch typed := value.(type) {
+	case string:
+		if typed == "" {
+			return nil
+		}
+		return []string{typed}
+	case []any:
+		var result []string
+		for _, item := range typed {
+			result = append(result, schemaStringValues(item)...)
+		}
+		return result
+	default:
+		return nil
+	}
+}
+
 // extractOrcid extracts ORCID from URL.
 func extractOrcid(url string) string {
 	// Handle various ORCID URL formats
@@ -578,4 +625,42 @@ func getString(m map[string]any, key string) string {
 		}
 	}
 	return ""
+}
+
+func schemaPublisherNames(value any) []string {
+	switch typed := value.(type) {
+	case string:
+		return []string{typed}
+	case map[string]any:
+		return []string{getString(typed, "name")}
+	case []any:
+		var result []string
+		for _, item := range typed {
+			result = append(result, schemaPublisherNames(item)...)
+		}
+		return result
+	default:
+		return nil
+	}
+}
+
+func schemaLanguageNames(value any) []string {
+	switch typed := value.(type) {
+	case string:
+		return []string{typed}
+	case map[string]any:
+		name := getString(typed, "name")
+		if name == "" {
+			name = getString(typed, "alternateName")
+		}
+		return []string{name}
+	case []any:
+		var result []string
+		for _, item := range typed {
+			result = append(result, schemaLanguageNames(item)...)
+		}
+		return result
+	default:
+		return nil
+	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	crossrefv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/crossref/v5_3_1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 const (
@@ -472,13 +473,14 @@ func buildDataset(record *hubv1.Record) *crossrefv1.Dataset {
 }
 
 func buildBook(record *hubv1.Record) *crossrefv1.Book {
+	edition := primaryCompatibilityValue(hub.GetEditions(record))
 	book := &crossrefv1.Book{
 		BookType: "monograph",
 		BookMetadata: &crossrefv1.BookMetadata{
 			Titles:        buildTitles(record),
 			Contributors:  buildContributors(record.Contributors),
 			DoiData:       buildDoiData(record),
-			EditionNumber: record.Edition,
+			EditionNumber: edition,
 		},
 	}
 
@@ -491,10 +493,11 @@ func buildBook(record *hubv1.Record) *crossrefv1.Book {
 	}
 
 	// Publisher
-	if record.Publisher != "" {
+	publisher := primaryCompatibilityValue(hub.GetPublishers(record))
+	if publisher != "" {
 		book.BookMetadata.Publisher = &crossrefv1.Publisher{
-			PublisherName:  record.Publisher,
-			PublisherPlace: record.PlacePublished,
+			PublisherName:  publisher,
+			PublisherPlace: primaryCompatibilityValue(hub.GetPlacesPublished(record)),
 		}
 	}
 
@@ -506,6 +509,13 @@ func buildBook(record *hubv1.Record) *crossrefv1.Book {
 	}
 
 	return book
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 func buildTitles(record *hubv1.Record) *crossrefv1.Titles {

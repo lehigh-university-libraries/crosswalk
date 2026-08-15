@@ -3,6 +3,7 @@ module github.com/lehigh-university-libraries/crosswalk
 go 1.25.6
 
 require (
+	github.com/hectorcorrea/marcli v1.3.1
 	github.com/lestrrat-go/httprc/v3 v3.0.5
 	github.com/lestrrat-go/jwx/v3 v3.1.1
 	github.com/spf13/cobra v1.10.2

@@ -178,46 +178,50 @@ func buildColumnMap(header []string, profile *mapping.Profile) map[int]string {
 
 		// Default mappings
 		defaultMap := map[string]string{
-			"title":             "Title",
-			"alt_title":         "AltTitle",
-			"alternative_title": "AltTitle",
-			"contributors":      "Contributors",
-			"authors":           "Contributors",
-			"author":            "Contributors",
-			"creator":           "Contributors",
-			"date_issued":       "Dates.issued",
-			"date_created":      "Dates.created",
-			"date":              "Dates.issued",
-			"year":              "Dates.issued",
-			"resource_type":     "ResourceType",
-			"type":              "ResourceType",
-			"genre":             "Genre",
-			"language":          "Language",
-			"lang":              "Language",
-			"rights":            "Rights",
-			"license":           "Rights",
-			"abstract":          "Abstract",
-			"description":       "Description",
-			"identifiers":       "Identifiers",
-			"identifier":        "Identifiers",
-			"doi":               "Identifiers.doi",
-			"subjects":          "Subjects",
-			"subject":           "Subjects",
-			"keywords":          "Subjects.keywords",
-			"keyword":           "Subjects.keywords",
-			"publisher":         "Publisher",
-			"place_published":   "PlacePublished",
-			"publication_place": "PlacePublished",
-			"member_of":         "Relations.member_of",
-			"collection":        "Relations.member_of",
-			"degree_name":       "DegreeInfo.DegreeName",
-			"degree_level":      "DegreeInfo.DegreeLevel",
-			"department":        "DegreeInfo.Department",
-			"institution":       "DegreeInfo.Institution",
-			"notes":             "Notes",
-			"note":              "Notes",
-			"nid":               "Extra.nid",
-			"uuid":              "Extra.uuid",
+			"title":                "Title",
+			"alt_title":            "AltTitle",
+			"alternative_title":    "AltTitle",
+			"contributors":         "Contributors",
+			"authors":              "Contributors",
+			"author":               "Contributors",
+			"creator":              "Contributors",
+			"date_issued":          "Dates.issued",
+			"date_created":         "Dates.created",
+			"date":                 "Dates.issued",
+			"year":                 "Dates.issued",
+			"resource_type":        "ResourceType",
+			"type":                 "ResourceType",
+			"genre":                "Genre",
+			"language":             "Language",
+			"lang":                 "Language",
+			"rights":               "Rights",
+			"license":              "Rights",
+			"abstract":             "Abstract",
+			"description":          "Description",
+			"identifiers":          "Identifiers",
+			"identifier":           "Identifiers",
+			"doi":                  "Identifiers.doi",
+			"subjects":             "Subjects",
+			"subject":              "Subjects",
+			"keywords":             "Subjects.keywords",
+			"keyword":              "Subjects.keywords",
+			"publisher":            "Publisher",
+			"place_published":      "PlacePublished",
+			"publication_place":    "PlacePublished",
+			"physical_description": "PhysicalDesc",
+			"physical_desc":        "PhysicalDesc",
+			"extent":               "PhysicalDesc",
+			"edition":              "Edition",
+			"member_of":            "Relations.member_of",
+			"collection":           "Relations.member_of",
+			"degree_name":          "DegreeInfo.DegreeName",
+			"degree_level":         "DegreeInfo.DegreeLevel",
+			"department":           "DegreeInfo.Department",
+			"institution":          "DegreeInfo.Institution",
+			"notes":                "Notes",
+			"note":                 "Notes",
+			"nid":                  "Extra.nid",
+			"uuid":                 "Extra.uuid",
 		}
 
 		if ir, ok := defaultMap[col]; ok {
@@ -308,7 +312,7 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			}
 
 		case "Language":
-			record.Language = value
+			hub.SetLanguages(record, append(hub.GetLanguages(record), splitMultiValue(value, sep)...))
 
 		case "Rights":
 			for _, v := range splitMultiValue(value, sep) {
@@ -331,10 +335,16 @@ func rowToRecord(row []string, header []string, colMap map[int]string, sep strin
 			}
 
 		case "Publisher":
-			record.Publisher = value
+			hub.SetPublishers(record, append(hub.GetPublishers(record), splitMultiValue(value, sep)...))
 
 		case "PlacePublished":
-			record.PlacePublished = value
+			hub.SetPlacesPublished(record, append(hub.GetPlacesPublished(record), splitMultiValue(value, sep)...))
+
+		case "PhysicalDesc":
+			hub.SetPhysicalDescriptions(record, append(hub.GetPhysicalDescriptions(record), splitMultiValue(value, sep)...))
+
+		case "Edition":
+			hub.SetEditions(record, append(hub.GetEditions(record), splitMultiValue(value, sep)...))
 
 		case "Relations":
 			relType := hub.NormalizeRelationType(subtype)

@@ -1019,8 +1019,8 @@ func validWorkbenchTargetHub(hubPath string) bool {
 	switch hubPath {
 	case "Title", "FullTitle", "ObjectModel", "ResourceType", "AddCoverpage", "IsPublic",
 		"Contributors", "Departments", "Genre", "Dates.issued", "Dates.created", "Dates.captured",
-		"Dates.available", "Publisher", "Edition", "Language", "PhysicalForm", "Files.mime_type",
-		"Extent", "DigitalOrigin", "Descriptions", "Notes", "LocalRestriction", "Subjects.lcsh",
+		"Dates.available", "Publisher", "PlacePublished", "Edition", "Language", "PhysicalForm", "Files.mime_type",
+		"Extent", "PhysicalDesc", "DigitalOrigin", "Descriptions", "Notes", "LocalRestriction", "Subjects.lcsh",
 		"Subjects.keywords", "Subjects.lcnaf", "Subjects.geographic", "Subjects.getty_tgn",
 		"Publication.RelatedItem", "Publication.Part", "Identifiers", "Rights", "AccessCondition",
 		"Relations.member_of", "Files.primary", "Files.supplemental":

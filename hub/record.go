@@ -2,6 +2,8 @@
 package hub
 
 import (
+	"strings"
+
 	"google.golang.org/protobuf/types/known/structpb"
 
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
@@ -10,15 +12,161 @@ import (
 // NewRecord creates a new empty Record.
 func NewRecord() *hubv1.Record {
 	return &hubv1.Record{
-		Contributors: make([]*hubv1.Contributor, 0),
-		Dates:        make([]*hubv1.DateValue, 0),
-		Subjects:     make([]*hubv1.Subject, 0),
-		Rights:       make([]*hubv1.Rights, 0),
-		Identifiers:  make([]*hubv1.Identifier, 0),
-		Notes:        make([]string, 0),
-		Relations:    make([]*hubv1.Relation, 0),
-		Genres:       make([]*hubv1.Subject, 0),
+		Contributors:         make([]*hubv1.Contributor, 0),
+		Dates:                make([]*hubv1.DateValue, 0),
+		Subjects:             make([]*hubv1.Subject, 0),
+		Rights:               make([]*hubv1.Rights, 0),
+		Identifiers:          make([]*hubv1.Identifier, 0),
+		Notes:                make([]string, 0),
+		Relations:            make([]*hubv1.Relation, 0),
+		Genres:               make([]*hubv1.Subject, 0),
+		Publishers:           make([]string, 0),
+		PlacesPublished:      make([]string, 0),
+		PhysicalDescriptions: make([]string, 0),
+		Editions:             make([]string, 0),
+		Languages:            make([]string, 0),
 	}
+}
+
+// SetPublishers stores the complete ordered publisher list and mirrors its
+// first value to the legacy scalar Publisher field for compatibility.
+func SetPublishers(r *hubv1.Record, publishers []string) {
+	if r == nil {
+		return
+	}
+
+	r.Publishers = normalizeRepeatedStrings(publishers)
+	r.Publisher = ""
+	if len(r.Publishers) > 0 {
+		r.Publisher = r.Publishers[0]
+	}
+}
+
+// GetPublishers returns the complete ordered publisher list. Records created
+// before the repeated field was added fall back to the legacy scalar value.
+func GetPublishers(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if publishers := normalizeRepeatedStrings(r.Publishers); len(publishers) > 0 {
+		return publishers
+	}
+	return normalizeRepeatedStrings([]string{r.Publisher})
+}
+
+// SetPlacesPublished stores every publication place and mirrors its first value
+// to the legacy scalar PlacePublished field.
+func SetPlacesPublished(r *hubv1.Record, places []string) {
+	if r == nil {
+		return
+	}
+	r.PlacesPublished = normalizeRepeatedStrings(places)
+	r.PlacePublished = ""
+	if len(r.PlacesPublished) > 0 {
+		r.PlacePublished = r.PlacesPublished[0]
+	}
+}
+
+// GetPlacesPublished returns every publication place, falling back to the
+// legacy scalar field for records created before the repeated field existed.
+func GetPlacesPublished(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if places := normalizeRepeatedStrings(r.PlacesPublished); len(places) > 0 {
+		return places
+	}
+	return normalizeRepeatedStrings([]string{r.PlacePublished})
+}
+
+// SetPhysicalDescriptions stores every physical description and mirrors its
+// first value to the legacy scalar PhysicalDesc field.
+func SetPhysicalDescriptions(r *hubv1.Record, descriptions []string) {
+	if r == nil {
+		return
+	}
+	r.PhysicalDescriptions = normalizeRepeatedStrings(descriptions)
+	r.PhysicalDesc = ""
+	if len(r.PhysicalDescriptions) > 0 {
+		r.PhysicalDesc = r.PhysicalDescriptions[0]
+	}
+}
+
+// GetPhysicalDescriptions returns every physical description, falling back to
+// the legacy scalar field for older records.
+func GetPhysicalDescriptions(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if descriptions := normalizeRepeatedStrings(r.PhysicalDescriptions); len(descriptions) > 0 {
+		return descriptions
+	}
+	return normalizeRepeatedStrings([]string{r.PhysicalDesc})
+}
+
+// SetEditions stores every edition statement and mirrors its first value to the
+// legacy scalar Edition field.
+func SetEditions(r *hubv1.Record, editions []string) {
+	if r == nil {
+		return
+	}
+	r.Editions = normalizeRepeatedStrings(editions)
+	r.Edition = ""
+	if len(r.Editions) > 0 {
+		r.Edition = r.Editions[0]
+	}
+}
+
+// GetEditions returns every edition statement, falling back to the legacy
+// scalar field for older records.
+func GetEditions(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if editions := normalizeRepeatedStrings(r.Editions); len(editions) > 0 {
+		return editions
+	}
+	return normalizeRepeatedStrings([]string{r.Edition})
+}
+
+// SetLanguages stores every language value and mirrors its first value to the
+// legacy scalar Language field.
+func SetLanguages(r *hubv1.Record, languages []string) {
+	if r == nil {
+		return
+	}
+	r.Languages = normalizeRepeatedStrings(languages)
+	r.Language = ""
+	if len(r.Languages) > 0 {
+		r.Language = r.Languages[0]
+	}
+}
+
+// GetLanguages returns every language value, falling back to the legacy scalar
+// field for older records.
+func GetLanguages(r *hubv1.Record) []string {
+	if r == nil {
+		return nil
+	}
+	if languages := normalizeRepeatedStrings(r.Languages); len(languages) > 0 {
+		return languages
+	}
+	return normalizeRepeatedStrings([]string{r.Language})
+}
+
+func normalizeRepeatedStrings(values []string) []string {
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		result = append(result, value)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 // GetDate returns the first date of a given type, or nil if not found.

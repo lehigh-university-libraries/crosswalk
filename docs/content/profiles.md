@@ -5,6 +5,39 @@ immutable executable mapping and identity policy bound to one exact model
 snapshot. Crosswalk never treats a Drupal field name or an Omeka property as
 globally meaningful without that contract.
 
+## Which mappings are configurable?
+
+Crosswalk does not expose an editable pairwise mapping for every source and
+target combination. Each registered adapter maps its wire format into the Hub,
+out of the Hub, or both; every conversion reuses those format-to-Hub mappings.
+
+Installation-specific mappings are exposed as model-bound profiles for systems
+whose schema varies by site. Crosswalk currently authors profiles for Drupal
+and Omeka S:
+
+```bash
+crosswalk profile create drupal ...
+crosswalk profile create omeka-s ...
+crosswalk profile validate ...
+crosswalk profile publish ...
+```
+
+Use a published profile at conversion time with `--source-profile`. A Drupal
+profile may also be selected with `--target-profile` for a profile-bound
+Islandora Workbench transformation. Editable CSV-to-Hub and
+Hub-to-Islandora-Workbench column mappings and validation policy are exposed
+separately as [transformation specifications](specifications.md), created with
+`crosswalk spec compile drupal`, reviewed, and sealed with `crosswalk spec
+validate`.
+
+Mappings for versioned or static formats—including MARC21, BibTeX, DataCite,
+Crossref deposit XML, Dublin Core, and MODS—are currently implemented by their
+format adapters and compiled into Crosswalk. They are not exposed as runtime
+profile files or CLI mapping overrides. Supporting local MARC tags or changing
+one of those mappings currently requires changing the adapter. See [Format
+support](formats.md) for the parse and serialization directions each adapter
+provides.
+
 ## Ownership boundary
 
 Crosswalk does not discover a live repository schema while compiling or loading

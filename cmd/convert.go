@@ -30,6 +30,7 @@ import (
 	_ "github.com/lehigh-university-libraries/crosswalk/format/datacite"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/dublincore"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/islandora_workbench"
+	_ "github.com/lehigh-university-libraries/crosswalk/format/marc"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/mods"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/omeka_s"
 	_ "github.com/lehigh-university-libraries/crosswalk/format/proquest"

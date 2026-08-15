@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/lehigh-university-libraries/crosswalk/helpers"
 )
 
 // ParserFunc is a function that parses a string value.
@@ -379,29 +381,12 @@ func parseCSLName(input string, opts *ParserOptions) (any, error) {
 // parseRelator normalizes MARC relator codes and terms.
 func parseRelator(input string, opts *ParserOptions) (any, error) {
 	input = strings.TrimSpace(input)
-	lower := strings.ToLower(input)
-
-	// Common mappings from terms to codes
-	termToCode := map[string]string{
-		"author":       "aut",
-		"editor":       "edt",
-		"translator":   "trl",
-		"contributor":  "ctb",
-		"creator":      "cre",
-		"illustrator":  "ill",
-		"photographer": "pht",
-		"compiler":     "com",
-		"narrator":     "nrt",
-		"performer":    "prf",
-		"sponsor":      "spn",
-		"funder":       "fnd",
+	normalized := helpers.NormalizeRole(input)
+	if normalized != input {
+		return normalized, nil
 	}
 
-	if code, ok := termToCode[lower]; ok {
-		return code, nil
-	}
-
-	// If already a 3-letter code, return as-is
+	// If already a 3-letter code, return as-is lowercased for legacy behavior.
 	if len(input) == 3 {
 		return strings.ToLower(input), nil
 	}

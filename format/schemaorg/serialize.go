@@ -8,6 +8,7 @@ import (
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as schema.org JSON-LD.
@@ -156,9 +157,7 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 		cw.Name = record.Title
 		cw.Headline = record.Title
 	}
-	if len(record.AltTitle) > 0 {
-		cw.AlternativeTitle = record.AltTitle[0]
-	}
+	cw.AlternativeTitle = schemaStringShape(record.AltTitle)
 
 	// Descriptions
 	if record.Abstract != "" {
@@ -183,6 +182,8 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 	}
 
 	// Dates
+	var publishedDates, createdDates, modifiedDates []string
+	var copyrightYears []any
 	for _, d := range record.Dates {
 		dateStr := formatDate(d)
 		if dateStr == "" {
@@ -190,29 +191,47 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 		}
 		switch d.Type {
 		case hubv1.DateType_DATE_TYPE_PUBLISHED, hubv1.DateType_DATE_TYPE_ISSUED:
-			cw.DatePublished = dateStr
+			publishedDates = append(publishedDates, dateStr)
 		case hubv1.DateType_DATE_TYPE_CREATED:
-			cw.DateCreated = dateStr
+			createdDates = append(createdDates, dateStr)
 		case hubv1.DateType_DATE_TYPE_MODIFIED:
-			cw.DateModified = dateStr
+			modifiedDates = append(modifiedDates, dateStr)
 		case hubv1.DateType_DATE_TYPE_COPYRIGHT:
-			cw.CopyrightYear = d.Year
+			if d.Year > 0 {
+				copyrightYears = append(copyrightYears, d.Year)
+			} else {
+				copyrightYears = append(copyrightYears, dateStr)
+			}
 		}
 	}
+	cw.DatePublished = schemaStringShape(publishedDates)
+	cw.DateCreated = schemaStringShape(createdDates)
+	cw.DateModified = schemaStringShape(modifiedDates)
+	cw.CopyrightYear = schemaValueShape(copyrightYears)
 
 	// Language
-	if record.Language != "" {
-		cw.InLanguage = record.Language
+	languages := hub.GetLanguages(record)
+	if len(languages) == 1 {
+		cw.InLanguage = languages[0]
+	} else if len(languages) > 1 {
+		cw.InLanguage = languages
 	}
 
 	// Publisher
-	if record.Publisher != "" {
-		cw.Publisher = &Organization{
+	publishers := hub.GetPublishers(record)
+	organizations := make([]*Organization, 0, len(publishers))
+	for _, publisher := range publishers {
+		organizations = append(organizations, &Organization{
 			Thing: Thing{
 				Type: TypeOrganization,
-				Name: record.Publisher,
+				Name: publisher,
 			},
-		}
+		})
+	}
+	if len(organizations) == 1 {
+		cw.Publisher = organizations[0]
+	} else if len(organizations) > 1 {
+		cw.Publisher = organizations
 	}
 
 	// Genre - output rich DefinedTerm when we have both label and URI
@@ -238,17 +257,13 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 	}
 
 	// Rights
-	if len(record.Rights) > 0 {
-		for _, r := range record.Rights {
-			if r.Uri != "" {
-				cw.License = r.Uri
-				break
-			} else if r.Statement != "" {
-				cw.License = r.Statement
-				break
-			}
+	licenses := make([]any, 0, len(record.Rights))
+	for _, rights := range record.Rights {
+		if license := schemaLicenseValue(rights); license != nil {
+			licenses = append(licenses, license)
 		}
 	}
+	cw.License = schemaValueShape(licenses)
 
 	// Identifiers
 	ids := buildIdentifiers(record.Identifiers)
@@ -270,15 +285,59 @@ func buildCreativeWorkBase(record *hubv1.Record, schemaType SchemaType) Creative
 	}
 
 	// Relations
+	var parents []any
 	for _, rel := range record.Relations {
 		switch rel.Type {
 		case hubv1.RelationType_RELATION_TYPE_PART_OF,
 			hubv1.RelationType_RELATION_TYPE_MEMBER_OF:
-			cw.IsPartOf = relationToCreativeWork(rel)
+			if parent := relationToCreativeWork(rel); parent != nil {
+				parents = append(parents, parent)
+			}
 		}
 	}
+	cw.IsPartOf = schemaValueShape(parents)
 
 	return cw
+}
+
+func schemaStringShape(values []string) any {
+	if len(values) == 1 {
+		return values[0]
+	}
+	if len(values) > 1 {
+		return values
+	}
+	return nil
+}
+
+func schemaValueShape(values []any) any {
+	if len(values) == 1 {
+		return values[0]
+	}
+	if len(values) > 1 {
+		return values
+	}
+	return nil
+}
+
+func schemaLicenseValue(rights *hubv1.Rights) any {
+	if rights == nil {
+		return nil
+	}
+	if rights.Uri != "" && rights.Statement != "" {
+		return map[string]any{
+			"@type": "CreativeWork",
+			"url":   rights.Uri,
+			"name":  rights.Statement,
+		}
+	}
+	if rights.Uri != "" {
+		return rights.Uri
+	}
+	if rights.Statement != "" {
+		return rights.Statement
+	}
+	return nil
 }
 
 func schemaTypeWithGoogleFallback(schemaType SchemaType) any {
@@ -626,21 +685,31 @@ func buildIdentifiers(ids []*hubv1.Identifier) []PropertyValue {
 func recordToScholarlyArticle(record *hubv1.Record) *ScholarlyArticle {
 	base := buildCreativeWorkBase(record, TypeScholarlyArticle)
 	article := &ScholarlyArticle{
-		CreativeWork: base,
+		CreativeWork:    base,
+		IsPartOfJournal: base.IsPartOf,
 	}
+	article.IsPartOf = nil
 
 	// Physical description for pagination
-	if record.PhysicalDesc != "" {
-		article.Pagination = record.PhysicalDesc
+	if physicalDescription := primaryCompatibilityValue(hub.GetPhysicalDescriptions(record)); physicalDescription != "" {
+		article.Pagination = physicalDescription
 	}
 
 	return article
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 func recordToBook(record *hubv1.Record) *Book {
 	base := buildCreativeWorkBase(record, TypeBook)
 	book := &Book{
 		CreativeWork: base,
+		BookEdition:  primaryCompatibilityValue(hub.GetEditions(record)),
 	}
 
 	// ISBN from identifiers
@@ -682,12 +751,7 @@ func recordToThesis(record *hubv1.Record) *CreativeWork {
 	// done in DigitalDocument output.
 	if record.DegreeInfo != nil {
 		if record.DegreeInfo.Institution != "" {
-			base.Publisher = &Organization{
-				Thing: Thing{
-					Type: TypeOrganization,
-					Name: record.DegreeInfo.Institution,
-				},
-			}
+			base.Publisher = appendSchemaOrganization(base.Publisher, record.DegreeInfo.Institution)
 		}
 		if record.DegreeInfo.DegreeName != "" {
 			if base.Description != "" {
@@ -716,12 +780,7 @@ func recordToDigitalDocument(record *hubv1.Record) *DigitalDocument {
 	// Thesis/dissertation handling
 	if record.DegreeInfo != nil {
 		if record.DegreeInfo.Institution != "" {
-			doc.Publisher = &Organization{
-				Thing: Thing{
-					Type: TypeOrganization,
-					Name: record.DegreeInfo.Institution,
-				},
-			}
+			doc.Publisher = appendSchemaOrganization(doc.Publisher, record.DegreeInfo.Institution)
 		}
 		// Add degree info to description
 		if record.DegreeInfo.DegreeName != "" {
@@ -736,6 +795,28 @@ func recordToDigitalDocument(record *hubv1.Record) *DigitalDocument {
 	}
 
 	return doc
+}
+
+func appendSchemaOrganization(current any, name string) any {
+	organization := &Organization{Thing: Thing{Type: TypeOrganization, Name: name}}
+	switch publishers := current.(type) {
+	case nil:
+		return organization
+	case *Organization:
+		if publishers.Name == name {
+			return publishers
+		}
+		return []*Organization{publishers, organization}
+	case []*Organization:
+		for _, publisher := range publishers {
+			if publisher != nil && publisher.Name == name {
+				return publishers
+			}
+		}
+		return append(publishers, organization)
+	default:
+		return current
+	}
 }
 
 func recordToManuscript(record *hubv1.Record) *Manuscript {

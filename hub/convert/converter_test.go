@@ -1,11 +1,66 @@
 package convert
 
 import (
+	"reflect"
 	"testing"
 
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	bibtexv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/bibtex/v1"
+	cslv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/csl/v1"
+	islandorav1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/islandora/v1"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
+
+func TestConverterToHubPreservesRepeatedCompatibilityFields(t *testing.T) {
+	input := &islandorav1.IslandoraObject{
+		Publisher:      []string{"Publisher One", "Publisher Two"},
+		PlacePublished: []string{"Halifax", "Moncton"},
+		Extent:         []string{"12 pages", "1 map"},
+		Edition:        []string{"First edition", "Revised edition"},
+	}
+	result, err := NewConverter().ToHub(input)
+	if err != nil {
+		t.Fatalf("ToHub() error = %v", err)
+	}
+	for _, test := range []struct {
+		name string
+		got  []string
+		want []string
+	}{
+		{name: "publishers", got: hub.GetPublishers(result.Record), want: input.Publisher},
+		{name: "places", got: hub.GetPlacesPublished(result.Record), want: input.PlacePublished},
+		{name: "physical descriptions", got: hub.GetPhysicalDescriptions(result.Record), want: input.Extent},
+		{name: "editions", got: hub.GetEditions(result.Record), want: input.Edition},
+	} {
+		if !reflect.DeepEqual(test.got, test.want) {
+			t.Errorf("%s = %#v, want %#v", test.name, test.got, test.want)
+		}
+	}
+}
+
+func TestConverterToHubMapsCSLDimensions(t *testing.T) {
+	tests := []struct {
+		name       string
+		dimensions string
+	}{
+		{name: "physical dimensions", dimensions: "30 cm"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, err := NewConverter().ToHub(&cslv1.Item{Dimensions: test.dimensions})
+			if err != nil {
+				t.Fatalf("ToHub() error = %v", err)
+			}
+			if result.Record.Dimensions != test.dimensions {
+				t.Errorf("Dimensions = %q, want %q", result.Record.Dimensions, test.dimensions)
+			}
+			if got := hub.GetPhysicalDescriptions(result.Record); len(got) != 0 {
+				t.Errorf("physical descriptions = %#v, want none", got)
+			}
+		})
+	}
+}
 
 func TestNewConverter(t *testing.T) {
 	c := NewConverter()

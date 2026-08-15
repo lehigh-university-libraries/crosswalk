@@ -348,7 +348,8 @@ func omekaSCodec(field model.Field, hubPath string) string {
 func omekaSRepeatedHubPath(path string) bool {
 	base, _, _ := strings.Cut(path, ".")
 	switch base {
-	case "AltTitle", "Contributors", "Dates", "Genre", "Subjects", "Rights", "Identifiers", "Relations", "Notes":
+	case "AltTitle", "Contributors", "Dates", "Genre", "Subjects", "Rights", "Identifiers", "Relations", "Notes",
+		"Publisher", "PlacePublished", "PhysicalDesc", "Edition", "Language":
 		return true
 	default:
 		return false

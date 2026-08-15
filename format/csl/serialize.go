@@ -10,6 +10,7 @@ import (
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	cslv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/csl/v1"
 	"github.com/lehigh-university-libraries/crosswalk/helpers"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Serialize writes hub records as CSL-JSON.
@@ -43,7 +44,7 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	item := &cslv1.Item{
 		Title:    record.Title,
 		Abstract: record.Abstract,
-		Language: record.Language,
+		Language: primaryCompatibilityValue(hub.GetLanguages(record)),
 	}
 
 	// ID from identifiers
@@ -107,8 +108,9 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	}
 
 	// Publisher
-	item.Publisher = record.Publisher
-	item.PublisherPlace = record.PlacePublished
+	item.Publisher = primaryCompatibilityValue(hub.GetPublishers(record))
+	item.PublisherPlace = primaryCompatibilityValue(hub.GetPlacesPublished(record))
+	item.Dimensions = record.Dimensions
 
 	// Container title from relations
 	for _, rel := range record.Relations {
@@ -148,13 +150,20 @@ func hubToSpoke(record *hubv1.Record) (*cslv1.Item, error) {
 	}
 
 	// Edition
-	item.Edition = record.Edition
+	item.Edition = primaryCompatibilityValue(hub.GetEditions(record))
 
 	// Notes
 	if len(record.Notes) > 0 {
 		item.Note = strings.Join(record.Notes, "; ")
 	}
 	return item, nil
+}
+
+func primaryCompatibilityValue(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 // mapResourceTypeToCSL maps hub resource type to CSL item type.
@@ -269,6 +278,7 @@ func spokeToJSON(spoke *cslv1.Item) JSONItem {
 		PMCID:          spoke.Pmcid,
 		Publisher:      spoke.Publisher,
 		PublisherPlace: spoke.PublisherPlace,
+		Dimensions:     spoke.Dimensions,
 		ContainerTitle: spoke.ContainerTitle,
 		Edition:        spoke.Edition,
 		Note:           spoke.Note,
@@ -373,6 +383,7 @@ type JSONItem struct {
 	PMCID          string         `json:"PMCID,omitempty"`
 	Publisher      string         `json:"publisher,omitempty"`
 	PublisherPlace string         `json:"publisher-place,omitempty"`
+	Dimensions     string         `json:"dimensions,omitempty"`
 	ContainerTitle string         `json:"container-title,omitempty"`
 	Edition        string         `json:"edition,omitempty"`
 	Volume         string         `json:"volume,omitempty"`

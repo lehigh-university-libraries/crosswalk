@@ -10,6 +10,7 @@ import (
 	"github.com/lehigh-university-libraries/crosswalk/format/protoxml"
 	hubv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/hub/v1"
 	modsv1 "github.com/lehigh-university-libraries/crosswalk/gen/go/spoke/mods/v3_8"
+	"github.com/lehigh-university-libraries/crosswalk/hub"
 )
 
 // Parse reads MODS XML and returns hub records.
@@ -77,15 +78,17 @@ func spokeToHub(spoke *modsv1.Record) *hubv1.Record {
 	}
 
 	// Origin info: publisher, place, dates.
+	var publishers []string
+	var placesPublished []string
+	var editions []string
 	for _, oi := range spoke.OriginInfo {
-		if len(oi.Publisher) > 0 && record.Publisher == "" {
-			record.Publisher = oi.Publisher[0]
+		publishers = append(publishers, oi.Publisher...)
+		if oi.Edition != "" {
+			editions = append(editions, oi.Edition)
 		}
 		for _, place := range oi.Place {
 			for _, pt := range place.PlaceTerm {
-				if pt.Value != "" && record.PlacePublished == "" {
-					record.PlacePublished = pt.Value
-				}
+				placesPublished = append(placesPublished, pt.Value)
 			}
 		}
 		for _, d := range oi.DateIssued {
@@ -121,6 +124,15 @@ func spokeToHub(spoke *modsv1.Record) *hubv1.Record {
 			}
 		}
 	}
+	hub.SetPublishers(record, publishers)
+	hub.SetPlacesPublished(record, placesPublished)
+	hub.SetEditions(record, editions)
+
+	var physicalDescriptions []string
+	for _, description := range spoke.PhysicalDescription {
+		physicalDescriptions = append(physicalDescriptions, description.Extent...)
+	}
+	hub.SetPhysicalDescriptions(record, physicalDescriptions)
 
 	// Abstract: use the first abstract value.
 	for _, a := range spoke.Abstract {
@@ -129,14 +141,14 @@ func spokeToHub(spoke *modsv1.Record) *hubv1.Record {
 		}
 	}
 
-	// Language: use the first language term value.
+	// Language terms are repeatable in MODS.
+	var languages []string
 	for _, lang := range spoke.Language {
 		for _, lt := range lang.LanguageTerm {
-			if lt.Value != "" && record.Language == "" {
-				record.Language = lt.Value
-			}
+			languages = append(languages, lt.Value)
 		}
 	}
+	hub.SetLanguages(record, languages)
 
 	// Subjects from subject elements.
 	for _, subj := range spoke.Subject {

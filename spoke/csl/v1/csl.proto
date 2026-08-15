@@ -342,7 +342,7 @@ message Item {
 
   // Dimensions
   string dimensions = 49 [(hub.v1.field) = {
-    target: "physical_desc"
+    target: "dimensions"
     description: "Physical dimensions"
   }];
 

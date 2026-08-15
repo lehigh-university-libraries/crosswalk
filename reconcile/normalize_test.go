@@ -144,6 +144,45 @@ func TestPrimaryYearFallsBackFromEmptyPreferredDate(t *testing.T) {
 	}
 }
 
+func TestSnapshotPrefersRepeatedPublisherAndLanguageValues(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		name          string
+		record        *hubv1.Record
+		wantPublisher string
+		wantLanguage  string
+	}{
+		{
+			name: "stale scalar",
+			record: &hubv1.Record{
+				Publisher:  "Stale Publisher",
+				Language:   "stale-language",
+				Publishers: []string{" Current &amp; Publisher ", "Second Publisher"},
+				Languages:  []string{" eng ", "fre"},
+			},
+			wantPublisher: "Current & Publisher",
+			wantLanguage:  "eng",
+		},
+		{
+			name: "repeated only",
+			record: &hubv1.Record{
+				Publishers: []string{"Repeated Publisher"},
+				Languages:  []string{"deu"},
+			},
+			wantPublisher: "Repeated Publisher",
+			wantLanguage:  "deu",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got := snapshot(test.record)
+			if got.Publisher != test.wantPublisher || got.Language != test.wantLanguage {
+				t.Fatalf("snapshot() publisher/language = %q/%q, want %q/%q", got.Publisher, got.Language, test.wantPublisher, test.wantLanguage)
+			}
+		})
+	}
+}
+
 func TestContributorORCIDCanonicalization(t *testing.T) {
 	t.Parallel()
 	record := testRecord("A shared title with an ORCID author", 2024, []string{"Doe, Jane"})

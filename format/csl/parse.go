@@ -69,10 +69,11 @@ func jsonToHub(item JSONItem) (*hubv1.Record, error) {
 	record := hub.NewRecord()
 	record.Title = strings.TrimSpace(item.Title)
 	record.Abstract = strings.TrimSpace(item.Abstract)
-	record.Language = strings.TrimSpace(item.Language)
-	record.Publisher = strings.TrimSpace(item.Publisher)
-	record.PlacePublished = strings.TrimSpace(item.PublisherPlace)
-	record.Edition = strings.TrimSpace(item.Edition)
+	hub.SetLanguages(record, []string{item.Language})
+	hub.SetPublishers(record, []string{item.Publisher})
+	hub.SetPlacesPublished(record, []string{item.PublisherPlace})
+	record.Dimensions = strings.TrimSpace(item.Dimensions)
+	hub.SetEditions(record, []string{item.Edition})
 	record.ResourceType = hub.NewResourceType(cslTypeToResourceType(item.Type), "CSL")
 
 	appendNames := func(names []JSONName, role, roleCode string) {

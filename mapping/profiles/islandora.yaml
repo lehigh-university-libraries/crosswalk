@@ -67,6 +67,7 @@ fields:
   field_language:
     ir: Language
     resolve: taxonomy_term
+    multi_value: true
 
   # Rights
   field_rights:
@@ -84,10 +85,16 @@ fields:
 
   field_physical_description:
     ir: PhysicalDesc
+    multi_value: true
 
   field_extent:
     ir: PhysicalDesc
     priority: -1
+    multi_value: true
+
+  field_edition:
+    ir: Edition
+    multi_value: true
 
   # Subjects and keywords
   field_subject:
@@ -115,9 +122,11 @@ fields:
   # Publishing
   field_publisher:
     ir: Publisher
+    multi_value: true
 
   field_place_published:
     ir: PlacePublished
+    multi_value: true
 
   # Relations
   field_member_of:

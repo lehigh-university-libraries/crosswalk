@@ -28,11 +28,22 @@ message Record {
   // Subject access
   repeated Subject subjects = 8;
   string language = 9;
+  // Languages is the complete ordered list of language values. language
+  // remains the primary value for compatibility.
+  repeated string languages = 49;
 
   // Publication info
+  // Publisher is the primary publisher retained for compatibility with
+  // consumers that support only one value.
   string publisher = 10;
+  // Publishers is the complete ordered list of publisher names.
+  repeated string publishers = 45;
   string place_published = 11;
   PublicationDetails publication = 24;
+
+  // PlacesPublished is the complete ordered list of publication places.
+  // place_published remains the primary value for compatibility.
+  repeated string places_published = 46;
 
   // Rights and access
   repeated Rights rights = 12;
@@ -45,11 +56,17 @@ message Record {
   // Descriptions and notes
   string description = 14;
   string physical_desc = 15;
+  // PhysicalDescriptions is the complete ordered list of physical extents or
+  // descriptions. physical_desc remains the primary value for compatibility.
+  repeated string physical_descriptions = 47;
   repeated string notes = 16;
   string table_of_contents = 17;
   string source = 18;
   string digital_origin = 19;
   string edition = 27;
+  // Editions is the complete ordered list of edition statements. edition
+  // remains the primary value for compatibility.
+  repeated string editions = 48;
   string version = 28;
   string preferred_citation = 29;
 

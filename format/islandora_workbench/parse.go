@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/lehigh-university-libraries/crosswalk/format"
@@ -256,6 +257,7 @@ func defaultWorkbenchColumnMap() map[string]string {
 func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap map[int]string, opts *format.ParseOptions) (*hubv1.Record, []format.Diagnostic) {
 	record := &hubv1.Record{}
 	diagnostics := make([]format.Diagnostic, 0)
+	delimiter := sourceMultiValueSeparator(opts)
 
 	for i, value := range row {
 		if i >= len(header) {
@@ -308,7 +310,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			}
 
 		case "AltTitle":
-			record.AltTitle = append(record.AltTitle, splitPipe(value)...)
+			record.AltTitle = append(record.AltTitle, splitWorkbenchValues(value, delimiter)...)
 
 		case "Abstract":
 			// Workbench serializes abstract as attr0 JSON; accept both forms
@@ -326,7 +328,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			}
 
 		case "Contributors":
-			for _, entry := range splitPipe(value) {
+			for _, entry := range splitWorkbenchValues(value, delimiter) {
 				if c := parseWorkbenchLinkedAgent(entry); c != nil {
 					record.Contributors = append(record.Contributors, c)
 				}
@@ -334,7 +336,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 
 		case "Dates":
 			dateType := workbenchDateType(subtype)
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				date, err := helpers.ParseEDTF(v, dateType)
 				if date.Year > 0 {
 					record.Dates = append(record.Dates, date)
@@ -361,19 +363,19 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			record.ObjectModel = value
 
 		case "Language":
-			record.Language = value
+			hub.SetLanguages(record, append(hub.GetLanguages(record), splitWorkbenchValues(value, delimiter)...))
 
 		case "Departments":
-			record.Departments = append(record.Departments, splitPipe(value)...)
+			record.Departments = append(record.Departments, splitWorkbenchValues(value, delimiter)...)
 
 		case "Rights":
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				record.Rights = append(record.Rights, hub.NewRightsFromURI(v))
 			}
 
 		case "Subjects":
 			vocab := workbenchSubjectVocab(subtype)
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				subjectType := hubv1.SubjectType_SUBJECT_TYPE_TOPIC
 				if subtype == "lcnaf" {
 					subjectType = hubv1.SubjectType_SUBJECT_TYPE_NAME
@@ -398,7 +400,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			}
 
 		case "Genre":
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				record.Genres = append(record.Genres, &hubv1.Subject{
 					Value:      v,
 					Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_GENRE,
@@ -406,7 +408,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			}
 
 		case "PhysicalForm":
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				record.PhysicalForm = append(record.PhysicalForm, &hubv1.Subject{
 					Value:      v,
 					Vocabulary: hubv1.SubjectVocabulary_SUBJECT_VOCABULARY_AAT,
@@ -415,33 +417,26 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 
 		case "Identifiers":
 			idType := workbenchIdentifierType(subtype)
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				if id := parseWorkbenchIdentifier(v, idType); id != nil {
 					record.Identifiers = append(record.Identifiers, id)
 				}
 			}
 
 		case "PhysicalDesc":
-			// Workbench serializes extent as attr0 JSON; accept both forms
-			if record.PhysicalDesc == "" {
-				if text := extractAttrValue(value); text != "" {
-					record.PhysicalDesc = text
-				} else {
-					record.PhysicalDesc = value
-				}
-			}
+			parseWorkbenchPhysicalDescriptions(record, splitWorkbenchValues(value, delimiter))
 
 		case "Publisher":
-			record.Publisher = value
+			hub.SetPublishers(record, append(hub.GetPublishers(record), splitWorkbenchValues(value, delimiter)...))
 
 		case "PlacePublished":
-			record.PlacePublished = value
+			hub.SetPlacesPublished(record, append(hub.GetPlacesPublished(record), splitWorkbenchValues(value, delimiter)...))
 
 		case "Edition":
-			record.Edition = value
+			hub.SetEditions(record, append(hub.GetEditions(record), splitWorkbenchValues(value, delimiter)...))
 
 		case "Files":
-			for _, path := range splitPipe(value) {
+			for _, path := range splitWorkbenchValues(value, delimiter) {
 				if subtype == "primary" {
 					file := parsedPrimaryFile(record)
 					if file.Path == "" {
@@ -460,7 +455,7 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 
 		case "Relations":
 			relType := hub.NormalizeRelationType(subtype)
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				record.Relations = append(record.Relations, &hubv1.Relation{
 					Type:        relType,
 					TargetTitle: v,
@@ -471,10 +466,10 @@ func workbenchRowToRecord(row []string, rowNumber int, header []string, colMap m
 			if record.Publication == nil {
 				record.Publication = &hubv1.PublicationDetails{}
 			}
-			parseWorkbenchPublicationField(record.Publication, subtype, value)
+			parseWorkbenchPublicationField(record.Publication, subtype, value, delimiter)
 
 		case "Notes":
-			for _, v := range splitPipe(value) {
+			for _, v := range splitWorkbenchValues(value, delimiter) {
 				if text := extractAttrValue(v); text != "" {
 					record.Notes = append(record.Notes, text)
 				} else {
@@ -634,6 +629,53 @@ func extractAttrValue(s string) string {
 	return value
 }
 
+type workbenchAttrValue struct {
+	Value string `json:"value"`
+	Attr0 string `json:"attr0"`
+}
+
+func parseWorkbenchPhysicalDescriptions(record *hubv1.Record, values []string) {
+	physicalDescriptions := append([]string(nil), hub.GetPhysicalDescriptions(record)...)
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+
+		var attr workbenchAttrValue
+		if !strings.HasPrefix(trimmed, "{") || json.Unmarshal([]byte(trimmed), &attr) != nil {
+			physicalDescriptions = append(physicalDescriptions, trimmed)
+			continue
+		}
+		attr.Value = strings.TrimSpace(attr.Value)
+		if attr.Value == "" {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(attr.Attr0)) {
+		case "", "page":
+			physicalDescriptions = append(physicalDescriptions, attr.Value)
+		case "dimensions":
+			if record.Dimensions == "" {
+				record.Dimensions = attr.Value
+			}
+		case "minutes":
+			if record.Duration == "" {
+				record.Duration = attr.Value
+			}
+		case "bytes":
+			if size, err := strconv.ParseInt(attr.Value, 10, 64); err == nil && size > 0 {
+				file := parsedPrimaryFile(record)
+				if file.SizeBytes == 0 {
+					file.SizeBytes = size
+				}
+			}
+		default:
+			physicalDescriptions = append(physicalDescriptions, attr.Value)
+		}
+	}
+	hub.SetPhysicalDescriptions(record, physicalDescriptions)
+}
+
 // islandoraModelToResourceType maps an Islandora Models vocabulary term to a hub ResourceType.
 func islandoraModelToResourceType(model string) *hubv1.ResourceType {
 	switch model {
@@ -654,11 +696,11 @@ func islandoraModelToResourceType(model string) *hubv1.ResourceType {
 }
 
 // parseWorkbenchPublicationField sets publication fields from workbench column values.
-func parseWorkbenchPublicationField(pub *hubv1.PublicationDetails, subtype, value string) {
+func parseWorkbenchPublicationField(pub *hubv1.PublicationDetails, subtype, value, delimiter string) {
 	switch subtype {
 	case "title":
 		// field_related_item can contain title and ISSN JSON values.
-		for _, item := range splitPipe(value) {
+		for _, item := range splitWorkbenchValues(value, delimiter) {
 			if !strings.HasPrefix(item, "{") {
 				if pub.Title == "" {
 					pub.Title = item
@@ -678,7 +720,7 @@ func parseWorkbenchPublicationField(pub *hubv1.PublicationDetails, subtype, valu
 
 	case "part":
 		// field_part_detail: {"number":"...","type":"volume|issue|page"}
-		for _, v := range splitPipe(value) {
+		for _, v := range splitWorkbenchValues(value, delimiter) {
 			if !strings.HasPrefix(v, "{") {
 				continue
 			}
@@ -700,9 +742,26 @@ func parseWorkbenchPublicationField(pub *hubv1.PublicationDetails, subtype, valu
 	}
 }
 
-// splitPipe splits a workbench multi-value field on "|".
-func splitPipe(value string) []string {
-	parts := strings.Split(value, sep)
+func sourceMultiValueSeparator(opts *format.ParseOptions) string {
+	if opts != nil && opts.Spec != nil {
+		if opts.Spec.Source.Format == "islandora-workbench" && opts.Spec.Source.MultiValueSeparator != "" {
+			return opts.Spec.Source.MultiValueSeparator
+		}
+		if opts.Spec.Target.Format == "islandora-workbench" && opts.Spec.Target.MultiValueSeparator != "" {
+			return opts.Spec.Target.MultiValueSeparator
+		}
+	}
+	if opts != nil && opts.Profile != nil {
+		return opts.Profile.GetMultiValueSeparator()
+	}
+	return sep
+}
+
+func splitWorkbenchValues(value, delimiter string) []string {
+	if delimiter == "" {
+		delimiter = sep
+	}
+	parts := strings.Split(value, delimiter)
 	result := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)

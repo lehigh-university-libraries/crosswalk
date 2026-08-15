@@ -20,7 +20,7 @@ clean: ## Clean generated files
 	rm -f crosswalk
 	@echo "Done"
 
-fmt: ## Format all go code the CLI
+fmt: ## Format all Go code
 	find . -type f -name "*.go" -exec gofmt -w {} \;
 
 generate: ## Generate Go code and JSON Schema from .proto files
